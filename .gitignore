@@ -1,0 +1,48 @@
+# === Credentials — never commit real ones ===
+config.php
+.env
+*.key
+*.pem
+
+# === Dataset — too large for GitHub; link it in ai/README.md instead ===
+dataset/
+*.jpg
+*.jpeg
+*.png
+*.bmp
+*.zip
+# ...but keep committed diagrams/photos in docs and hardware:
+!docs/**/*.png
+!hardware/**/*.png
+!dashboard/**/*.png
+
+# === Trained models — large binaries; link them if over ~100MB ===
+*.h5
+*.keras
+*.tflite
+*.weights
+*.pt
+
+# === Python / Colab ===
+__pycache__/
+*.pyc
+venv/
+.venv/
+.ipynb_checkpoints/
+
+# === Editor & OS junk ===
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# === Obsidian workspace (this context folder is an Obsidian vault) ===
+.obsidian/
+
+# === Internal working notes — NOT deliverables; keep them out of the repo ===
+context.md
+gaps.md
+recommendations.md
+
+# === Research paper / academic docs — repo stays CODE-ONLY; the paper is handled at the defense ===
+*.pdf
