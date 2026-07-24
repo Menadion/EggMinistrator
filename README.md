@@ -1,79 +1,48 @@
-<!--
-  README SKELETON — the graded landing page.
-  Fill each <!-- fill --> block in your team's own words. GitHub renders this
-  automatically on the repo's front page, so keep it Markdown, not a PDF.
-  Delete these comment blocks as you go.
--->
-
 # EggMinistrator
 
-<!-- fill: one line — what it does, for whom.
-     e.g. "A stationary, camera-based AI system that inspects, grades, and counts eggs
-     for LH Deli, replacing manual visual inspection and handwritten inventory logs." -->
+A stationary, camera-based egg inspection system that uses AI image processing to inspect,
+grade, and count eggs — replacing manual visual inspection and handwritten inventory logs for
+a local egg production and distribution business (LH Deli).
 
-> ⚠️ Capstone / PROJMAN prototype by 5 NU Fairview students. One inspection station, not a
-> commercial product.
+A capstone prototype: one inspection station, built to prove the approach, not a commercial
+product.
 
-<!-- fill: a screenshot or photo — the dashboard, or the physical station.
-     The first thing a reader sees. Drop the image in docs/ and reference it:
-     ![Dashboard](docs/dashboard-screenshot.png) -->
+Built with **Python + OpenCV + TensorFlow** (AI), **PHP + MySQL on XAMPP** (dashboard), and an
+**ESP32-CAM** capture rig. Inference runs on the computer, not the ESP32.
 
-## The problem
+## What it does
 
-<!-- fill: 2–3 sentences on LH Deli's manual inspection/counting/inventory process and why
-     it breaks down as volume grows. -->
+- Captures egg images at a fixed, evenly lit station (ESP32-CAM over Wi-Fi).
+- Classifies **external quality** from the image — cracks, discoloration, damaged shells.
+- Assesses **internal quality** via candling (transillumination).
+- Grades **size by weight** (load cell + HX711).
+- Counts inspected eggs automatically.
+- Logs every result to a MySQL database and shows live results, daily stats, history, and
+  reports on a web dashboard.
+- Lets authorized staff **override** an AI classification.
 
-## Features
+## Project layout
 
-<!-- fill: map these to your FR list (FR-01…FR-14).
-  - External quality classification (cracks, discoloration, damaged shells)
-  - Candling-based internal quality assessment
-  - Weight-based size grading
-  - Automatic counting
-  - Web monitoring dashboard (results, stats, history, reports)
-  - Authorized human override of a classification (FR-03)
--->
+Four subsystems that run in parallel, each with its own README:
 
-## Tech stack
+- **[`firmware/`](firmware/)** — the ESP32-CAM capture sketch.
+- **[`ai/`](ai/)** — the model: training (Colab) and inference (Python / OpenCV / TensorFlow).
+- **[`dashboard/`](dashboard/)** — the PHP / MySQL web dashboard, served on XAMPP.
+- **[`database/`](database/)** — the canonical MySQL schema.
 
-| Layer | Tech |
-|---|---|
-| Capture | ESP32-CAM, candling illumination, load cell + HX711 |
-| AI / processing | Python, OpenCV, TensorFlow (runs on a laptop, not the ESP32) |
-| Dashboard | PHP, HTML, CSS, JavaScript, MySQL on XAMPP |
-| Comms | Wi-Fi (ESP32-CAM → computer) |
+Hardware wiring and the bill of materials are in **[`hardware/`](hardware/)**.
 
-## Architecture
+## Running it
 
-<!-- fill: link the architecture diagram in docs/. Even a hand-drawn photo beats nothing.
-     One line: camera captures → laptop runs the model → results stored in MySQL → dashboard. -->
+Each subsystem sets up independently — start with the README in the folder you're working on.
+The dashboard needs XAMPP and the schema imported from `database/`; the AI side runs from
+`ai/`. The dataset is **not** in this repo (too large for git) — see
+[`ai/README.md`](ai/README.md) for where it lives.
 
-## Setup
+> The dashboard is PHP + MySQL, so **GitHub Pages can't host it** — the repo stores the code, a
+> web host runs it.
 
-<!-- fill: numbered steps so someone else could actually run it. Point at the per-subsystem
-     READMEs (ai/, dashboard/, database/, firmware/) for detail. -->
+## Contributing
 
-## Live demo
-
-<!-- fill: link once the hosted dashboard is up. Note: GitHub Pages CANNOT host this (it's PHP +
-     MySQL); the repo stores the code, a web host runs it. -->
-
-## Team
-
-| Name | Role |
-|---|---|
-| Sean Kyle Ambrocio | Project Manager |
-| Ricardo Antonio Jr. | Development, data, implementation |
-| Jasfer Ramos | Research, UI/UX, validation |
-| Daniel Ivan Renegado | Design, documentation, testing |
-| Miguel Andrei Castaneda | <!-- fill: role --> |
-
-## Dataset
-
-<!-- fill: the dataset is NOT in this repo (too large, see CONTRIBUTING.md). State where it
-     lives (Google Drive / Colab link), the class list, and image counts per class.
-     Details also in ai/README.md. -->
-
-<!-- The capstone paper is intentionally NOT in this repo — it's covered by the defense, and the
-     repo is kept code-only. Any lightweight diagrams/screenshots may live in docs/. -->
-
+See **[CONTRIBUTING.md](CONTRIBUTING.md)** for subsystem ownership, branch/PR flow, and commit
+conventions.

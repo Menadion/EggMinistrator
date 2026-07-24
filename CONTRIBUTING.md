@@ -5,20 +5,18 @@ parallel — **firmware** (ESP32-CAM), **ai** (Python/OpenCV/TensorFlow), and **
 (PHP/MySQL on XAMPP) — plus **database** and **hardware** docs. The best changes are focused,
 land in the right folder, and are tested before they're committed.
 
-## Who owns what
+## Subsystems
 
-Work in your own subsystem folder; don't reach into someone else's without a heads-up.
+Work in the folder for your part; don't reach into someone else's without a heads-up. Who did
+what is tracked by commit history, not a table here.
 
-| Folder | Owner(s) | Stack |
-|---|---|---|
-| `firmware/` | (embedded) | ESP32-CAM capture sketch |
-| `ai/` | (AI/data) | Python, OpenCV, TensorFlow, Colab |
-| `dashboard/` | (full-stack) | PHP, MySQL, HTML/CSS/JS, XAMPP |
-| `database/` | (full-stack) | `schema.sql`, seed data |
-| `docs/`, `hardware/` | (docs/QA) | diagrams, manuals, BOM |
-
-Fill in the names once roles are final — this table doubles as the "who did what" a professor
-will look for.
+| Folder | Stack |
+|---|---|
+| `firmware/` | ESP32-CAM capture sketch |
+| `ai/` | Python, OpenCV, TensorFlow, Colab |
+| `dashboard/` | PHP, MySQL, HTML/CSS/JS, XAMPP |
+| `database/` | `schema.sql`, seed data |
+| `docs/`, `hardware/` | diagrams, manuals, BOM |
 
 ## Branches — so five people don't overwrite each other
 
