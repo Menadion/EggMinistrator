@@ -1,7 +1,7 @@
 import { ChevronLeft, ChevronRight, Filter, SlidersHorizontal } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { historyScans } from '../data/mockData'
-import { DemoBadge, PageHeader, QualityBadge, SearchInput, SizeBadge } from '../components/Ui'
+import { PageHeader, QualityBadge, SearchInput, SizeBadge } from '../components/Ui'
 
 const PAGE_SIZE = 5
 
@@ -17,7 +17,7 @@ export default function HistoryPage() {
 
   return (
     <div>
-      <PageHeader title="History" description="Browse all egg inspection records" actions={<DemoBadge />} />
+      <PageHeader title="History" description="Browse all egg inspection records" />
       <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <div className="grid gap-3 lg:grid-cols-[170px_1fr_150px_150px_auto]">
           <input type="date" defaultValue="2026-07-25" className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-600" />

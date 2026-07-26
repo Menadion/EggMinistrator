@@ -1,13 +1,13 @@
 import { CalendarDays, FileBarChart, Printer } from 'lucide-react'
 import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { dailyInspections, qualityDistribution, scans, sizeDistribution } from '../data/mockData'
-import { ChartCard, DemoBadge, ExportButtons, PageHeader, StatCard, downloadCsv } from '../components/Ui'
+import { ChartCard, ExportButtons, PageHeader, StatCard, downloadCsv } from '../components/Ui'
 
 export default function ReportsPage() {
   const exportReport = () => downloadCsv([['Egg ID', 'Weight (g)', 'Size', 'Quality', 'Device'], ...scans.map((scan) => [scan[1], scan[2], scan[3], scan[4], scan[5]])], 'eggministrator-report-jul-25-2026.csv')
   return (
     <div>
-      <PageHeader title="Reports" description="Generate and export egg inspection reports" actions={<DemoBadge />} />
+      <PageHeader title="Reports" description="Generate and export egg inspection reports" />
       <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <div className="flex flex-wrap gap-2"><button className="rounded-full border border-slate-200 px-4 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50">Daily</button><button className="rounded-full border border-slate-200 px-4 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50">Weekly</button><button className="rounded-full border border-slate-200 px-4 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50">Monthly</button><button className="rounded-full bg-forest-800 px-4 py-1.5 text-xs font-semibold text-white">Custom Range</button></div>
         <div className="mt-4 grid gap-3 lg:grid-cols-[180px_180px_1fr_150px_auto]"><label className="relative"><span className="sr-only">Start date</span><input type="date" defaultValue="2026-07-19" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-600" /></label><label><span className="sr-only">End date</span><input type="date" defaultValue="2026-07-25" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-600" /></label><select className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600"><option>All Sizes</option><option>Large</option><option>Jumbo</option></select><select className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600"><option>All Quality</option><option>Good</option><option>Spoiled</option></select><button className="inline-flex items-center justify-center gap-2 rounded-lg bg-forest-800 px-4 py-2 text-sm font-semibold text-white hover:bg-forest-900"><FileBarChart size={16} />Generate Report</button></div>
