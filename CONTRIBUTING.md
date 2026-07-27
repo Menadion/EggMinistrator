@@ -1,9 +1,15 @@
 # Contributing to EggMinistrator
 
-Five-person capstone, one working prototype. The repo has three subsystems that move in
-parallel — **firmware** (ESP32-CAM), **ai** (Python/OpenCV/TensorFlow), and **dashboard**
-(PHP/MySQL on XAMPP) — plus **database** and **hardware** docs. The best changes are focused,
-land in the right folder, and are tested before they're committed.
+Five-person capstone, one working prototype. The repo has four code subsystems that move in
+parallel — **firmware** (ESP32-CAM), **ai** (Python/OpenCV/TensorFlow), **dashboard**
+(PHP/MySQL on XAMPP), and **database** (the schema) — plus **hardware** and **docs** for build
+reference. The best changes are focused, land in the right folder, and are tested before they're
+committed.
+
+**One thing to know before you touch anything:** each egg is captured **once**, under candling
+(backlit) illumination. There is no second reflected-light photo. Surface dirt and shell
+discoloration are therefore out of scope, and embryo development is a **routing** decision (balut),
+not a defect. See the root [README](README.md) and `docs/context.md`.
 
 ## Subsystems
 
