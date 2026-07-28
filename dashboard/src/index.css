@@ -27,3 +27,27 @@ button, input, select {
   border-radius: 12px !important;
   box-shadow: 0 12px 30px rgb(15 23 42 / 12%) !important;
 }
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .report-preview,
+  .report-preview * {
+    visibility: visible;
+  }
+
+  .report-preview {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    border: 0;
+    box-shadow: none;
+  }
+
+  .report-actions {
+    display: none;
+  }
+}

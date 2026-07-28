@@ -1,75 +1,93 @@
-export const sizeDistribution = [
-  { name: 'Peewee', value: 102, color: '#5cae5e' },
-  { name: 'Small', value: 191, color: '#4da6df' },
-  { name: 'Medium', value: 276, color: '#f7b73b' },
-  { name: 'Large', value: 304, color: '#f07855' },
-  { name: 'Extra Large', value: 233, color: '#9c78d3' },
-  { name: 'Jumbo', value: 142, color: '#ef7f95' },
+const CURRENT_DAILY_TOTALS = [132, 190, 142, 188, 159, 190, 247]
+const PREVIOUS_DAILY_TOTALS = [140, 150, 145, 155, 160, 165, 177]
+const CURRENT_TOTAL = CURRENT_DAILY_TOTALS.reduce((sum, count) => sum + count, 0)
+const PREVIOUS_TOTAL = PREVIOUS_DAILY_TOTALS.reduce((sum, count) => sum + count, 0)
+const CURRENT_SPOILED_TOTAL = 161
+const PREVIOUS_SPOILED_TOTAL = 144
+
+const sizeDefinitions = [
+  { name: 'Peewee', count: 102, color: '#5cae5e', minimumWeight: 30, maximumWeight: 39 },
+  { name: 'Small', count: 191, color: '#4da6df', minimumWeight: 40, maximumWeight: 46 },
+  { name: 'Medium', count: 276, color: '#f7b73b', minimumWeight: 47, maximumWeight: 53 },
+  { name: 'Large', count: 304, color: '#f07855', minimumWeight: 54, maximumWeight: 60 },
+  { name: 'Extra Large', count: 233, color: '#9c78d3', minimumWeight: 61, maximumWeight: 67 },
+  { name: 'Jumbo', count: 142, color: '#ef7f95', minimumWeight: 68, maximumWeight: 74 },
 ]
 
-export const dailyInspections = [
-  { day: 'Jul 19', count: 206 },
-  { day: 'Jul 20', count: 300 },
-  { day: 'Jul 21', count: 221 },
-  { day: 'Jul 22', count: 298 },
-  { day: 'Jul 23', count: 255 },
-  { day: 'Jul 24', count: 302 },
-  { day: 'Jul 25', count: 366 },
-]
+const getManilaToday = () => {
+  const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date())
+  const value = Object.fromEntries(parts.filter((part) => part.type !== 'literal').map((part) => [part.type, part.value]))
+  return `${value.year}-${value.month}-${value.day}`
+}
 
-export const qualityDistribution = [
-  { name: 'Good', value: 1087, color: '#58ad5c' },
-  { name: 'Spoiled', value: 161, color: '#ef5350' },
-]
+const dateFromIso = (isoDate) => new Date(`${isoDate}T00:00:00Z`)
+const formatDate = (isoDate, options) => new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', ...options }).format(dateFromIso(isoDate))
+const getDayDetails = (date, count) => {
+  const isoDate = date.toISOString().slice(0, 10)
+  return { isoDate, count, label: formatDate(isoDate, { month: 'short', day: 'numeric' }), displayDate: formatDate(isoDate, { month: '2-digit', day: '2-digit', year: 'numeric' }) }
+}
 
-export const scans = [
-  ['10:35:21 AM', 'EGG-001248', 58.2, 'Large', 'Good', 'Egg Scanner 01'],
-  ['10:32:10 AM', 'EGG-001247', 42.7, 'Small', 'Spoiled', 'Egg Scanner 01'],
-  ['10:28:54 AM', 'EGG-001246', 61.3, 'Extra Large', 'Good', 'Egg Scanner 01'],
-  ['10:25:33 AM', 'EGG-001245', 36.9, 'Peewee', 'Good', 'Egg Scanner 01'],
-  ['10:22:18 AM', 'EGG-001244', 70.2, 'Jumbo', 'Good', 'Egg Scanner 01'],
-  ['10:18:05 AM', 'EGG-001243', 55.3, 'Medium', 'Good', 'Egg Scanner 01'],
-  ['10:15:42 AM', 'EGG-001242', 47.8, 'Small', 'Spoiled', 'Egg Scanner 01'],
-  ['10:11:45 AM', 'EGG-001241', 60.4, 'Large', 'Good', 'Egg Scanner 01'],
-  ['10:08:12 AM', 'EGG-001240', 63.1, 'Extra Large', 'Good', 'Egg Scanner 01'],
-  ['10:03:46 AM', 'EGG-001239', 52.6, 'Medium', 'Good', 'Egg Scanner 01'],
-  ['09:58:38 AM', 'EGG-001238', 43.9, 'Small', 'Spoiled', 'Egg Scanner 01'],
-  ['09:54:01 AM', 'EGG-001237', 69.5, 'Jumbo', 'Good', 'Egg Scanner 01'],
-]
+const today = dateFromIso(getManilaToday())
+const reportingDays = CURRENT_DAILY_TOTALS.map((count, index) => {
+  const date = new Date(today)
+  date.setUTCDate(today.getUTCDate() - (CURRENT_DAILY_TOTALS.length - 1 - index))
+  return getDayDetails(date, count)
+})
+const previousDays = PREVIOUS_DAILY_TOTALS.map((count, index) => {
+  const date = new Date(today)
+  date.setUTCDate(today.getUTCDate() - (CURRENT_DAILY_TOTALS.length + PREVIOUS_DAILY_TOTALS.length - 1 - index))
+  return getDayDetails(date, count)
+})
 
-export const historyScans = scans.map((scan, index) => ({
-  date: index > 7 ? '07/24/2026' : '07/25/2026',
-  time: scan[0],
-  eggId: scan[1],
-  weight: scan[2],
-  size: scan[3],
-  quality: scan[4],
-  device: scan[5],
-}))
+const sizePool = sizeDefinitions.flatMap(({ name, count }) => Array.from({ length: count }, () => name))
+const sizeByName = Object.fromEntries(sizeDefinitions.map((size) => [size.name, size]))
 
-export const weeklyTrend = [
-  { name: 'Wk 1', count: 1320 },
-  { name: 'Wk 2', count: 1700 },
-  { name: 'Wk 3', count: 1510 },
-  { name: 'Wk 4', count: 1810 },
-]
+const createTime = (index) => {
+  const totalSeconds = (8 * 60 * 60) + ((index * 47) % (4 * 60 * 60))
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+  const suffix = hours >= 12 ? 'PM' : 'AM'
+  return `${hours % 12 || 12}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')} ${suffix}`
+}
 
-export const monthlyTrend = [
-  { name: 'Jan', count: 2800 },
-  { name: 'Feb', count: 3900 },
-  { name: 'Mar', count: 4700 },
-  { name: 'Apr', count: 4100 },
-  { name: 'May', count: 5800 },
-  { name: 'Jun', count: 6200 },
-  { name: 'Jul', count: 8400 },
-]
+const createInspections = (days, startingIndex, spoiledTarget, sizeOffset) => {
+  const total = days.reduce((sum, day) => sum + day.count, 0)
+  let inspectionIndex = startingIndex
+  return days.flatMap((day) => Array.from({ length: day.count }, (_, dayIndex) => {
+    const localIndex = inspectionIndex - startingIndex
+    const size = sizePool[((localIndex * 317) + sizeOffset) % CURRENT_TOTAL]
+    const sizeDefinition = sizeByName[size]
+    const weightRatio = ((inspectionIndex * 17) % 101) / 100
+    const isSpoiled = Math.floor(((localIndex + 1) * spoiledTarget) / total) > Math.floor((localIndex * spoiledTarget) / total)
+    const inspection = { date: day.isoDate, displayDate: day.displayDate, time: createTime(dayIndex), eggId: `EGG-${String(inspectionIndex + 1).padStart(6, '0')}`, weight: Number((sizeDefinition.minimumWeight + ((sizeDefinition.maximumWeight - sizeDefinition.minimumWeight) * weightRatio)).toFixed(1)), size, quality: isSpoiled ? 'Spoiled' : 'Good', device: 'Egg Scanner 01' }
+    inspectionIndex += 1
+    return inspection
+  }))
+}
 
-export const spoilageTrend = [
-  { day: 'Jun 26', rate: 11 },
-  { day: 'Jul 1', rate: 8 },
-  { day: 'Jul 5', rate: 13 },
-  { day: 'Jul 10', rate: 12 },
-  { day: 'Jul 15', rate: 15 },
-  { day: 'Jul 20', rate: 11 },
-  { day: 'Jul 25', rate: 15 },
-]
+const previousInspections = createInspections(previousDays, 0, PREVIOUS_SPOILED_TOTAL, 53)
+const currentInspections = createInspections(reportingDays, PREVIOUS_TOTAL, CURRENT_SPOILED_TOTAL, 0)
+export const mockInspections = [...previousInspections, ...currentInspections]
+export const historyScans = [...mockInspections].reverse()
+export const recentScans = historyScans.slice(0, 6)
+
+const calculateStats = (inspections) => {
+  const good = inspections.filter((inspection) => inspection.quality === 'Good').length
+  const spoiled = inspections.length - good
+  const totalWeight = inspections.reduce((sum, inspection) => sum + inspection.weight, 0)
+  return { total: inspections.length, good, spoiled, averageWeight: inspections.length ? Number((totalWeight / inspections.length).toFixed(1)) : 0, goodPercentage: inspections.length ? Number(((good / inspections.length) * 100).toFixed(1)) : 0, spoilagePercentage: inspections.length ? Number(((spoiled / inspections.length) * 100).toFixed(1)) : 0 }
+}
+
+export const dashboardStats = calculateStats(currentInspections)
+export const sizeDistribution = sizeDefinitions.map((size) => ({ name: size.name, value: currentInspections.filter((inspection) => inspection.size === size.name).length, color: size.color }))
+export const qualityDistribution = [{ name: 'Good', value: dashboardStats.good, color: '#58ad5c' }, { name: 'Spoiled', value: dashboardStats.spoiled, color: '#ef5350' }]
+export const dailyInspections = reportingDays.map((day) => ({ day: day.label, count: currentInspections.filter((inspection) => inspection.date === day.isoDate).length }))
+export const spoilageTrend = reportingDays.map((day) => {
+  const inspections = currentInspections.filter((inspection) => inspection.date === day.isoDate)
+  const spoiled = inspections.filter((inspection) => inspection.quality === 'Spoiled').length
+  return { day: day.label, rate: Number(((spoiled / inspections.length) * 100).toFixed(1)) }
+})
+export const weeklyTrend = [{ name: `${reportingDays[0].label}–${reportingDays.at(-1).label}`, count: dashboardStats.total }]
+export const monthlyTrend = [{ name: formatDate(reportingDays.at(-1).isoDate, { month: 'short' }), count: dashboardStats.total }]
+export const reportingPeriod = { start: reportingDays[0].isoDate, end: reportingDays.at(-1).isoDate, label: `${formatDate(reportingDays[0].isoDate, { month: 'short', day: 'numeric', year: 'numeric' })} – ${formatDate(reportingDays.at(-1).isoDate, { month: 'short', day: 'numeric', year: 'numeric' })}` }
