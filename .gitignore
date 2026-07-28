@@ -36,6 +36,10 @@ venv/
 .DS_Store
 Thumbs.db
 
+# === Frontend build output ===
+node_modules/
+dist/
+
 # === Obsidian workspace (this context folder is an Obsidian vault) ===
 .obsidian/
 
