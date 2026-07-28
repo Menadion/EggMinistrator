@@ -35,12 +35,10 @@ INSERT INTO `ai_assessments` (
     `is_defect_detected`, `model_name`, `model_version`, `inference_time_ms`, `assessed_at`
 )
 VALUES
-    (1, 'external', 'clean_shell', 0.9820, 0, 'external-quality-classifier', '0.1.0', 185, '2026-07-25 08:05:02'),
     (1, 'candling', 'normal', 0.9540, 0, 'candling-classifier', '0.1.0', 207, '2026-07-25 08:05:03'),
-    (2, 'external', 'cracked_shell', 0.9910, 1, 'external-quality-classifier', '0.1.0', 181, '2026-07-25 08:06:02'),
-    (2, 'candling', 'normal', 0.9420, 0, 'candling-classifier', '0.1.0', 203, '2026-07-25 08:06:03'),
-    (3, 'external', 'discoloration', 0.6830, 1, 'external-quality-classifier', '0.1.0', 188, '2026-07-25 08:07:02'),
-    (3, 'candling', 'normal', 0.9710, 0, 'candling-classifier', '0.1.0', 204, '2026-07-25 08:07:03');
+    (1, 'candling', 'normal', 0.9760, 0, 'candling-classifier', '0.2.0', 196, '2026-07-25 08:05:05'),
+    (2, 'candling', 'large_crack', 0.9910, 1, 'candling-classifier', '0.2.0', 203, '2026-07-25 08:06:03'),
+    (3, 'candling', 'normal', 0.6830, 0, 'candling-classifier', '0.2.0', 204, '2026-07-25 08:07:03');
 
 INSERT INTO `staff_overrides` (
     `inspection_id`, `user_id`, `previous_disposition`, `new_disposition`,

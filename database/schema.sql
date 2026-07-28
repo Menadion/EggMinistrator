@@ -96,7 +96,7 @@ CREATE TABLE `egg_inspections` (
 CREATE TABLE `inspection_images` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `inspection_id` BIGINT UNSIGNED NOT NULL,
-    `image_type` ENUM('external', 'candling') NOT NULL,
+    `image_type` ENUM('candling') NOT NULL DEFAULT 'candling',
     `file_path` VARCHAR(500) NOT NULL,
     `captured_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -110,18 +110,18 @@ CREATE TABLE `inspection_images` (
 CREATE TABLE `ai_assessments` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `inspection_id` BIGINT UNSIGNED NOT NULL,
-    `assessment_type` ENUM('external', 'candling') NOT NULL,
-    `result_label` VARCHAR(100) NOT NULL,
+    `assessment_type` ENUM('candling') NOT NULL DEFAULT 'candling',
+    `result_label` ENUM('normal', 'large_crack', 'blood_spot', 'meat_spot', 'gross_shell_damage') NOT NULL,
     `confidence_score` DECIMAL(5,4) NULL,
     `is_defect_detected` TINYINT(1) NOT NULL DEFAULT 0,
     `model_name` VARCHAR(100) NULL,
-    `model_version` VARCHAR(50) NULL,
+    `model_version` VARCHAR(50) NOT NULL,
     `inference_time_ms` INT UNSIGNED NULL,
     `raw_result` LONGTEXT NULL,
     `assessed_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uq_ai_assessments_type` (`inspection_id`, `assessment_type`),
-    KEY `idx_ai_assessments_type_label` (`assessment_type`, `result_label`),
+    UNIQUE KEY `uq_ai_assessments_model_version` (`inspection_id`, `model_version`),
+    KEY `idx_ai_assessments_result_label` (`result_label`),
     KEY `idx_ai_assessments_assessed_at` (`assessed_at`),
     CONSTRAINT `fk_ai_assessments_inspection`
         FOREIGN KEY (`inspection_id`) REFERENCES `egg_inspections` (`id`)

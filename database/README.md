@@ -1,7 +1,7 @@
 # database/
 
 The canonical MySQL database for EggMinistrator. It stores individual egg inspections,
-external and candling AI assessments, weight grades, and an auditable staff-override history.
+candling AI assessments, weight grades, and an auditable staff-override history.
 
 ## Importing locally
 
@@ -16,6 +16,13 @@ with records you need to keep without exporting them first.
 
 - `schema.sql` - canonical database definition, indexes, foreign keys, and daily summary view.
 - `sample-data.sql` - optional demo users, grades, one batch, inspections, AI results, and an override.
+
+## Candling model contract
+
+Each assessment represents a candling result. The permitted `result_label` values are `normal`,
+`large_crack`, `blood_spot`, `meat_spot`, and `gross_shell_damage`. Multiple model versions can
+be retained for the same inspection, allowing model results to be compared without overwriting
+an earlier inference.
 
 The sample users use a shared development-only password: `password`. Replace or remove them
 before any real deployment. Update the weight thresholds in `size_grades` if LH Deli uses a
