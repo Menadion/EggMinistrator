@@ -42,7 +42,8 @@ figures in a submitted budget are the thing a panel checks first.
 |---|---|
 | Laptop / desktop | Inference runs here, not on the ESP32 |
 | Python, OpenCV, TensorFlow | Free and open source |
-| XAMPP, MySQL, PHP | Free and open source |
+| XAMPP, MySQL | Free and open source |
+| Node.js, React, Vite | Free and open source |
 
 Worth stating explicitly in the paper: **software cost is effectively zero.** That is a genuine
 strength of the stack choice, not a gap in the table.

@@ -10,11 +10,10 @@ product.
 Built with **Python + OpenCV + TensorFlow** (AI), a **React + Vite** dashboard over **MySQL**, and
 an **ESP32-CAM** capture rig. Inference runs on the computer, not the ESP32.
 
-> ⚠️ **Unresolved: the dashboard stack.** Ver4 of the capstone paper (p. — "Technology") commits to
-> a dashboard "developed using **PHP**, HTML, CSS, JavaScript, and MySQL running on a local XAMPP
-> server." The code in `dashboard/` is **React + Vite + Tailwind**, with no PHP. One of the two has
-> to move — either the paper is updated to name the real stack, or the dashboard is rebuilt in PHP.
-> **Do not let this reach the defense unreconciled.**
+> **Settled 2026-07-28:** the paper previously described a **PHP** dashboard on XAMPP. The code is
+> React + Vite and it builds, so the paper is being updated to match the code rather than the
+> reverse. MySQL and XAMPP stay. The "software cost is effectively zero" argument is unaffected,
+> since Node, React and Vite are free too.
 
 ## How it works — one capture, two kinds of finding
 

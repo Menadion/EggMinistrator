@@ -21,20 +21,19 @@ what is tracked by commit history, not a table here.
 |---|---|
 | `firmware/` | ESP32-CAM capture sketch |
 | `ai/` | Python, OpenCV, TensorFlow, Colab |
-| `dashboard/` | React, Vite, Tailwind, Recharts (⚠️ paper says PHP — see note) |
+| `dashboard/` | React, Vite, Tailwind, Recharts |
 | `database/` | `schema.sql`, seed data |
 | `docs/`, `hardware/` | diagrams, manuals, BOM |
 
-### ⚠️ Unresolved: the dashboard stack
+### The dashboard stack (settled 2026-07-28)
 
-Ver4 of the paper says the dashboard is "developed using **PHP**, HTML, CSS, JavaScript, and MySQL
-running on a local XAMPP server." The merged `dashboard/` is **React + Vite + Tailwind** and
-contains no PHP. Both cannot be true at the defense.
+The paper used to say the dashboard was "developed using **PHP**, HTML, CSS, JavaScript, and MySQL
+running on a local XAMPP server." It isn't. The merged `dashboard/` is **React + Vite + Tailwind**
+with no PHP.
 
-Either is defensible — a Vite build can be served by Apache and talk to a PHP API, so the paper
-could simply be corrected. What is *not* defensible is a panel finding the paper and the repo
-naming different stacks. **Agree on one, then make the other match.** Until then, don't build new
-work that assumes the loser.
+**Resolved in favour of the code:** the paper is being corrected to name React + Vite. MySQL and
+XAMPP stay as they were. Build on React; don't add PHP to `dashboard/` expecting it to match the
+old description.
 
 ## Branches — so five people don't overwrite each other
 
@@ -86,8 +85,7 @@ There is no automated test suite — verification is manual, per subsystem:
 ## Don't
 
 - Don't introduce a **further** build tool, bundler, or framework without agreeing first. The
-  dashboard was specified as no-build PHP and arrived as React + Vite; that reversal has not been
-  agreed or written into the paper yet (see the note under **Subsystems**). Don't stack a second
-  unagreed choice on top.
+  React + Vite reversal has been accepted and written into the paper; don't stack another
+  unagreed choice on top of it.
 - Don't add features or abstractions beyond the task's scope.
 - Don't commit a trained model over ~100MB — link it instead.
