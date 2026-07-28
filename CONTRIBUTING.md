@@ -8,8 +8,9 @@ committed.
 
 **One thing to know before you touch anything:** each egg is captured **once**, under candling
 (backlit) illumination. There is no second reflected-light photo. Surface dirt and shell
-discoloration are therefore out of scope, and embryo development is a **routing** decision (balut),
-not a defect. See the root [README](README.md) and `docs/context.md`.
+discoloration are therefore out of scope. **Balut / embryo routing was descoped in Ver4** — the
+system emits a quality verdict only, with no routing output. See the root [README](README.md) and
+`docs/context.md`.
 
 ## Subsystems
 
@@ -20,9 +21,20 @@ what is tracked by commit history, not a table here.
 |---|---|
 | `firmware/` | ESP32-CAM capture sketch |
 | `ai/` | Python, OpenCV, TensorFlow, Colab |
-| `dashboard/` | PHP, MySQL, HTML/CSS/JS, XAMPP |
+| `dashboard/` | React, Vite, Tailwind, Recharts (⚠️ paper says PHP — see note) |
 | `database/` | `schema.sql`, seed data |
 | `docs/`, `hardware/` | diagrams, manuals, BOM |
+
+### ⚠️ Unresolved: the dashboard stack
+
+Ver4 of the paper says the dashboard is "developed using **PHP**, HTML, CSS, JavaScript, and MySQL
+running on a local XAMPP server." The merged `dashboard/` is **React + Vite + Tailwind** and
+contains no PHP. Both cannot be true at the defense.
+
+Either is defensible — a Vite build can be served by Apache and talk to a PHP API, so the paper
+could simply be corrected. What is *not* defensible is a panel finding the paper and the repo
+naming different stacks. **Agree on one, then make the other match.** Until then, don't build new
+work that assumes the loser.
 
 ## Branches — so five people don't overwrite each other
 
@@ -44,8 +56,8 @@ what is tracked by commit history, not a table here.
 
 There is no automated test suite — verification is manual, per subsystem:
 
-- **dashboard:** `php -l path/to/file.php` syntax-checks a PHP file, then **load the page in the
-  browser** and confirm the flow actually works. `php -l` only checks syntax.
+- **dashboard:** `npm run build` must succeed, then `npm run dev` and **load the page in the
+  browser** and confirm the flow actually works. A clean build only proves it compiles.
 - **ai:** re-run the training notebook / inference script end-to-end on a couple of sample images
   and confirm it classifies without erroring. Note the model's accuracy in `ai/README.md`.
 - **firmware:** compile/verify the sketch in the Arduino IDE before pushing.
@@ -66,14 +78,16 @@ There is no automated test suite — verification is manual, per subsystem:
   removed once they're in history. Keep them in Google Drive / Colab and link them in
   `ai/README.md` with the class list and image counts. (`.gitignore` already blocks `*.jpg`
   etc. — don't force-add them.)
-- **Real credentials.** No hosting passwords, DB passwords, or registrar logins. Commit
-  `dashboard/config.example.php` with placeholders; each person copies it to `config.php`
-  locally, which `.gitignore` keeps out.
+- **Real credentials.** No hosting passwords, DB passwords, or registrar logins. Commit an
+  example config with placeholders (`.env.example`, or `config.example.php` if a PHP backend
+  lands); each person copies it locally to a file `.gitignore` keeps out.
 - **Generated junk.** `venv/`, `__pycache__/`, `.vscode/`, `.DS_Store` — all already ignored.
 
 ## Don't
 
-- Don't introduce a build tool or bundler without agreeing first — the dashboard is
-  deliberately no-build (edit PHP/CSS/JS and refresh).
+- Don't introduce a **further** build tool, bundler, or framework without agreeing first. The
+  dashboard was specified as no-build PHP and arrived as React + Vite; that reversal has not been
+  agreed or written into the paper yet (see the note under **Subsystems**). Don't stack a second
+  unagreed choice on top.
 - Don't add features or abstractions beyond the task's scope.
 - Don't commit a trained model over ~100MB — link it instead.

@@ -9,16 +9,19 @@ The AI image-processing subsystem — Python, OpenCV, TensorFlow. Inference runs
 Anything that requires reflected light — surface dirt, shell discoloration — is out of scope and must
 not appear as a class.
 
-The frame yields three kinds of finding, and they are **not** one flat label set:
+The frame yields two kinds of finding:
 
 | Kind | Examples | Decision |
 |---|---|---|
 | Internal quality | blood/meat spots, air cell size | grade / downgrade |
 | Shell condition | large cracks (light leakage), gross damage | reject |
-| **Routing** | embryo development | **separate for balut — not a defect** |
 
-Do not fold routing into the defect classes. A balut egg is intentional product; labelling it as
-"bad" is wrong about the business the system serves.
+> **Balut routing was descoped in Ver4.** Earlier revisions of this file required a third,
+> *routing* output that separated eggs showing embryo development. Both scope sections of Ver4
+> drop it, so the model has **no embryo class** and emits a quality verdict only. Ver4 still
+> carries two leftover promises of balut routing (§3.4 Key Deliverables, and the Expected Benefits
+> table, which values it at ₱48,000/yr) — those are paper bugs, not requirements. Do not build to
+> them.
 
 ## Structure
 
@@ -34,12 +37,17 @@ data is supplied. The team photographs and labels its own eggs, or sources a pub
 
 <!-- fill -->
 - **Location:** <!-- Google Drive / Colab link -->
-- **Classes:** <!-- candling-visible only. e.g. good, blood-spot, large-crack, damaged-shell,
-     embryo (routing). NOT dirty / discolored — the capture cannot show them -->
+- **Classes:** <!-- Ver4 §3.2.6 is the authoritative list — "large cracks revealed by light
+     leakage, blood and meat spots, and gross shell damage", plus a normal/good class. So:
+     good, blood-meat-spot, large-crack, gross-shell-damage. NO embryo class (descoped Ver4).
+     NOT dirty / discolored — the capture cannot show them, and §3.2.4 puts surface dirt out
+     of scope outright. -->
 - **Image counts per class:** <!-- state them — imbalance matters -->
 
 Defective eggs are rarer than good ones, so the set will be imbalanced on exactly the classes that
-matter. Blood spots and embryos cannot be ordered on demand — plan collection early.
+matter. Blood and meat spots cannot be ordered on demand — plan collection early. (Fertile eggs
+are no longer needed as a *class*, but they are still the cheapest way to source a known-abnormal
+candling image while you validate the camera.)
 
 The dataset is kept out of git (thousands of photos blow past GitHub's limits and can't be cleanly
 removed once committed). See the repo `CONTRIBUTING.md`.

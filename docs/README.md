@@ -20,9 +20,11 @@ working notes (`context.md`, `gaps.md`, `recommendations.md`), which `.gitignore
   the project up.
 - `gaps.md` — ranked logical gaps in the paper.
 - `recommendations.md` — what to fix, in leverage order.
+- `schema-review.md` — findings on `database/schema.sql` vs the paper and the dashboard.
 
-Those three are working notes, not deliverables. They're the honest internal read of the document,
-which is exactly why they don't belong in a public repo.
+Those four are working notes, not deliverables. They're the honest internal read of the document,
+which is exactly why they don't belong in a public repo. Share them with teammates directly rather
+than committing them.
 
 ## Related
 
