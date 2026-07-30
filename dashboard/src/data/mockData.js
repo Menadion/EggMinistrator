@@ -6,12 +6,12 @@ const CURRENT_SPOILED_TOTAL = 161
 const PREVIOUS_SPOILED_TOTAL = 144
 
 const sizeDefinitions = [
-  { name: 'Peewee', count: 102, color: '#5cae5e', minimumWeight: 30, maximumWeight: 39 },
-  { name: 'Small', count: 191, color: '#4da6df', minimumWeight: 40, maximumWeight: 46 },
-  { name: 'Medium', count: 276, color: '#f7b73b', minimumWeight: 47, maximumWeight: 53 },
-  { name: 'Large', count: 304, color: '#f07855', minimumWeight: 54, maximumWeight: 60 },
-  { name: 'Extra Large', count: 233, color: '#9c78d3', minimumWeight: 61, maximumWeight: 67 },
-  { name: 'Jumbo', count: 142, color: '#ef7f95', minimumWeight: 68, maximumWeight: 74 },
+  { name: 'Pewee', count: 102, color: '#5cae5e', minimumWeight: 0, maximumWeight: 45 },
+  { name: 'Small', count: 191, color: '#4da6df', minimumWeight: 45, maximumWeight: 55 },
+  { name: 'Medium', count: 276, color: '#f7b73b', minimumWeight: 55, maximumWeight: 60 },
+  { name: 'Large', count: 304, color: '#f07855', minimumWeight: 60, maximumWeight: 65 },
+  { name: 'Extra Large', count: 233, color: '#9c78d3', minimumWeight: 65, maximumWeight: 70 },
+  { name: 'Jumbo', count: 142, color: '#ef7f95', minimumWeight: 70, maximumWeight: null, sampleMaximumWeight: 80 },
 ]
 
 const getManilaToday = () => {
@@ -58,9 +58,10 @@ const createInspections = (days, startingIndex, spoiledTarget, sizeOffset) => {
     const localIndex = inspectionIndex - startingIndex
     const size = sizePool[((localIndex * 317) + sizeOffset) % CURRENT_TOTAL]
     const sizeDefinition = sizeByName[size]
-    const weightRatio = ((inspectionIndex * 17) % 101) / 100
+    const weightRatio = ((inspectionIndex * 17) % 100) / 100
+    const sampleMaximumWeight = sizeDefinition.maximumWeight ?? sizeDefinition.sampleMaximumWeight
     const isSpoiled = Math.floor(((localIndex + 1) * spoiledTarget) / total) > Math.floor((localIndex * spoiledTarget) / total)
-    const inspection = { date: day.isoDate, displayDate: day.displayDate, time: createTime(dayIndex), eggId: `EGG-${String(inspectionIndex + 1).padStart(6, '0')}`, weight: Number((sizeDefinition.minimumWeight + ((sizeDefinition.maximumWeight - sizeDefinition.minimumWeight) * weightRatio)).toFixed(1)), size, quality: isSpoiled ? 'Spoiled' : 'Good', device: 'Egg Scanner 01' }
+    const inspection = { date: day.isoDate, displayDate: day.displayDate, time: createTime(dayIndex), eggId: `EGG-${String(inspectionIndex + 1).padStart(6, '0')}`, weight: Number((sizeDefinition.minimumWeight + ((sampleMaximumWeight - sizeDefinition.minimumWeight) * weightRatio)).toFixed(1)), size, quality: isSpoiled ? 'Spoiled' : 'Good', device: 'Egg Scanner 01' }
     inspectionIndex += 1
     return inspection
   }))

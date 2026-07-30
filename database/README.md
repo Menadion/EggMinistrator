@@ -19,10 +19,13 @@ with records you need to keep without exporting them first.
 
 ## Candling model contract
 
-Each assessment represents a candling result. The permitted `result_label` values are `normal`,
-`large_crack`, `blood_spot`, `meat_spot`, and `gross_shell_damage`. Multiple model versions can
-be retained for the same inspection, allowing model results to be compared without overwriting
-an earlier inference.
+Each assessment represents one candling result per inspection. The permitted `result_label` values
+are `good`, `defective`, and `not_an_egg`. The last value records a misload without adding it to the
+egg totals in `daily_inspection_summary`.
+
+Size grades use the six PNS/BAFS 321:2021 bands: Pewee (under 45 g), Small (45 to under 55 g),
+Medium (55 to under 60 g), Large (60 to under 65 g), Extra Large (65 to under 70 g), and Jumbo
+(70 g and above).
 
 The sample users use a shared development-only password: `password`. Replace or remove them
 before any real deployment. Update the weight thresholds in `size_grades` if LH Deli uses a

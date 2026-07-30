@@ -72,8 +72,8 @@ CREATE TABLE `egg_inspections` (
     `captured_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `weight_g` DECIMAL(6,2) NULL,
     `size_grade_id` TINYINT UNSIGNED NULL,
-    `ai_disposition` ENUM('accepted', 'rejected', 'review') NOT NULL DEFAULT 'review',
-    `final_disposition` ENUM('accepted', 'rejected', 'review') NOT NULL DEFAULT 'review',
+    `ai_disposition` ENUM('accepted', 'rejected', 'review', 'no_egg') NOT NULL DEFAULT 'review',
+    `final_disposition` ENUM('accepted', 'rejected', 'review', 'no_egg') NOT NULL DEFAULT 'review',
     `final_grade` VARCHAR(50) NULL,
     `is_overridden` TINYINT(1) NOT NULL DEFAULT 0,
     `notes` TEXT NULL,
@@ -101,7 +101,7 @@ CREATE TABLE `inspection_images` (
     `captured_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uq_inspection_images_type` (`inspection_id`, `image_type`),
+    UNIQUE KEY `uq_inspection_images_inspection` (`inspection_id`),
     CONSTRAINT `fk_images_inspection`
         FOREIGN KEY (`inspection_id`) REFERENCES `egg_inspections` (`id`)
         ON UPDATE CASCADE ON DELETE CASCADE
@@ -111,7 +111,7 @@ CREATE TABLE `ai_assessments` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `inspection_id` BIGINT UNSIGNED NOT NULL,
     `assessment_type` ENUM('candling') NOT NULL DEFAULT 'candling',
-    `result_label` ENUM('normal', 'large_crack', 'blood_spot', 'meat_spot', 'gross_shell_damage') NOT NULL,
+    `result_label` ENUM('good', 'defective', 'not_an_egg') NOT NULL,
     `confidence_score` DECIMAL(5,4) NULL,
     `is_defect_detected` TINYINT(1) NOT NULL DEFAULT 0,
     `model_name` VARCHAR(100) NULL,
@@ -120,7 +120,7 @@ CREATE TABLE `ai_assessments` (
     `raw_result` LONGTEXT NULL,
     `assessed_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uq_ai_assessments_model_version` (`inspection_id`, `model_version`),
+    UNIQUE KEY `uq_ai_assessments_inspection` (`inspection_id`),
     KEY `idx_ai_assessments_result_label` (`result_label`),
     KEY `idx_ai_assessments_assessed_at` (`assessed_at`),
     CONSTRAINT `fk_ai_assessments_inspection`
@@ -159,4 +159,5 @@ SELECT
     SUM(`is_overridden` = 1) AS `overridden_count`,
     ROUND(AVG(`weight_g`), 2) AS `average_weight_g`
 FROM `egg_inspections`
+WHERE `final_disposition` <> 'no_egg'
 GROUP BY DATE(`captured_at`);
