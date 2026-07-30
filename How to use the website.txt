@@ -1,0 +1,4 @@
+1.Open xampp
+2.Open power shell (open 2 tabs)
+3.First tab type cd D:\Xampp\htdocs\EggMinistrator\EggMinistrator\dashboard then npm run dev
+4.Second tab type cd D:\Xampp\htdocs\EggMinistrator\EggMinistrator\backend them npm run dev
