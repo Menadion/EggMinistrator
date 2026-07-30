@@ -1,6 +1,8 @@
 # === Credentials — never commit real ones ===
 config.php
 .env
+.env.*
+!.env.example
 *.key
 *.pem
 
