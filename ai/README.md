@@ -35,13 +35,29 @@ The frame yields two kinds of finding:
 ⚠️ **There is no dataset to inherit.** LH Deli is a reference scenario, not a client — no operational
 data is supplied. The team photographs and labels its own eggs, or sources a public set.
 
+- **Classes: `good` / `defective` / `not_an_egg`** — three, locked 2026-07-30 (Decision G in
+  `docs/recommendations.md`).
+
+  | Class | What goes in it |
+  |---|---|
+  | `good` | No internal defect visible under transillumination. |
+  | `defective` | **Any** of: blood or meat spot, large crack revealed by light leakage, gross shell damage. The model does **not** report which. |
+  | `not_an_egg` | Empty platform, a hand, a misload. |
+
+  **Why three and not four or five.** Softmax scores sum to 1, so a per-defect class list cannot
+  represent an egg with two defects at once — blood-spot-and-crack and one-unidentifiable-defect
+  produce the same output. More decisive: blood and meat spots cannot be sourced on demand, so
+  splitting the scarcest images across several boxes is the worst thing you can do to this dataset.
+  Three classes pools them and is materially likelier to clear the 85% target.
+
+  **`not_an_egg` is not padding.** Nothing forces the platform to hold an egg and softmax always
+  returns a winner, so without it a thumb in frame gets scored `good` or `defective`.
+
+  **Still excluded:** no embryo class (descoped Ver4), no dirty or discoloured class (the capture
+  cannot show them), no size class (FR-04 is a threshold on the load cell, not a model output).
+
 <!-- fill -->
 - **Location:** <!-- Google Drive / Colab link -->
-- **Classes:** <!-- Ver4 §3.2.6 is the authoritative list — "large cracks revealed by light
-     leakage, blood and meat spots, and gross shell damage", plus a normal/good class. So:
-     good, blood-meat-spot, large-crack, gross-shell-damage. NO embryo class (descoped Ver4).
-     NOT dirty / discolored — the capture cannot show them, and §3.2.4 puts surface dirt out
-     of scope outright. -->
 - **Image counts per class:** <!-- state them — imbalance matters -->
 
 Defective eggs are rarer than good ones, so the set will be imbalanced on exactly the classes that

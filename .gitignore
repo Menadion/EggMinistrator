@@ -48,8 +48,10 @@ context.md
 gaps.md
 recommendations.md
 schema-review.md
+schema-update.md
 questions.md
 github-repo-setup.md
+pinned.md
 
 # === Research paper / academic docs — repo stays CODE-ONLY; the paper is handled at the defense ===
 *.pdf

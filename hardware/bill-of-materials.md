@@ -42,7 +42,8 @@ figures in a submitted budget are the thing a panel checks first.
 |---|---|
 | Laptop / desktop | Inference runs here, not on the ESP32 |
 | Python, OpenCV, TensorFlow | Free and open source |
-| XAMPP, MySQL | Free and open source |
+| Node, React, Vite | Free and open source. Replaces the earlier XAMPP/PHP entry per Decision E. |
+| MySQL | Free and open source |
 | Node.js, React, Vite | Free and open source |
 
 Worth stating explicitly in the paper: **software cost is effectively zero.** That is a genuine
