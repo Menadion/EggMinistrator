@@ -9,8 +9,9 @@ committed.
 **One thing to know before you touch anything:** each egg is captured **once**, under candling
 (backlit) illumination. There is no second reflected-light photo. Surface dirt and shell
 discoloration are therefore out of scope. **Balut / embryo routing was descoped in Ver4** — the
-system emits a quality verdict only, with no routing output. See the root [README](README.md) and
-`docs/context.md`.
+system emits a quality verdict only, with no routing output. See the root [README](README.md). The
+team's working notes are kept out of the repo — ask a teammate for `context.md` if you need the
+long version.
 
 ## Subsystems
 
@@ -22,8 +23,8 @@ what is tracked by commit history, not a table here.
 | `firmware/` | ESP32-CAM capture sketch |
 | `ai/` | Python, OpenCV, TensorFlow, Colab |
 | `dashboard/` | React, Vite, Tailwind, Recharts |
-| `database/` | `schema.sql`, seed data |
-| `docs/`, `hardware/` | diagrams, manuals, BOM |
+| `database/` | `schema.sql`, seed data, the size-grade spec |
+| `hardware/` | diagrams, manuals, BOM, enclosure model |
 
 ### The dashboard stack (settled 2026-07-28)
 

@@ -81,4 +81,5 @@ fabrication:
 
 - Capstone paper §2.4 (p.13) — "Table X. Hardware Components Cost Breakdown," currently empty.
 - §3.6 Budget Summary (p.32) — currently an empty heading.
-- `docs/gaps.md` gap 3 (blank cost tables) and gap 17 (contingency covers labor only).
+- The paper-gaps working note, gaps 3 (blank cost tables) and 17 (contingency covers labor only).
+  Kept local, not in the repo.

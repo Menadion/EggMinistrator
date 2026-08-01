@@ -16,6 +16,9 @@ with records you need to keep without exporting them first.
 
 - `schema.sql` - canonical database definition, indexes, foreign keys, and daily summary view.
 - `sample-data.sql` - optional demo users, grades, one batch, inspections, AI results, and an override.
+- `fr-04-size-classification.md` - the PNS/BAFS 321:2021 weight bands the `size_grades` table
+  implements. Moved here from `docs/` on 2026-08-01: it is the spec the schema is built against,
+  not documentation, so it belongs beside the schema.
 
 The sample users use a shared development-only password: `password`. Replace or remove them
 before any real deployment. Update the weight thresholds in `size_grades` if LH Deli uses a

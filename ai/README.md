@@ -35,8 +35,9 @@ The frame yields two kinds of finding:
 ⚠️ **There is no dataset to inherit.** LH Deli is a reference scenario, not a client — no operational
 data is supplied. The team photographs and labels its own eggs, or sources a public set.
 
-- **Classes: `good` / `defective` / `not_an_egg`** — three, locked 2026-07-30 (Decision G in
-  `docs/recommendations.md`).
+- **Classes: `good` / `defective` / `not_an_egg`** — three, locked 2026-07-30 (Decision G; the
+  decision log is a local working note, ask a teammate for it). These exact strings are what
+  `inference/classify.py` prints and what the database stores.
 
   | Class | What goes in it |
   |---|---|

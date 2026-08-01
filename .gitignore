@@ -11,8 +11,8 @@ dataset/
 *.png
 *.bmp
 *.zip
-# ...but keep committed diagrams/photos in docs and hardware:
-!docs/**/*.png
+# ...but keep committed diagrams/photos, which live next to what they document:
+!assets/**/*.png
 !hardware/**/*.png
 !dashboard/**/*.png
 
@@ -56,3 +56,10 @@ dashboard-vocabulary.md
 
 # === Research paper / academic docs — repo stays CODE-ONLY; the paper is handled at the defense ===
 *.pdf
+
+# === docs/ is local-only (dropped from the repo 2026-08-01) ===
+# The consultant's ruling: the GitHub repo stays code; documentation is handled at the defense.
+# Everything in docs/ was already either a working note or a PDF, and the one file that was really
+# a spec — the PNS/BAFS size grades the `size_grades` table implements — moved to database/.
+# Committed images now live beside what they document (assets/, hardware/, dashboard/).
+docs/

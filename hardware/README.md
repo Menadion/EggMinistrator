@@ -51,5 +51,5 @@ Geometry still undecided as of 2026-07-27, and none of it is a CAD problem — i
 - How the chamber seals against ambient light while still allowing fast loading and unloading.
 - Camera-to-egg distance — blocked on Wave 1 validation.
 
-Design images go in [`../docs/`](../docs/) (PNG is committed; see `.gitignore`). The exported model
-file belongs here.
+Design images go in this folder alongside the model (PNG under `hardware/` is committed; see
+`.gitignore`). The exported model file belongs here too.
