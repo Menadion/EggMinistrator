@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { BarChart3, ChevronLeft, Egg, History, LayoutDashboard, LogOut, Menu, ReceiptText, UserRound, X } from 'lucide-react'
+import { BarChart3, ChevronLeft, Egg, History, LayoutDashboard, LogOut, Menu, ReceiptText, UserRound, UsersRound, X } from 'lucide-react'
 import { NavLink, useNavigate } from 'react-router-dom'
+import { useAuth } from '../auth/AuthContext'
 import humptyLogo from "../assets/Humpty_Dumpty.webp";
 const navigation = [
   { label: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
@@ -13,8 +14,10 @@ export default function AppLayout({ children }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
   const navigate = useNavigate()
+  const { user, logout } = useAuth()
   const width = collapsed ? 'lg:w-20' : 'lg:w-64'
   const close = () => setMobileOpen(false)
+  const signOut = async () => { await logout(); navigate('/') }
 
   return (
     <div className="min-h-screen bg-cream-100">
@@ -33,13 +36,14 @@ export default function AppLayout({ children }) {
             </NavLink>
           ))}
         </nav>
+        {user?.role === 'admin' && <nav className="mt-6 space-y-1"><p className={`px-3 pb-1 text-[11px] font-bold uppercase tracking-wider text-green-300 ${collapsed ? 'sr-only' : ''}`}>Administration</p><NavLink to="/accounts" onClick={close} className={({ isActive }) => `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${isActive ? 'bg-green-700 text-white shadow-sm' : 'text-green-100 hover:bg-green-800'}`}><UsersRound size={18} className="shrink-0" />{!collapsed && <span>Accounts</span>}</NavLink></nav>}
         <div className="mt-auto space-y-3">
           <button onClick={() => setCollapsed(!collapsed)} className="hidden w-full items-center justify-center rounded-lg py-2 text-green-100 hover:bg-green-800 lg:flex"><ChevronLeft className={collapsed ? 'rotate-180' : ''} size={18} /></button>
           <div className="rounded-lg border border-green-700 bg-green-900/60 p-2">
             <div className="flex items-center gap-2">
               <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-cream-50 text-forest-900"><UserRound size={17} /></div>
-              {!collapsed && <div className="min-w-0 text-left"><p className="truncate text-xs font-semibold">Admin User</p><p className="text-[11px] text-green-200">Administrator</p></div>}
-              {!collapsed && <button onClick={() => navigate('/')} className="ml-auto text-green-200 hover:text-white" title="Log out"><LogOut size={16} /></button>}
+              {!collapsed && <div className="min-w-0 text-left"><p className="truncate text-xs font-semibold">{user?.fullName}</p><p className="text-[11px] capitalize text-green-200">{user?.role}</p></div>}
+              {!collapsed && <button onClick={signOut} className="ml-auto text-green-200 hover:text-white" title="Log out"><LogOut size={16} /></button>}
             </div>
           </div>
         </div>

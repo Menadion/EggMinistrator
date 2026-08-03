@@ -3,10 +3,10 @@
 
 USE `eggministrator`;
 
-INSERT INTO `users` (`full_name`, `username`, `password_hash`, `role`)
+INSERT INTO `users` (`full_name`, `first_name`, `middle_initial`, `last_name`, `username`, `password_hash`, `role`)
 VALUES
-    ('System Administrator', 'admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi', 'admin'),
-    ('Sample Inspector', 'inspector', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi', 'inspector');
+    ('System Administrator', 'System', NULL, 'Administrator', 'admin', '$2b$10$c0q71d1qFt.P0JXxT47HKuFdhbPzs2HyzaiMXxm0bYHQHmhPuZmni', 'admin'),
+    ('Sample Inspector', 'Sample', NULL, 'Inspector', 'inspector', '$2b$10$c0q71d1qFt.P0JXxT47HKuFdhbPzs2HyzaiMXxm0bYHQHmhPuZmni', 'inspector');
 
 -- PNS/BAFS 321:2021 weight bands: lower bound inclusive, upper bound exclusive.
 INSERT INTO `size_grades` (`code`, `label`, `minimum_weight_g`, `maximum_weight_g`, `display_order`)

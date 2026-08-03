@@ -12,10 +12,23 @@ candling AI assessments, weight grades, and an auditable staff-override history.
 `schema.sql` resets the EggMinistrator tables when imported. Never import it into a database
 with records you need to keep without exporting them first.
 
+## Updating an existing database
+
+For an existing `eggministrator` database, run each file in `migrations/` once in filename order.
+`20260803_add_temporary_password_security.sql` is additive: it preserves all users and adds safe
+defaults (`must_change_password = 0`, no temporary-password expiry, and zero failed attempts).
+It also creates the hashed session and password-change-token tables required by the backend.
+
+`20260803_add_account_name_fields_and_restrict_roles.sql` adds nullable `first_name`,
+`middle_initial`, and `last_name` fields, keeps existing `full_name` values unchanged, and limits
+new roles to `admin` or `inspector`. It stops instead of changing any existing viewer account.
+Existing accounts with blank structured-name fields must be updated manually in Accounts.
+
 ## Files
 
 - `schema.sql` - canonical database definition, indexes, foreign keys, and daily summary view.
 - `sample-data.sql` - optional demo users, grades, one batch, inspections, AI results, and an override.
+- `migrations/` - additive updates for existing databases; do not run a migration more than once.
 
 ## Candling model contract
 
@@ -31,4 +44,5 @@ The sample users use a shared development-only password: `password`. Replace or 
 before any real deployment. Update the weight thresholds in `size_grades` if LH Deli uses a
 different grading standard.
 
-No migration framework is used yet: schema changes land in `schema.sql` and everyone re-imports.
+There is no migration runner: apply tracked SQL files in `migrations/` manually for existing
+databases, and keep `schema.sql` aligned for fresh installs.

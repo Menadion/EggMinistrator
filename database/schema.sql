@@ -9,6 +9,8 @@ USE `eggministrator`;
 
 SET FOREIGN_KEY_CHECKS = 0;
 DROP VIEW IF EXISTS `daily_inspection_summary`;
+DROP TABLE IF EXISTS `password_change_tokens`;
+DROP TABLE IF EXISTS `auth_sessions`;
 DROP TABLE IF EXISTS `staff_overrides`;
 DROP TABLE IF EXISTS `ai_assessments`;
 DROP TABLE IF EXISTS `inspection_images`;
@@ -21,11 +23,19 @@ SET FOREIGN_KEY_CHECKS = 1;
 CREATE TABLE `users` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `full_name` VARCHAR(100) NOT NULL,
+    `first_name` VARCHAR(100) NULL,
+    `middle_initial` CHAR(1) NULL,
+    `last_name` VARCHAR(100) NULL,
     `username` VARCHAR(50) NOT NULL,
     `password_hash` VARCHAR(255) NOT NULL,
-    `role` ENUM('admin', 'inspector', 'viewer') NOT NULL DEFAULT 'viewer',
+    `role` ENUM('admin', 'inspector') NOT NULL DEFAULT 'inspector',
     `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+    `must_change_password` TINYINT(1) NOT NULL DEFAULT 0,
     `last_login_at` DATETIME NULL,
+    `password_changed_at` DATETIME NULL,
+    `temporary_password_expires_at` DATETIME NULL,
+    `failed_login_attempts` INT NOT NULL DEFAULT 0,
+    `locked_until` DATETIME NULL,
     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
@@ -147,6 +157,36 @@ CREATE TABLE `staff_overrides` (
     CONSTRAINT `fk_overrides_user`
         FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
         ON UPDATE CASCADE ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+CREATE TABLE `auth_sessions` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `user_id` BIGINT UNSIGNED NOT NULL,
+    `token_hash` CHAR(64) NOT NULL,
+    `expires_at` DATETIME NOT NULL,
+    `invalidated_at` DATETIME NULL,
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uq_auth_sessions_token_hash` (`token_hash`),
+    KEY `idx_auth_sessions_user_active` (`user_id`, `invalidated_at`, `expires_at`),
+    CONSTRAINT `fk_auth_sessions_user`
+        FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
+        ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE `password_change_tokens` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `user_id` BIGINT UNSIGNED NOT NULL,
+    `token_hash` CHAR(64) NOT NULL,
+    `expires_at` DATETIME NOT NULL,
+    `used_at` DATETIME NULL,
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uq_password_change_tokens_token_hash` (`token_hash`),
+    KEY `idx_password_change_tokens_user_active` (`user_id`, `used_at`, `expires_at`),
+    CONSTRAINT `fk_password_change_tokens_user`
+        FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
+        ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 CREATE VIEW `daily_inspection_summary` AS

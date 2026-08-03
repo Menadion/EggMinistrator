@@ -3,6 +3,8 @@ import { readFileSync, existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createAnalyticsInsights } from './routes/analyticsRoutes.js'
+import { handleAuthRoute } from './routes/authRoutes.js'
+import { AuthError, getSessionUser } from './services/authService.js'
 
 const backendDirectory = fileURLToPath(new URL('.', import.meta.url))
 const envPath = resolve(backendDirectory, '.env')
@@ -17,11 +19,11 @@ if (existsSync(envPath)) {
 const sendJson = (response, statusCode, body) => {
   response.writeHead(statusCode, {
     'Access-Control-Allow-Origin': 'http://localhost:5173',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Authorization, Content-Type',
     'Content-Type': 'application/json; charset=utf-8',
   })
-  response.end(JSON.stringify(body))
+  response.end(body === null ? undefined : JSON.stringify(body))
 }
 
 const readJsonBody = (request) => new Promise((resolveBody, reject) => {
@@ -38,13 +40,25 @@ const readJsonBody = (request) => new Promise((resolveBody, reject) => {
 
 const server = createServer(async (request, response) => {
   if (request.method === 'OPTIONS') return sendJson(response, 204, {})
-  if (request.method !== 'POST' || request.url !== '/api/analytics/insights') return sendJson(response, 404, { error: 'Route not found.' })
 
   try {
-    const requestBody = await readJsonBody(request)
-    const result = await createAnalyticsInsights(requestBody)
-    return sendJson(response, result.statusCode, result.body)
+    const requestUrl = new URL(request.url || '/', 'http://localhost')
+    const path = requestUrl.pathname
+    const requestBody = ['POST', 'PUT', 'PATCH'].includes(request.method) ? await readJsonBody(request) : null
+    const authResult = await handleAuthRoute({ method: request.method, path, query: Object.fromEntries(requestUrl.searchParams), headers: request.headers, body: requestBody })
+    if (authResult) return sendJson(response, authResult.statusCode, authResult.body)
+
+    if (request.method === 'POST' && path === '/api/analytics/insights') {
+      const authorization = request.headers.authorization || ''
+      const token = authorization.startsWith('Bearer ') ? authorization.slice(7) : null
+      await getSessionUser(token)
+      const result = await createAnalyticsInsights(requestBody)
+      return sendJson(response, result.statusCode, result.body)
+    }
+
+    return sendJson(response, 404, { error: 'Route not found.' })
   } catch (error) {
+    if (error instanceof AuthError) return sendJson(response, error.statusCode, { error: error.message, code: error.code })
     return sendJson(response, 400, { error: error.message || 'Invalid request.', code: 'INVALID_REQUEST' })
   }
 })

@@ -9,10 +9,6 @@ const sizeStyles = {
   Jumbo: 'bg-rose-100 text-rose-800',
 }
 
-export function DemoBadge() {
-  return <span className="rounded-md bg-amber-100 px-3 py-1.5 text-xs font-semibold text-amber-800">Demo Mode</span>
-}
-
 export function SizeBadge({ size }) {
   return <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold ${sizeStyles[size]}`}>{size}</span>
 }
