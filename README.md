@@ -51,8 +51,10 @@ Four code subsystems that run in parallel, each with its own README:
   database wiring yet).
 - **[`database/`](database/)** — the canonical MySQL schema.
 
-Plus two reference folders: **[`hardware/`](hardware/)** (wiring, bill of materials, enclosure
-model) and **[`docs/`](docs/)** (diagrams and design images).
+Plus **[`hardware/`](hardware/)** — wiring, bill of materials, enclosure model and design images.
+
+The repo is **code only**. The capstone paper, the RRL and the team's working notes are handled at
+the defense and are not tracked here.
 
 ## Running it
 

@@ -29,6 +29,8 @@ Existing accounts with blank structured-name fields must be updated manually in 
 - `schema.sql` - canonical database definition, indexes, foreign keys, and daily summary view.
 - `sample-data.sql` - optional demo users, grades, one batch, inspections, AI results, and an override.
 - `migrations/` - additive updates for existing databases; do not run a migration more than once.
+- `fr-04-size-classification.md` - the PNS/BAFS 321:2021 weight bands the `size_grades` table
+  implements. It belongs beside the schema because it is the specification the schema follows.
 
 ## Candling model contract
 

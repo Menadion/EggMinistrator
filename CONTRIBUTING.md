@@ -1,9 +1,17 @@
 # Contributing to EggMinistrator
 
-Five-person capstone, one working prototype. The repo has three subsystems that move in
-parallel — **firmware** (ESP32-CAM), **ai** (Python/OpenCV/TensorFlow), and **dashboard**
-(PHP/MySQL on XAMPP) — plus **database** and **hardware** docs. The best changes are focused,
-land in the right folder, and are tested before they're committed.
+Five-person capstone, one working prototype. The repo has four code subsystems that move in
+parallel — **firmware** (ESP32-CAM), **ai** (Python/OpenCV/TensorFlow), **dashboard**
+(PHP/MySQL on XAMPP), and **database** (the schema) — plus **hardware** and **docs** for build
+reference. The best changes are focused, land in the right folder, and are tested before they're
+committed.
+
+**One thing to know before you touch anything:** each egg is captured **once**, under candling
+(backlit) illumination. There is no second reflected-light photo. Surface dirt and shell
+discoloration are therefore out of scope. **Balut / embryo routing was descoped in Ver4** — the
+system emits a quality verdict only, with no routing output. See the root [README](README.md). The
+team's working notes are kept out of the repo — ask a teammate for `context.md` if you need the
+long version.
 
 ## Subsystems
 
@@ -14,9 +22,19 @@ what is tracked by commit history, not a table here.
 |---|---|
 | `firmware/` | ESP32-CAM capture sketch |
 | `ai/` | Python, OpenCV, TensorFlow, Colab |
-| `dashboard/` | PHP, MySQL, HTML/CSS/JS, XAMPP |
-| `database/` | `schema.sql`, seed data |
-| `docs/`, `hardware/` | diagrams, manuals, BOM |
+| `dashboard/` | React, Vite, Tailwind, Recharts |
+| `database/` | `schema.sql`, seed data, the size-grade spec |
+| `hardware/` | diagrams, manuals, BOM, enclosure model |
+
+### The dashboard stack (settled 2026-07-28)
+
+The paper used to say the dashboard was "developed using **PHP**, HTML, CSS, JavaScript, and MySQL
+running on a local XAMPP server." It isn't. The merged `dashboard/` is **React + Vite + Tailwind**
+with no PHP.
+
+**Resolved in favour of the code:** the paper is being corrected to name React + Vite. MySQL and
+XAMPP stay as they were. Build on React; don't add PHP to `dashboard/` expecting it to match the
+old description.
 
 ## Branches — so five people don't overwrite each other
 
@@ -38,8 +56,8 @@ what is tracked by commit history, not a table here.
 
 There is no automated test suite — verification is manual, per subsystem:
 
-- **dashboard:** `php -l path/to/file.php` syntax-checks a PHP file, then **load the page in the
-  browser** and confirm the flow actually works. `php -l` only checks syntax.
+- **dashboard:** `npm run build` must succeed, then `npm run dev` and **load the page in the
+  browser** and confirm the flow actually works. A clean build only proves it compiles.
 - **ai:** re-run the training notebook / inference script end-to-end on a couple of sample images
   and confirm it classifies without erroring. Note the model's accuracy in `ai/README.md`.
 - **firmware:** compile/verify the sketch in the Arduino IDE before pushing.
@@ -60,14 +78,15 @@ There is no automated test suite — verification is manual, per subsystem:
   removed once they're in history. Keep them in Google Drive / Colab and link them in
   `ai/README.md` with the class list and image counts. (`.gitignore` already blocks `*.jpg`
   etc. — don't force-add them.)
-- **Real credentials.** No hosting passwords, DB passwords, or registrar logins. Commit
-  `dashboard/config.example.php` with placeholders; each person copies it to `config.php`
-  locally, which `.gitignore` keeps out.
+- **Real credentials.** No hosting passwords, DB passwords, or registrar logins. Commit an
+  example config with placeholders (`.env.example`, or `config.example.php` if a PHP backend
+  lands); each person copies it locally to a file `.gitignore` keeps out.
 - **Generated junk.** `venv/`, `__pycache__/`, `.vscode/`, `.DS_Store` — all already ignored.
 
 ## Don't
 
-- Don't introduce a build tool or bundler without agreeing first — the dashboard is
-  deliberately no-build (edit PHP/CSS/JS and refresh).
+- Don't introduce a **further** build tool, bundler, or framework without agreeing first. The
+  React + Vite reversal has been accepted and written into the paper; don't stack another
+  unagreed choice on top of it.
 - Don't add features or abstractions beyond the task's scope.
 - Don't commit a trained model over ~100MB — link it instead.
