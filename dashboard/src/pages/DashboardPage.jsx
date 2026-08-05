@@ -1,55 +1,29 @@
-import { AlertTriangle, CalendarDays, CheckCircle2, ChevronRight, Egg, Scale, Settings2 } from 'lucide-react'
+import { AlertTriangle, CalendarDays, CheckCircle2, ChevronRight, Egg, Scale } from 'lucide-react'
 import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import { useEffect, useState } from 'react'
+import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { dailyInspections, dashboardStats, qualityDistribution, recentScans, sizeDistribution } from '../data/mockData'
 import { ChartCard, PageHeader, QualityBadge, SizeBadge, StatCard } from '../components/Ui'
+import { useDatabaseInspections } from '../hooks/useDatabaseInspections'
+
+const sizeColors = { Peewee: '#5cae5e', Small: '#4da6df', Medium: '#f7b73b', Large: '#f07855', 'Extra Large': '#9c78d3', Jumbo: '#ef7f95' }
 
 function ScanTable({ rows }) {
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[630px] text-left text-xs">
-        <thead className="border-y border-slate-100 bg-slate-50 text-slate-500"><tr><th className="px-3 py-2.5 font-semibold">Time</th><th className="px-3 py-2.5 font-semibold">Egg ID</th><th className="px-3 py-2.5 font-semibold">Weight (g)</th><th className="px-3 py-2.5 font-semibold">Size</th><th className="px-3 py-2.5 font-semibold">Quality</th><th className="px-3 py-2.5 font-semibold">Device</th></tr></thead>
-        <tbody>{rows.map((scan) => <tr key={scan.eggId} className="border-b border-slate-100 text-slate-600"><td className="px-3 py-3">{scan.time}</td><td className="px-3 py-3 font-semibold text-slate-800">{scan.eggId}</td><td className="px-3 py-3">{scan.weight}</td><td className="px-3 py-3"><SizeBadge size={scan.size} /></td><td className="px-3 py-3"><QualityBadge quality={scan.quality} /></td><td className="px-3 py-3">{scan.device}</td></tr>)}</tbody>
-      </table>
-    </div>
-  )
+  return <div className="overflow-x-auto"><table className="w-full min-w-[630px] text-left text-xs"><thead className="border-y border-slate-100 bg-slate-50 text-slate-500"><tr><th className="px-3 py-2.5 font-semibold">Time</th><th className="px-3 py-2.5 font-semibold">Egg ID</th><th className="px-3 py-2.5 font-semibold">Weight (g)</th><th className="px-3 py-2.5 font-semibold">Size</th><th className="px-3 py-2.5 font-semibold">AI Result</th><th className="px-3 py-2.5 font-semibold">Device</th></tr></thead><tbody>{rows.map((scan) => <tr key={scan.eggId} className="border-b border-slate-100 text-slate-600"><td className="px-3 py-3">{scan.time}</td><td className="px-3 py-3 font-semibold text-slate-800">{scan.eggId}</td><td className="px-3 py-3">{scan.weight ?? '—'}</td><td className="px-3 py-3"><SizeBadge size={scan.size} /></td><td className="px-3 py-3"><QualityBadge quality={scan.quality} /></td><td className="px-3 py-3">{scan.device}</td></tr>)}</tbody></table></div>
 }
 
 export default function DashboardPage() {
   const navigate = useNavigate()
-  const [currentDate, setCurrentDate] = useState(new Date())
+  const { inspections, isLoading, error } = useDatabaseInspections()
+  const data = useMemo(() => {
+    const eggScans = inspections.filter((scan) => scan.quality !== 'not_an_egg')
+    const good = inspections.filter((scan) => scan.quality === 'good').length
+    const defective = inspections.filter((scan) => scan.quality === 'defective').length
+    const averageWeight = eggScans.length ? (eggScans.reduce((sum, scan) => sum + Number(scan.weight), 0) / eggScans.length).toFixed(1) : '—'
+    const sizes = Object.keys(sizeColors).map((name) => ({ name, value: inspections.filter((scan) => scan.size === name).length, color: sizeColors[name] }))
+    const quality = [{ name: 'Good', value: good, color: '#58ad5c' }, { name: 'Defective', value: defective, color: '#ef5350' }]
+    const byDay = [...new Map(inspections.map((scan) => [scan.date, 0])).keys()].sort().map((date) => ({ day: new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' }).format(new Date(`${date}T00:00:00Z`)), count: inspections.filter((scan) => scan.date === date).length }))
+    return { good, defective, averageWeight, sizes, quality, byDay }
+  }, [inspections])
 
-  useEffect(() => {
-    const timer = window.setInterval(() => setCurrentDate(new Date()), 60_000)
-    return () => window.clearInterval(timer)
-  }, [])
-
-  const formattedDate = currentDate.toLocaleDateString('en-PH', {
-    timeZone: 'Asia/Manila',
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  })
-
-  return (
-    <div>
-      <PageHeader title="Dashboard" description="Overview of egg inspections and system statistics" actions={<button className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700"><CalendarDays size={16} />{formattedDate}</button>} />
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Total Eggs Inspected" value={dashboardStats.total.toLocaleString()} detail="Current sample period" icon={Egg} tone="green" />
-        <StatCard label="Good Eggs" value={dashboardStats.good.toLocaleString()} detail={`${dashboardStats.goodPercentage}% of total`} icon={CheckCircle2} tone="green" />
-        <StatCard label="Spoiled Eggs" value={dashboardStats.spoiled.toLocaleString()} detail={`${dashboardStats.spoilagePercentage}% of total`} icon={AlertTriangle} tone="red" />
-        <StatCard label="Average Weight" value={<>{dashboardStats.averageWeight}<span className="ml-1 text-base">g</span></>} detail="Across all sample scans" icon={Scale} tone="yellow" />
-      </div>
-      <div className="mt-4 grid gap-4 xl:grid-cols-12">
-        <ChartCard title="Egg Size Distribution" className="xl:col-span-4"><div className="flex min-h-56 flex-col sm:flex-row sm:items-center"><ResponsiveContainer width="100%" height={190}><PieChart><Pie data={sizeDistribution} dataKey="value" nameKey="name" innerRadius={48} outerRadius={76} paddingAngle={2}>{sizeDistribution.map((item) => <Cell key={item.name} fill={item.color} />)}</Pie><Tooltip formatter={(value) => [`${value} eggs`, 'Total']} /></PieChart></ResponsiveContainer><div className="grid shrink-0 grid-cols-2 gap-x-3 gap-y-1 text-[11px] sm:block">{sizeDistribution.map((item) => <div key={item.name} className="flex items-center gap-1.5 py-1 text-slate-600"><span className="h-2 w-2 rounded-full" style={{ background: item.color }} /><span>{item.name}</span><span className="ml-auto font-medium text-slate-800">{item.value}</span></div>)}</div></div></ChartCard>
-        <ChartCard title="Daily Egg Inspections" action={<select className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-600"><option>Last 7 Days</option></select>} className="xl:col-span-4"><ResponsiveContainer width="100%" height={220}><BarChart data={dailyInspections} margin={{ top: 8, right: 0, left: -22, bottom: 0 }}><XAxis dataKey="day" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} /><YAxis tick={{ fontSize: 11 }} axisLine={false} tickLine={false} /><Tooltip cursor={{ fill: '#eff8f0' }} /><Bar dataKey="count" fill="#5bae60" radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer></ChartCard>
-        <ChartCard title="Quality Distribution" className="xl:col-span-4"><div className="relative flex min-h-56 items-center justify-center"><ResponsiveContainer width="100%" height={220}><PieChart><Pie data={qualityDistribution} dataKey="value" nameKey="name" innerRadius={62} outerRadius={88} paddingAngle={2}>{qualityDistribution.map((item) => <Cell key={item.name} fill={item.color} />)}</Pie><Tooltip /></PieChart></ResponsiveContainer><div className="pointer-events-none absolute text-center"><p className="text-xl font-bold text-slate-900">{dashboardStats.total.toLocaleString()}</p><p className="text-[11px] text-slate-500">Total eggs</p></div></div></ChartCard>
-      </div>
-      <div className="mt-4 grid gap-4 xl:grid-cols-12">
-        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm xl:col-span-8"><div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-bold text-slate-800">Recent Scans</h2><button onClick={() => navigate('/history')} className="inline-flex items-center gap-1 text-xs font-semibold text-forest-800 hover:underline">View all <ChevronRight size={15} /></button></div><ScanTable rows={recentScans} /></section>
-        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm xl:col-span-4"><h2 className="text-sm font-bold text-slate-800">Device Status</h2><div className="mt-4 rounded-lg border border-amber-100 bg-amber-50 p-4"><div className="flex items-center gap-2 text-sm font-bold text-slate-800"><span className="h-2.5 w-2.5 rounded-full bg-amber-500" />Not Configured</div><p className="mt-2 text-xs leading-5 text-slate-600">The egg inspection device has not yet been configured.</p><p className="mt-3 text-xs text-slate-500">Data source: Sample data</p></div><dl className="mt-4 grid grid-cols-2 gap-y-2 text-xs"><dt className="text-slate-500">Device Name</dt><dd className="text-right font-medium">-</dd><dt className="text-slate-500">Connection</dt><dd className="text-right font-medium">-</dd><dt className="text-slate-500">Last Active</dt><dd className="text-right font-medium">-</dd><dt className="text-slate-500">Last Scan</dt><dd className="text-right font-medium">-</dd></dl><button className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-green-700 px-3 py-2 text-xs font-semibold text-forest-800 hover:bg-green-50"><Settings2 size={15} />Configure device</button></section>
-      </div>
-    </div>
-  )
+  return <div><PageHeader title="Dashboard" description={isLoading ? 'Loading MariaDB inspection records…' : `${inspections.length.toLocaleString()} MariaDB inspection records`} actions={<span className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700"><CalendarDays size={16} />MariaDB</span>} />{error && <p role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><StatCard label="Total Inspections" value={inspections.length.toLocaleString()} detail="MariaDB records" icon={Egg} tone="green" /><StatCard label="Good Eggs" value={data.good.toLocaleString()} detail="AI result: good" icon={CheckCircle2} tone="green" /><StatCard label="Defective Eggs" value={data.defective.toLocaleString()} detail="AI result: defective" icon={AlertTriangle} tone="red" /><StatCard label="Average Weight" value={data.averageWeight === '—' ? '—' : <>{data.averageWeight}<span className="ml-1 text-base">g</span></>} detail="Real egg inspections" icon={Scale} tone="yellow" /></div><div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-12"><ChartCard title="Egg Size Distribution" className="xl:col-span-4"><div className="flex min-h-56 flex-col sm:flex-row sm:items-center"><ResponsiveContainer width="100%" height={190}><PieChart><Pie data={data.sizes} dataKey="value" nameKey="name" innerRadius={48} outerRadius={76} paddingAngle={2}>{data.sizes.map((item) => <Cell key={item.name} fill={item.color} />)}</Pie><Tooltip /></PieChart></ResponsiveContainer><div className="grid shrink-0 grid-cols-2 gap-x-3 gap-y-1 text-[11px] sm:block">{data.sizes.map((item) => <div key={item.name} className="flex items-center gap-1.5 py-1 text-slate-600"><span className="h-2 w-2 rounded-full" style={{ background: item.color }} /><span>{item.name}</span><span className="ml-auto font-medium text-slate-800">{item.value}</span></div>)}</div></div></ChartCard><ChartCard title="Daily Egg Inspections" className="xl:col-span-4"><ResponsiveContainer width="100%" height={220}><BarChart data={data.byDay} margin={{ top: 8, right: 0, left: -22, bottom: 0 }}><XAxis dataKey="day" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} /><YAxis tick={{ fontSize: 11 }} axisLine={false} tickLine={false} /><Tooltip /><Bar dataKey="count" fill="#5bae60" radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer></ChartCard><ChartCard title="AI Classification Distribution" className="md:col-span-2 xl:col-span-4"><div className="relative flex min-h-56 items-center justify-center"><ResponsiveContainer width="100%" height={220}><PieChart><Pie data={data.quality} dataKey="value" nameKey="name" innerRadius={62} outerRadius={88} paddingAngle={2}>{data.quality.map((item) => <Cell key={item.name} fill={item.color} />)}</Pie><Tooltip /></PieChart></ResponsiveContainer><div className="pointer-events-none absolute text-center"><p className="text-xl font-bold text-slate-900">{inspections.length.toLocaleString()}</p><p className="text-[11px] text-slate-500">Inspections</p></div></div></ChartCard></div><section className="mt-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-bold text-slate-800">Recent Scans</h2><button onClick={() => navigate('/history')} className="inline-flex items-center gap-1 text-xs font-semibold text-forest-800 hover:underline">View all <ChevronRight size={15} /></button></div><ScanTable rows={inspections.slice(0, 6)} /></section></div>
 }

@@ -6,11 +6,11 @@ const isString = (value) => typeof value === 'string' && value.trim().length > 0
 const validateAnalyticsSummary = (analytics) => {
   if (!analytics || typeof analytics !== 'object' || Array.isArray(analytics)) return 'A prepared analytics summary is required.'
 
-  const { dateRange, totalInspections, averageInspectionsPerDay, spoilageRate, averageWeight, mostCommonSize, qualityCounts, sizeCounts, volumeSeries, spoilageSeries, peakHour, dataSource } = analytics
+  const { dateRange, totalInspections, averageInspectionsPerDay, defectRate, averageWeight, mostCommonSize, classificationCounts, sizeCounts, volumeSeries, defectSeries, peakHour, dataSource } = analytics
   if (!dateRange || !isString(dateRange.start) || !isString(dateRange.end) || !isString(dateRange.label)) return 'The selected date range is invalid.'
-  if (![totalInspections, averageInspectionsPerDay, spoilageRate, averageWeight].every(isNumber) || !isString(mostCommonSize)) return 'The summary metrics are invalid.'
-  if (!qualityCounts || !isNumber(qualityCounts.good) || !isNumber(qualityCounts.spoiled)) return 'The quality totals are invalid.'
-  if (!Array.isArray(sizeCounts) || !Array.isArray(volumeSeries) || !Array.isArray(spoilageSeries)) return 'The chart summaries are invalid.'
+  if (![totalInspections, averageInspectionsPerDay, defectRate, averageWeight].every(isNumber) || !isString(mostCommonSize)) return 'The summary metrics are invalid.'
+  if (!classificationCounts || !isNumber(classificationCounts.good) || !isNumber(classificationCounts.defective) || !isNumber(classificationCounts.not_an_egg)) return 'The classification totals are invalid.'
+  if (!Array.isArray(sizeCounts) || !Array.isArray(volumeSeries) || !Array.isArray(defectSeries)) return 'The chart summaries are invalid.'
   if (!peakHour || !isString(peakHour.label) || !isNumber(peakHour.count) || !isString(dataSource)) return 'The analytics summary is incomplete.'
   return null
 }

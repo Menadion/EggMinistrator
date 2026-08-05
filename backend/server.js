@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url'
 import { createAnalyticsInsights } from './routes/analyticsRoutes.js'
 import { handleAuthRoute } from './routes/authRoutes.js'
 import { AuthError, getSessionUser } from './services/authService.js'
+import { listInspections } from './services/inspectionService.js'
 
 const backendDirectory = fileURLToPath(new URL('.', import.meta.url))
 const envPath = resolve(backendDirectory, '.env')
@@ -47,6 +48,13 @@ const server = createServer(async (request, response) => {
     const requestBody = ['POST', 'PUT', 'PATCH'].includes(request.method) ? await readJsonBody(request) : null
     const authResult = await handleAuthRoute({ method: request.method, path, query: Object.fromEntries(requestUrl.searchParams), headers: request.headers, body: requestBody })
     if (authResult) return sendJson(response, authResult.statusCode, authResult.body)
+
+    if (request.method === 'GET' && path === '/api/inspections') {
+      const authorization = request.headers.authorization || ''
+      const token = authorization.startsWith('Bearer ') ? authorization.slice(7) : null
+      await getSessionUser(token)
+      return sendJson(response, 200, await listInspections())
+    }
 
     if (request.method === 'POST' && path === '/api/analytics/insights') {
       const authorization = request.headers.authorization || ''
