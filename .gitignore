@@ -17,6 +17,9 @@ dataset/
 !dashboard/**/*.png
 
 # === Trained models — large binaries; link them if over ~100MB ===
+# classes.json is written by the same training run as the weights and describes only that
+# model. Committing it leaves a copy in git that can drift from weights nobody has.
+ai/models/classes.json
 *.h5
 *.keras
 *.tflite
