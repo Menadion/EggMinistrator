@@ -43,7 +43,7 @@ Medium (55 to under 60 g), Large (60 to under 65 g), Extra Large (65 to under 70
 (70 g and above).
 
 The sample users use a shared development-only password: `password`. Replace or remove them
-before any real deployment. Update the weight thresholds in `size_grades` if LH Deli uses a
+before any real deployment. Update the weight thresholds in `size_grades` if Leong Hup PH uses a
 different grading standard.
 
 There is no migration runner: apply tracked SQL files in `migrations/` manually for existing

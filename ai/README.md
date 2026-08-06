@@ -32,7 +32,7 @@ The frame yields two kinds of finding:
 
 ## Dataset (NOT in the repo)
 
-⚠️ **There is no dataset to inherit.** LH Deli is a reference scenario, not a client — no operational
+⚠️ **There is no dataset to inherit.** Leong Hup PH is a reference scenario, not a client — no operational
 data is supplied. The team photographs and labels its own eggs, or sources a public set.
 
 - **Classes: `good` / `defective` / `not_an_egg`** — three, locked 2026-07-30 (Decision G; the

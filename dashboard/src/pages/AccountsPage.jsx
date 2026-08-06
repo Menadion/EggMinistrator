@@ -135,7 +135,7 @@ export default function AccountsPage() {
   const totalPages = Math.max(1, Math.ceil(total / 10))
 
   return <div>
-    <PageHeader title="Accounts" description="Manage employee access and account status" actions={<button onClick={() => { setError(''); setModal({ type: 'add', account: emptyAccount }) }} className="inline-flex items-center gap-2 rounded-lg bg-forest-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-forest-900"><Plus size={17} />Add Account</button>} />
+    <PageHeader title="Accounts" actions={<button onClick={() => { setError(''); setModal({ type: 'add', account: emptyAccount }) }} className="inline-flex items-center gap-2 rounded-lg bg-forest-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-forest-900"><Plus size={17} />Add Account</button>} />
     {notice && <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800"><span>{notice}</span><button onClick={() => setNotice('')} aria-label="Dismiss success message"><X size={16} /></button></div>}
     {error && !modal && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
     <section className="account-summary-grid"><AccountCount label="Total Accounts" value={summary.total} icon={Users} tone="green" /><AccountCount label="Active Accounts" value={summary.active || 0} icon={UserCheck} tone="green" /><AccountCount label="Inactive Accounts" value={summary.inactive || 0} icon={UserMinus} tone="red" /></section>

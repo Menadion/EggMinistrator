@@ -2,7 +2,7 @@
 
 A stationary, camera-based egg inspection system that uses AI image processing to inspect,
 grade, and count eggs — replacing manual visual inspection and handwritten inventory logs for
-a local egg production and distribution business (LH Deli).
+a local egg production and distribution business (Leong Hup PH).
 
 A capstone prototype: one inspection station, built to prove the approach, not a commercial
 product.
