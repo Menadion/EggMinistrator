@@ -1,0 +1,7 @@
+# Python packages needed to train and run the egg classifier.
+# Install with:  pip install -r ai/requirements.txt
+# Versions are the ones the model was actually trained with.
+
+tensorflow==2.21.0
+opencv-python==5.0.0.93
+numpy==2.5.1

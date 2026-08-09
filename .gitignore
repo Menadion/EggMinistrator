@@ -5,7 +5,13 @@ config.php
 *.pem
 
 # === Dataset — too large for GitHub; link it in ai/README.md instead ===
-dataset/
+# Ignore what is INSIDE a dataset folder, but not the folder itself, so that the three
+# class folders can be committed via .gitkeep. Anyone who clones then gets the correct
+# folder names and cannot typo a class name (the folder name IS the class string).
+# Order matters here: the last matching rule wins, so the negations must come last.
+dataset/**
+!ai/dataset/*/
+!ai/dataset/*/.gitkeep
 *.jpg
 *.jpeg
 *.png
