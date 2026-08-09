@@ -1,8 +1,8 @@
 # Contributing to EggMinistrator
 
 Five-person capstone, one working prototype. The repo has four code subsystems that move in
-parallel — **firmware** (ESP32-CAM), **ai** (Python/OpenCV/TensorFlow), **dashboard**
-(PHP/MySQL on XAMPP), and **database** (the schema) — plus **hardware** and **docs** for build
+parallel — **firmware** (ESP32-S3 weight node), **ai** (Python/OpenCV/TensorFlow), **dashboard**
+(React + Vite over MySQL), and **database** (the schema) — plus **hardware** and **docs** for build
 reference. The best changes are focused, land in the right folder, and are tested before they're
 committed.
 
@@ -20,8 +20,8 @@ what is tracked by commit history, not a table here.
 
 | Folder | Stack |
 |---|---|
-| `firmware/` | ESP32-CAM capture sketch |
-| `ai/` | Python, OpenCV, TensorFlow, Colab |
+| `firmware/` | ESP32-S3 weight node (HX711 → Wi-Fi). Not written yet |
+| `ai/` | Python, OpenCV, TensorFlow (trained locally, no notebook) |
 | `dashboard/` | React, Vite, Tailwind, Recharts |
 | `database/` | `schema.sql`, seed data, the size-grade spec |
 | `hardware/` | diagrams, manuals, BOM, enclosure model |
@@ -58,8 +58,9 @@ There is no automated test suite — verification is manual, per subsystem:
 
 - **dashboard:** `npm run build` must succeed, then `npm run dev` and **load the page in the
   browser** and confirm the flow actually works. A clean build only proves it compiles.
-- **ai:** re-run the training notebook / inference script end-to-end on a couple of sample images
-  and confirm it classifies without erroring. Note the model's accuracy in `ai/README.md`.
+- **ai:** re-run `python ai/training/train.py` then `python ai/inference/classify.py <image>`
+  end-to-end (**from the repo root**) and confirm it classifies without erroring. Do not record the
+  training run's printed score as the model's accuracy — see `ai/README.md`.
 - **firmware:** compile/verify the sketch in the Arduino IDE before pushing.
 - **database:** land schema changes in `database/schema.sql` (the canonical dump) and re-import
   to apply. No migration framework.
@@ -75,12 +76,16 @@ There is no automated test suite — verification is manual, per subsystem:
 ## Never commit
 
 - **The dataset.** Thousands of egg photos blow past GitHub's limits and can't be cleanly
-  removed once they're in history. Keep them in Google Drive / Colab and link them in
-  `ai/README.md` with the class list and image counts. (`.gitignore` already blocks `*.jpg`
-  etc. — don't force-add them.)
+  removed once they're in history. The three class folders under `ai/dataset/` **are** tracked
+  (empty, via `.gitkeep`) so nobody typos a class name; the photos inside them are not. Move
+  photos by zip — see `ai/how-to-add-images.md`. (`.gitignore` already blocks `*.jpg` etc. —
+  don't force-add them.)
+- **The trained model.** `ai/models/egg.keras` and `ai/models/classes.json` are both ignored.
+  They are written by a training run and must travel together; a committed copy drifts from
+  weights nobody has.
 - **Real credentials.** No hosting passwords, DB passwords, or registrar logins. Commit an
-  example config with placeholders (`.env.example`, or `config.example.php` if a PHP backend
-  lands); each person copies it locally to a file `.gitignore` keeps out.
+  example config with placeholders (`.env.example` — the backend is Node/Express per
+  `CONTRACT.md` §3.7, not PHP); each person copies it locally to a file `.gitignore` keeps out.
 - **Generated junk.** `venv/`, `__pycache__/`, `.vscode/`, `.DS_Store` — all already ignored.
 
 ## Don't

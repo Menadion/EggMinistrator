@@ -6,9 +6,9 @@ Physical build reference for the inspection station.
 
 - **`bill-of-materials.md`** — parts, quantities, costs. ✅ Written; prices not yet filled.
   Split into two purchase waves on purpose (see below).
-- `wiring-diagram.png` — ESP32-CAM, transillumination LEDs, load cell + HX711 amplifier, and the
-  light-sealed enclosure. *(Not created yet.* Committed when it is — see the `!hardware/**/*.png`
-  exception in `.gitignore`.)
+- `wiring-diagram.png` — load cell → HX711 → ESP32-S3, and the light-sealed enclosure. *(Not created
+  yet.* Committed when it is — see the `!hardware/**/*.png` exception in `.gitignore`.) **Much
+  smaller than it used to be** — the webcam is a USB cable and the candler has its own power.
 - Enclosure model — the 3D print deliverable. See below. *(Not created yet.)*
 
 > The BOM here must match the hardware cost table in the capstone paper (§2.4) — keep them in sync.
@@ -17,15 +17,18 @@ Physical build reference for the inspection station.
 
 ## Buy in two waves
 
-The ESP32-CAM candling through a **brown** shell is the project's one unvalidated assumption.
+> **Updated 2026-08-07 — the descope removed the reason for this split.** The two-wave rule existed
+> because the ESP32-CAM might have failed to candle through a shell, and swapping it for a USB camera
+> would have changed the enclosure geometry. **Capture is now a USB webcam from the start**, so that
+> risk is gone. The sequencing below is still sensible, just no longer load-bearing.
 
-1. **Wave 1 — electronics.** Camera, programmer, LED, load cell, HX711, power. Rig them on a table,
-   no enclosure. Photograph real cracked and fertile eggs.
+1. **Wave 1 — electronics.** Load cell, HX711, ESP32-S3, candler. Rig them on a table, no enclosure.
+   Photograph real cracked eggs and confirm the candler penetrates a **white or tinted** shell.
 2. **Wave 2 — the rig.** Enclosure, blackout material, egg platform, fasteners.
 
-Camera-to-egg distance is unknown until Wave 1 runs, and if the ESP32-CAM fails and gets swapped for
-a USB camera the enclosure geometry changes with it. **Building the box first means building it
-twice.**
+**Still check before building the box:** the webcam's **minimum focus distance**. Many webcams will
+not focus at close range, and that distance sets the depth of the chamber. Building the box first
+means building it twice.
 
 ## Enclosure — commissioned 3D print
 
@@ -46,10 +49,12 @@ What a print shop needs from us:
 
 Geometry still undecided as of 2026-07-27, and none of it is a CAD problem — it's a design problem:
 
-- Where the LED sits relative to egg and camera (light *behind* the egg, camera opposite).
+- Where the candler sits relative to egg and camera (light *behind* the egg, camera opposite). It has
+  to be **fixed in position and continuously USB-powered** — the paper's "illumination remains
+  constant between inspections" claim depends on it.
 - How the platform holds the egg over the light **and** transfers weight to the load cell.
 - How the chamber seals against ambient light while still allowing fast loading and unloading.
-- Camera-to-egg distance — blocked on Wave 1 validation.
+- Webcam-to-egg distance — set by the webcam's minimum focus distance. Measure it.
 
 Design images go in this folder alongside the model (PNG under `hardware/` is committed; see
 `.gitignore`). The exported model file belongs here too.

@@ -4,9 +4,9 @@
 
 ## Subsystem
 
-- [ ] firmware (ESP32-CAM)
+- [ ] firmware (ESP32-S3 weight node)
 - [ ] ai (Python / TensorFlow)
-- [ ] dashboard (PHP / MySQL)
+- [ ] dashboard (React + Vite / MySQL)
 - [ ] database (schema)
 - [ ] docs / hardware
 

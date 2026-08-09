@@ -1,14 +1,19 @@
 # EggMinistrator
 
 A stationary, camera-based egg inspection system that uses AI image processing to inspect,
-grade, and count eggs — replacing manual visual inspection and handwritten inventory logs for
-a local egg production and distribution business (LH Deli).
+grade, and count eggs — replacing manual visual inspection and handwritten inventory logs at
+**LH Deli**, the egg production and distribution operation of **Leong Hup Philippines Inc.**
 
 A capstone prototype: one inspection station, built to prove the approach, not a commercial
 product.
 
-Built with **Python + OpenCV + TensorFlow** (AI), a **React + Vite** dashboard over **MySQL**, and
-an **ESP32-CAM** capture rig. Inference runs on the computer, not the ESP32.
+Built with **Python + OpenCV + TensorFlow** (AI), a **React + Vite** dashboard over **MySQL**, a
+**USB webcam** for capture, and an **ESP32-S3** weight node reading a load cell over Wi-Fi.
+Inference runs on the computer, not the microcontroller.
+
+> **Hardware descoped 2026-08-07.** The build was previously an **ESP32-CAM** capture rig. For time
+> constraints it is now webcam + laptop + HX711 + load cell, with the already-owned ESP32-S3
+> repurposed from programmer to networked weight node. See `hardware/bill-of-materials.md`.
 
 > **Settled 2026-07-28:** the paper previously described a **PHP** dashboard on XAMPP. The code is
 > React + Vite and it builds, so the paper is being updated to match the code rather than the
@@ -33,7 +38,8 @@ Ver4, and absent from both scope sections.
 
 ## What it does
 
-- Captures one candling image per egg at a fixed, light-sealed station (ESP32-CAM over Wi-Fi).
+- Captures one candling image per egg at a fixed, light-sealed station (USB webcam on the laptop),
+  with weight read by an ESP32-S3 node over Wi-Fi.
 - Classifies quality from that frame — internal features, large cracks, gross shell damage.
 - Grades **size by weight** (load cell + HX711).
 - Counts inspected eggs automatically.
@@ -45,8 +51,10 @@ Ver4, and absent from both scope sections.
 
 Four code subsystems that run in parallel, each with its own README:
 
-- **[`firmware/`](firmware/)** — the ESP32-CAM capture sketch.
-- **[`ai/`](ai/)** — the model: training (Colab) and inference (Python / OpenCV / TensorFlow).
+- **[`firmware/`](firmware/)** — the ESP32-S3 weight node (reads the HX711, posts over Wi-Fi).
+  **Not written yet.**
+- **[`ai/`](ai/)** — the model: training and inference (Python / OpenCV / TensorFlow), both run
+  locally.
 - **[`dashboard/`](dashboard/)** — the web dashboard (React + Vite + Tailwind; mock data only, no
   database wiring yet).
 - **[`database/`](database/)** — the canonical MySQL schema.

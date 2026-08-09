@@ -9,7 +9,7 @@ anyone's work.
 **Owner: M.** One editor, so it cannot drift. If something here is wrong or out of date, message M
 rather than editing it, and it gets fixed in one place.
 
-*Last updated: 2026-08-04*
+*Last updated: 2026-08-09*
 
 ---
 
@@ -158,16 +158,36 @@ the group chat first. The paper has to describe what the system actually contain
 
 These are unresolved. If your task touches one, ask before assuming.
 
-1. **Which ESP32 board the team physically owns.** The paper names both "ESP32-S3 CAM" and
-   "ESP32-CAM" in different sections. They are different modules. The classic ESP32-CAM has no USB
-   port and cannot be flashed without a USB-to-serial adapter or a programmer baseboard; an
-   ESP32-S3 board with a USB-C port can usually be flashed directly with a data cable. **The camera
-   is currently not running on the ESP32 at all**, so this blocks the IoT half of the system.
-2. **The load cell specified in the paper is 5 kg**, against a ±2 g accuracy target. A 5 kg cell
-   wastes resolution on a 60 g object. Spec not yet confirmed.
-3. **There is no dataset yet.** No labelled defective eggs exist, so the 85% accuracy target cannot
-   currently be measured. Collection is team work, not one person's.
-4. **The final paper title** is being revised with the adviser.
+1. 🔴 **There is no dataset yet.** No labelled defective eggs exist, so the **85% accuracy target in
+   the paper (Table 9) cannot be measured.** The model has trained on 2 eggs and 10 noise images and
+   returns ~0.50 confidence. **This is the highest-value open item in the project** and no document
+   edit touches it. Collection is team work, not one person's.
+2. 🟡 **The load cell spec is chosen but not bought.** The paper previously specified 5 kg against a
+   ±2 g target, which wastes resolution on a 60 g object. The BOM now specifies **1 kg**. Confirm on
+   purchase.
+3. 🟡 **The ESP32-S3 firmware does not exist.** The paper states the node *"executes its own
+   firmware"* and posts weight over Wi-Fi. Small job, not yet started. See `firmware/README.md`.
+4. 🔴 **Section 4.3 above describes a schema that is not on `main`.** The `ai_assessments` columns
+   listed there — `result_label` as an ENUM, `assessment_type ENUM('candling')`, `model_version
+   NOT NULL` — exist only on the unmerged **`origin/Ricardo`** branch. What `database/schema.sql`
+   on `main` actually has: `result_label VARCHAR(100)`, `assessment_type ENUM('external',
+   'candling')`, `image_type ENUM('external','candling')`, `model_version NULL`, and an
+   `ai_disposition` with no `'no_egg'` value. **So on `main` there is nowhere to store a
+   `not_an_egg` verdict**, and the two `'external'` values contradict settled decision 1 (one
+   candling photo per egg). Per section 6, `main` is what exists — so until that branch merges,
+   section 4.3 is a plan, not a description. **Do not generate code against 4.3 without checking
+   which branch you are on.** Merge is R's call; raise it in the group chat.
+
+**Resolved 2026-08-07** *(kept for context, do not re-open)*:
+
+- ~~Which ESP32 board the team owns.~~ **The ESP32-S3.** The classic ESP32-CAM is out of the build
+  entirely. The camera is deliberately **not** on the ESP32 — capture is a USB webcam on the laptop.
+  The ESP32-S3 reads the HX711 and posts weight **over Wi-Fi**, which is what keeps the IoT claim in
+  the title true. ⚠️ **Wiring it over USB serial instead would break the cover page** — see
+  `firmware/README.md`.
+- ~~The final paper title.~~ Confirmed by the professor and landed in Ver6.1.4:
+  *"EggMinistrator: An AI-Powered IoT System for Real-Time Egg Grading and Counting Using Candling
+  Computer Vision and Load Cell Weight Measurement **for Leong Hup Philippines Inc.**"*
 
 ---
 
