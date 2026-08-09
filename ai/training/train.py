@@ -11,6 +11,10 @@ val_ds = tf.keras.utils.image_dataset_from_directory(
     validation_split=0.2, subset="validation", seed=123,
 )
 
+half = len(val_ds) // 2
+test_ds = val_ds.take(half)
+val_ds = val_ds.skip(half)
+
 with open("ai/models/classes.json", "w") as file:
     file.write(json.dumps(train_ds.class_names))
 
@@ -31,6 +35,7 @@ model.compile(
     loss="sparse_categorical_crossentropy",
     metrics=["accuracy"],
 )
-model.fit(train_ds, validation_data=val_ds, epochs=3)
 
+model.fit(train_ds, validation_data=val_ds, epochs=3)
+model.evaluate(test_ds)
 model.save("ai/models/egg.keras")

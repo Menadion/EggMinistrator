@@ -134,14 +134,44 @@ removed once committed). See the repo `CONTRIBUTING.md`.
 - **How to retrain:** `python ai/training/train.py`, **from the repo root**. There is no notebook
   and no Colab step.
 
-> 🔴 **Accuracy (held-out test set): cannot be filled yet, and not just for want of data.**
-> `train.py` splits the dataset 80/20 into **training and validation only**. There is no third,
-> untouched split, so no number this code currently produces is a held-out test accuracy. The paper
-> claims **85%** (Ver6.1.4 Table 9). Filling this in needs both a real dataset *and* a test split
-> that the training run never sees.
+### The three splits, and the one you are not allowed to look at
+
+`train.py:14-16` cuts the data three ways, not two:
+
+```python
+half    = len(val_ds) // 2
+test_ds = val_ds.take(half)
+val_ds  = val_ds.skip(half)
+```
+
+`image_dataset_from_directory` can only produce two subsets (`"training"` and `"validation"` — there
+is no `"test"`), so the 20% validation slice is halved again. `train.py:39` trains against `val_ds`;
+`train.py:40` measures `test_ds` once with `model.evaluate()`.
+
+**Do not reorder those three lines.** `.take()` and `.skip()` return new datasets and leave the
+original alone, so both must read `val_ds` *before* line 16 rebinds it. Rebind first and line 15
+reads the already-halved dataset, producing an **empty test set with no error**. The same applies to
+`half`: it is a variable so the count is locked to the original, not to save typing.
+
+**Why the two names are not interchangeable.** `take` and `skip` are symmetric — the operation says
+nothing about what a half is *for*. The role lives in the variable name. `val_ds` is what training
+validates against; `test_ds` is the held-out set. Read the name, never the operation.
+
+> 🔴 **Accuracy (held-out test set): still cannot be filled, but the reason has narrowed.**
+> The split now exists, so the code can produce a held-out number. What is missing is the data —
+> per `CONTRACT.md` §7.1 the model has trained on 2 eggs and 10 noise images at ~0.50 confidence,
+> and `ai/dataset/` is currently empty. The paper claims **85%** (Ver6.1.4 Table 9).
 >
-> Current state per `CONTRACT.md` §7.1: trained on 2 eggs and 10 noise images, returning ~0.50
-> confidence. **Do not quote the training run's printed score as the system's accuracy** — see
+> ⚠️ **The split is correct by reading, not by running.** With an empty dataset `train.py` fails
+> before it reaches either line. Nobody has executed this path.
+>
+> ⚠️ **`test_ds` is a one-shot, and no code can enforce that.** `evaluate()` will run a hundred
+> times without complaint. But the moment you use the test number to decide something — more
+> epochs, a different optimizer — you have started steering by it, and it stops being an estimate of
+> unseen performance for exactly the reason `val_accuracy` did. Look once. A fresh honest number
+> needs fresh images nobody has seen.
+>
+> **Do not quote the training run's printed score as the system's accuracy** — see
 > [`how-to-add-images.md`](how-to-add-images.md) §7.
 
 > **Validate the capture before building anything around it.** The camera has exactly one optical job:
