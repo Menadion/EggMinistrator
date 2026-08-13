@@ -329,18 +329,18 @@ check their own work against the thing being graded. **The bar is 50% for SOFTDE
 finals.** Update the status column when something lands; it is the project plan now, not just a
 defense aid.
 
-**Status as of 2026-08-13: 4 met, 5 partial, 6 not met — 27%. Eight are needed for 50%.**
+**Status as of 2026-08-13: 5 met, 5 partial, 5 not met — 33%. Eight are needed for 50%.**
 
 | FR | Requirement | | Where it stands |
 |---|---|---|---|
 | 01 | Capture egg images using a stationary camera | 🔴 | no capture code exists. `classify.py` reads a file off disk (`cv2.imread(sys.argv[1])`); nothing opens a webcam |
 | 02 | Automatically detect eggs on the platform | 🟡 | firmware triggers at 20 g — written, never flashed |
-| 03 | Allow authorized personnel to override an AI result | 🔴 | schema has `is_overridden`, `final_disposition`, `final_grade`; **no code touches any of them.** Cheapest unmet FR in the table |
+| 03 | Allow authorized personnel to override an AI result | 🟡 | **built 2026-08-13** — `PATCH /api/inspections/:code/override`, any signed-in account, plus a per-row control on History. Syntax-checked and the dashboard builds; **never run against a live database.** Flip to ✅ after one real override |
 | 04 | Assign a size class from weight (PNS, Table 11) | 🟡 | `size_grades` + display exist; nothing *assigns* `size_grade_id`. Do it inside the 4.1 step-1 write |
 | 05 | Automatically count inspected eggs | ✅ | dashboard |
 | 06 | Store inspection records in the database | 🔴 | no ingest route — see section 7 item 3 |
 | 07 | Display results on the monitoring dashboard | ✅ | builds clean |
-| 08 | Generate inspection reports | 🟡 | `ReportsPage.jsx` exists, never verified |
+| 08 | Generate inspection reports | ✅ | verified 2026-08-13: report builder + filters + paginated preview over real DB rows, and `downloadCsv()` genuinely produces a file. ⚠️ the **"Export PDF" button just calls `window.print()`** — same handler as Print, nothing generates a PDF. Relabel or remove before a demo |
 | 09 | Display daily production statistics | ✅ | Analytics: per-day averages, volume charts |
 | 10 | Allow administrators to access inspection history | ✅ | HistoryPage + admin accounts |
 | 11 | Capture a candling image under transillumination | 🔴 | **same missing capture code as FR-01** |

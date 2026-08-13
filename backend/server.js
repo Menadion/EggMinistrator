@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 import { createAnalyticsInsights } from './routes/analyticsRoutes.js'
 import { handleAuthRoute } from './routes/authRoutes.js'
 import { AuthError, getSessionUser } from './services/authService.js'
-import { listInspections } from './services/inspectionService.js'
+import { listInspections, overrideInspection } from './services/inspectionService.js'
 
 const backendDirectory = fileURLToPath(new URL('.', import.meta.url))
 const envPath = resolve(backendDirectory, '.env')
@@ -57,6 +57,23 @@ const server = createServer(async (request, response) => {
       const token = authorization.startsWith('Bearer ') ? authorization.slice(7) : null
       await getSessionUser(token)
       return sendJson(response, 200, await listInspections(), origin)
+    }
+
+    // FR-03: an authorized user replaces the model's verdict with their own.
+    // Any signed-in account may do this -- an inspector correcting the machine
+    // at the station is the workflow the requirement describes, not an admin
+    // task. Who did it is recorded on the row.
+    const overrideMatch = path.match(/^\/api\/inspections\/([^/]+)\/override$/)
+    if (request.method === 'PATCH' && overrideMatch) {
+      const authorization = request.headers.authorization || ''
+      const token = authorization.startsWith('Bearer ') ? authorization.slice(7) : null
+      const actor = await getSessionUser(token)
+      const updated = await overrideInspection({
+        inspectionCode: decodeURIComponent(overrideMatch[1]),
+        label: requestBody?.label,
+        actor,
+      })
+      return sendJson(response, 200, updated, origin)
     }
 
     if (request.method === 'POST' && path === '/api/analytics/insights') {
