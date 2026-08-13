@@ -74,12 +74,55 @@ This is the part that matters most. These are the handoffs between people.
 
 ### 4.1 Firmware → server
 
-The ESP32 captures one candling image and one weight reading per egg, and sends both over Wi-Fi to
-the local server.
+**The board sends weight. It does not send an image.** That changed with the 2026-08-07 descope: the
+camera is a USB webcam on the laptop, and the ESP32-S3 reads the load cell through the HX711, which
+has no USB and cannot reach a laptop on its own.
 
-> 🔧 **TO FILL (J + R):** the exact transport. HTTP POST with a multipart image? A raw TCP stream?
-> What is the endpoint URL, and does the weight travel in the same request as the image or a
-> separate one? Nothing downstream can be finished until this is written down.
+**Transport: HTTP over Wi-Fi, never USB serial.** The board's USB cable carries power only. This is
+not a style preference — `hardware/bill-of-materials.md` is explicit that a USB *data* path makes the
+board a peripheral attached to a computer, which contradicts the paper's title and §2.2. Whoever
+touches this: the weight leaves over the network.
+
+#### The three calls, in order
+
+```
+1. BOARD  →  POST /api/inspections            { "weight_g": 58.23 }
+   SERVER →  creates the egg_inspections row, replies { "id": 41 }
+
+2. LAPTOP →  POST /api/inspections/41/assessment
+             the six fields from classify.py (see 4.3) + raw_result
+   SERVER →  writes the ai_assessments row and sets the disposition
+
+3. BOARD  →  GET /api/inspections/41/result   (polled, ~500 ms)
+   SERVER →  { "status": "pending" } until step 2 lands,
+             then { "label": "good", "confidence": 0.83 }
+   BOARD  →  drives the LCD, LEDs and buzzer (FR-15). Gives up after 5 s.
+```
+
+**Why the board polls instead of being pushed to.** Pushing means the laptop has to know the board's
+IP, which means a static address or a DHCP reservation on whatever router is in the room. That is one
+more thing to configure and one more thing to break **on defense day, on an unfamiliar network**.
+Polling only requires the board to reach the server, so the board makes outbound requests and nothing
+has to know where it is.
+
+**Why the server creates the row and hands back an id.** It is the only way `inspection_id` reaches
+the assessment write. The classifier cannot know it — see 4.3 — so step 1 mints it and step 2 quotes
+it back. Weight and verdict never have to be matched up by timestamp.
+
+**Authentication.** The board cannot log in as a user. It sends a device key in an `X-Device-Key`
+header, and the value lives in `backend/.env`, never in the repo and never in the sketch. J's branch
+already assumed this exact header, so it is not a new idea, only a written-down one.
+
+> 🔧 **R's to confirm, and rename freely.** The route names above are a proposal so the firmware has
+> something concrete to build against — **the shapes are the contract, the spellings are yours.** In
+> the sketch each URL is a single constant, so a rename costs one line. Three things are genuinely
+> open: what the `GET` returns while pending, whether `inspection_images.file_path` is written in
+> step 2 or separately, and the `class` → disposition mapping (proposed: `good` → `accepted`,
+> `defective` → `rejected`, `not_an_egg` → `no_egg`, per settled decision 8).
+
+> ⚠️ **None of these endpoints exist yet.** The backend on `main` serves `GET /api/inspections` and
+> can receive an inspection through no route at all. Until step 1 exists, nothing downstream of the
+> load cell can run end to end — this sits alongside the empty dataset in section 7.
 
 ### 4.2 Image → classifier
 
@@ -201,8 +244,18 @@ These are unresolved. If your task touches one, ask before assuming.
 2. 🟡 **The load cell spec is chosen but not bought.** The paper previously specified 5 kg against a
    ±2 g target, which wastes resolution on a 60 g object. The BOM now specifies **1 kg**. Confirm on
    purchase.
-3. 🟡 **The ESP32-S3 firmware does not exist.** The paper states the node *"executes its own
-   firmware"* and posts weight over Wi-Fi. Small job, not yet started. See `firmware/README.md`.
+3. 🔴 **The server cannot receive an inspection.** None of the three calls in section 4.1 exist. The
+   backend on `main` serves `GET /api/inspections` and has no route that writes one, so every column
+   spec in 4.3 — `model_version`, `raw_result`, the four server-owned columns — describes an insert
+   that no code performs. **Owner: R.** This and item 1 are the two things standing between the
+   project and a pipeline that runs end to end.
+4. 🟡 **The ESP32-S3 firmware exists as an untested draft.** `firmware/EggMinistrator_ESP32S3.ino`,
+   written by J, cherry-picked from `origin/Jasfer` on 2026-08-13. Reads the HX711, drives the
+   display, LEDs and buzzer. **Never compiled and never run on hardware** — the banner at the top of
+   the file says so and should stay until someone flashes it. Three known gaps: it posts over USB
+   serial rather than Wi-Fi (contradicts 4.1), its display code targets an SSD1306 OLED rather than
+   the **16x2 I²C LCD** the station actually has, and `handleLine()` waits for the egg to be removed
+   with no timeout. The rest of J's branch was **not** taken; see section 7 resolved notes below.
 
 **Resolved 2026-08-13** *(kept for context, do not re-open)*:
 
