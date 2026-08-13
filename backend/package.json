@@ -1,0 +1,14 @@
+{
+  "name": "eggministrator-backend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "@google/genai": "^2.14.0",
+    "bcryptjs": "^3.0.3",
+    "mysql2": "^3.23.2"
+  }
+}
