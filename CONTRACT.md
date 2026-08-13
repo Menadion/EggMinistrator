@@ -329,13 +329,19 @@ check their own work against the thing being graded. **The bar is 50% for SOFTDE
 finals.** Update the status column when something lands; it is the project plan now, not just a
 defense aid.
 
-**Status as of 2026-08-13: 5 met, 5 partial, 5 not met — 33%. Eight are needed for 50%.**
+**Status as of 2026-08-13: 6 met, 4 partial, 5 not met — 40%. Eight are needed for 50%.**
+
+> ⚠️ **`final_grade` holds the SIZE, not the verdict.** The sample data puts `Medium` and `Large` in
+> it. An early cut of the FR-03 override wrote `"defective"` there and corrupted the size shown on
+> every page — caught only because the change was tested against a real database rather than
+> reasoned about. The verdict lives in `final_disposition`. **R: worth renaming it `final_size_grade`
+> before someone repeats this.**
 
 | FR | Requirement | | Where it stands |
 |---|---|---|---|
 | 01 | Capture egg images using a stationary camera | 🔴 | no capture code exists. `classify.py` reads a file off disk (`cv2.imread(sys.argv[1])`); nothing opens a webcam |
 | 02 | Automatically detect eggs on the platform | 🟡 | firmware triggers at 20 g — written, never flashed |
-| 03 | Allow authorized personnel to override an AI result | 🟡 | **built 2026-08-13** — `PATCH /api/inspections/:code/override`, any signed-in account, plus a per-row control on History. Syntax-checked and the dashboard builds; **never run against a live database.** Flip to ✅ after one real override |
+| 03 | Allow authorized personnel to override an AI result | ✅ | **built and verified 2026-08-13** against MariaDB — `PATCH /api/inspections/:code/override`, any signed-in account, per-row control on History. Writes `final_disposition` + `is_overridden`, appends who and when to `notes`, and never touches `ai_disposition`. `400` on an invalid label, `401` without a token |
 | 04 | Assign a size class from weight (PNS, Table 11) | 🟡 | `size_grades` + display exist; nothing *assigns* `size_grade_id`. Do it inside the 4.1 step-1 write |
 | 05 | Automatically count inspected eggs | ✅ | dashboard |
 | 06 | Store inspection records in the database | 🔴 | no ingest route — see section 7 item 3 |

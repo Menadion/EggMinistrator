@@ -27,7 +27,7 @@ export async function listInspections() {
       size_grades.label AS size,
       assessments.result_label AS aiQuality,
       inspections.is_overridden AS isOverridden,
-      inspections.final_grade AS finalGrade,
+      inspections.final_disposition AS finalDisposition,
       inspections.station_name AS device
     FROM egg_inspections AS inspections
     LEFT JOIN size_grades ON size_grades.id = inspections.size_grade_id
@@ -36,14 +36,15 @@ export async function listInspections() {
     ORDER BY inspections.captured_at DESC, inspections.id DESC
   `)
 
-  const inspections = rows.map(({ inspectionCode, batchId, sequenceNumber, aiQuality, isOverridden, finalGrade, ...inspection }) => {
+  const inspections = rows.map(({ inspectionCode, batchId, sequenceNumber, aiQuality, isOverridden, finalDisposition, ...inspection }) => {
     const overridden = Number(isOverridden) === 1
+    const overriddenLabel = DISPOSITION_TO_LABEL[finalDisposition]
     return {
       ...inspection,
       // `quality` stays the field every page already reads, so nothing downstream
       // changes. What moves is where it comes from: a human's override wins over
       // the model's label, which is the whole point of FR-03.
-      quality: overridden && finalGrade ? finalGrade : aiQuality,
+      quality: overridden && overriddenLabel ? overriddenLabel : aiQuality,
       aiQuality,
       isOverridden: overridden,
       eggId: formatEggId(inspectionCode, batchId, sequenceNumber),
@@ -61,11 +62,19 @@ export async function listInspections() {
 // `is_overridden` records that the two differ by human decision rather than by
 // accident. We never touch `ai_disposition` -- overwriting what the model said
 // would destroy the only evidence that an override happened.
+//
+// ⚠️ `final_grade` is NOT this column. The sample data puts size labels in it
+// ("Medium", "Large"), so it is the final *size* grade, not the final verdict.
+// Writing a quality label there corrupts the size shown on every page.
 const OVERRIDE_LABELS = {
   good: 'accepted',
   defective: 'rejected',
   not_an_egg: 'no_egg',
 }
+
+const DISPOSITION_TO_LABEL = Object.fromEntries(
+  Object.entries(OVERRIDE_LABELS).map(([label, disposition]) => [disposition, label]),
+)
 
 export async function overrideInspection({ inspectionCode, label, actor }) {
   const code = typeof inspectionCode === 'string' ? inspectionCode.trim() : ''
@@ -86,10 +95,9 @@ export async function overrideInspection({ inspectionCode, label, actor }) {
     `UPDATE egg_inspections
         SET is_overridden = 1,
             final_disposition = ?,
-            final_grade = ?,
             notes = CONCAT(COALESCE(notes, ''), IF(notes IS NULL OR notes = '', '', '\n'), ?)
       WHERE inspection_code = ?`,
-    [disposition, label, note, code],
+    [disposition, note, code],
   )
 
   if (result.affectedRows === 0) throw new Error('No inspection found with that code.')

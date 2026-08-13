@@ -22,7 +22,8 @@ RUNNING IT
 
     Standard library only -- no pip install, no Flask. Then set SERVER_HOST
     in your secrets.h to this machine's LAN IP (ipconfig -> IPv4 Address),
-    and SERVER_PORT to 3000.
+    and SERVER_PORT to 3001 -- the same port the real backend uses, so you can
+    stop the stub and start the real thing without reflashing the board.
 
     Both machines must be on the same Wi-Fi. If the board cannot reach it,
     the usual cause is Windows Firewall blocking inbound python.exe -- allow
@@ -44,7 +45,9 @@ import threading
 import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-PORT = 3000
+PORT = 3001                        # same port the Node backend uses, so the board
+                                   # can swap between stub and real without reflashing
+                                   # (run one or the other, not both)
 DEVICE_KEY = "replace-me"          # must match secrets.h
 AUTO_VERDICT_AFTER_S = 1.5         # set to None to disable invented verdicts
 
