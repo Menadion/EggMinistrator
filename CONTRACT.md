@@ -9,7 +9,7 @@ anyone's work.
 **Owner: M.** One editor, so it cannot drift. If something here is wrong or out of date, message M
 rather than editing it, and it gets fixed in one place.
 
-*Last updated: 2026-08-09*
+*Last updated: 2026-08-13*
 
 ---
 
@@ -33,7 +33,8 @@ The reference operation runs **white and tinted** (partially pigmented) shells. 
 |---|---|---|
 | `ai/` | M | OpenCV + TensorFlow/Keras classifier and inference |
 | `database/` | R | MySQL schema, migrations, sample data |
-| `dashboard/` | R | React + Vite frontend, Node/Express backend |
+| `dashboard/` | R | React + Vite frontend |
+| `backend/` | R | Node/Express API: auth, inspection queries, Gemini insight service |
 | `firmware/` | J | ESP32 firmware: camera capture, load cell reading, Wi-Fi |
 | `hardware/` | J | Enclosure, bill of materials, wiring |
 | `docs/` | shared | Local only, gitignored, not in the repo |
@@ -59,6 +60,11 @@ work crosses a boundary, that is a conversation, not a commit.
 7. **The stack is fixed:** Python for `ai/`, Node/Express for the backend, React + Vite for the
    dashboard, MySQL for the database, ESP32 for firmware. **The paper says PHP in one place. The
    paper is wrong.** Do not let an AI generate PHP.
+8. **A `not_an_egg` scan is recorded, not discarded.** It writes an `egg_inspections` row
+   dispositioned `no_egg` plus its linked `ai_assessments` row, and every egg metric filters it back
+   out. Misload rate is real diagnostic data about the station and we keep it. The alternative —
+   write nothing and only warn on the station screen — was **considered and rejected 2026-08-13**;
+   see section 7.
 
 ---
 
@@ -86,13 +92,25 @@ is "correct" on its own.
 
 ### 4.3 Classifier → database
 
-`classify.py` emits exactly three fields:
+`classify.py` emits exactly six fields *(was three until 2026-08-13)*:
 
 ```json
-{ "image": "<filename>", "class": "good | defective | not_an_egg", "confidence": 0.0 }
+{
+  "image": "<filename>",
+  "class": "good | defective | not_an_egg",
+  "confidence": 0.0,
+  "model_name": "candling-classifier",
+  "model_version": "0.3.0+20260813T144500Z",
+  "inference_time_ms": 105
+}
 ```
 
 `class` uses the Decision G values verbatim, with underscores, lowercase.
+
+**The classifier does not fill the whole row.** Of the `ai_assessments` columns below, `classify.py`
+supplies six and the server supplies the rest: `inspection_id` (the server owns it — the classifier
+has never heard of it), `assessment_type` (constant `'candling'`), `is_defect_detected` (derive it
+from `class`), and `assessed_at` (database default). Do not wait on `ai/` for those four.
 
 These land in the `ai_assessments` table:
 
@@ -106,9 +124,15 @@ These land in the `ai_assessments` table:
 | `inference_time_ms` | `INT UNSIGNED` | nullable |
 | `raw_result` | `LONGTEXT` | nullable |
 
-> 🔧 **TO FILL (M + R):** `model_version` is `NOT NULL`, and no trained model exists yet, so there is
-> no version string to write and **no assessment row can currently be inserted**. Agree either a
-> placeholder value (for example `v0-stub`) or make the column nullable until a model exists.
+> ✅ **Settled 2026-08-13 — `model_version` is supplied by the classifier, not typed by hand.**
+> `train.py` writes `ai/models/version.json` in the same run that saves the weights, and
+> `classify.py` reads it and reports it. The string is `MODEL_VERSION` plus the UTC timestamp of the
+> training run, e.g. `0.3.0+20260813T144500Z`. Fits `VARCHAR(50)`.
+>
+> **Why not a hardcoded constant.** A version typed into `classify.py` is a sticker applied by hand:
+> retrain, forget to bump it, and the database records a version that does not describe the weights
+> that produced the row. Same failure as a committed `classes.json`. ⚠️ `version.json` now travels
+> with `egg.keras` and `classes.json` — **all three or none.**
 
 > 🔧 **TO FILL (M + R):** is `raw_result` meant to hold the full JSON above? If so, say so here, so
 > the dashboard knows what it can read out of it.
@@ -167,16 +191,45 @@ These are unresolved. If your task touches one, ask before assuming.
    purchase.
 3. 🟡 **The ESP32-S3 firmware does not exist.** The paper states the node *"executes its own
    firmware"* and posts weight over Wi-Fi. Small job, not yet started. See `firmware/README.md`.
-4. 🔴 **Section 4.3 above describes a schema that is not on `main`.** The `ai_assessments` columns
-   listed there — `result_label` as an ENUM, `assessment_type ENUM('candling')`, `model_version
-   NOT NULL` — exist only on the unmerged **`origin/Ricardo`** branch. What `database/schema.sql`
-   on `main` actually has: `result_label VARCHAR(100)`, `assessment_type ENUM('external',
-   'candling')`, `image_type ENUM('external','candling')`, `model_version NULL`, and an
-   `ai_disposition` with no `'no_egg'` value. **So on `main` there is nowhere to store a
-   `not_an_egg` verdict**, and the two `'external'` values contradict settled decision 1 (one
-   candling photo per egg). Per section 6, `main` is what exists — so until that branch merges,
-   section 4.3 is a plan, not a description. **Do not generate code against 4.3 without checking
-   which branch you are on.** Merge is R's call; raise it in the group chat.
+
+**Resolved 2026-08-13** *(kept for context, do not re-open)*:
+
+- ~~`not_an_egg`: store the row, or discard it and only warn?~~ **Store it — Option A stands**, now
+  settled decision 8. R's proposal `docs/option-b-warning-only-not-an-egg.md` (discard, warn on
+  screen, retry) is **declined**, and R's shipped code already implements what we kept, so nothing
+  is torn out.
+
+  The complaint behind the proposal was real — misloads flooded the History page during R's
+  testing — but the cause was **not** the data model, and it is **already fixed at the source**.
+  `backend/services/inspectionService.js:33` filters `WHERE inspections.final_disposition <>
+  'no_egg'`, that endpoint is the only path any page has to inspection rows, and the `schema.sql:202`
+  view filters the same way. A misload row is therefore **write-only** — stored by the station, never
+  read back — and cannot reach History from the database at all. Whatever R saw predates that filter
+  or came from an earlier mock-data build. ❓ **Ask him which**, so we know it is actually gone.
+
+  ⚠️ **Nothing was changed in the dashboard for this.** A UI guard was written on 2026-08-13 — a
+  fourth *"Not an Egg"* dropdown choice, with History defaulting to eggs only — and **reverted the
+  same day**, because it guarded a path the SQL already closes. The one dashboard edit that stands is
+  unrelated to misloads: `HistoryPage.jsx`'s `useMemo` was missing `historyScans` from its dependency
+  array, so the table stayed empty until you touched a filter.
+
+  ⚠️ **Open consequence: the data this decision keeps is not readable anywhere.** Misload rate is
+  stored and never surfaced — `AnalyticsPage.jsx:134` counts `not_an_egg`, but from rows the API has
+  already filtered out, so the tile can only ever read zero. Decision 8 is satisfied in the database
+  and invisible in the UI until someone builds the readout.
+
+  ⚠️ **The row-expiry timer discussed in the group chat was not adopted.** It would not have fixed
+  this: the flood is same-session, and a one-day timer deletes yesterday's rows. It would also have
+  silently reset the Analytics "Not an Egg" count every day, and it depends on MySQL's
+  `event_scheduler`, which is **off by default** — a cleanup job that quietly never runs.
+
+- ~~Section 4.3 describes a schema that is not on `main`.~~ **Merged 2026-08-13** (`0927658`).
+  `origin/Ricardo` landed on `main`, so `result_label` is now
+  `ENUM('good','defective','not_an_egg')`, `assessment_type` is `ENUM('candling')` only,
+  `model_version` is `NOT NULL`, and both `ai_disposition` and `final_disposition` carry `'no_egg'`.
+  Section 4.3 is a description again, not a plan, and the two `'external'` values that contradicted
+  decision 1 are gone. ⚠️ An existing local MySQL database predates this and will not match —
+  reapply `database/schema.sql`.
 
 **Resolved 2026-08-07** *(kept for context, do not re-open)*:
 
