@@ -1,4 +1,178 @@
 import database from '../db.js'
+import { randomUUID, timingSafeEqual } from 'node:crypto'
+
+export class InspectionError extends Error {
+  constructor(message, statusCode = 400, code = 'INSPECTION_ERROR') {
+    super(message)
+    this.statusCode = statusCode
+    this.code = code
+  }
+}
+
+const classificationDispositions = {
+  good: 'accepted',
+  defective: 'rejected',
+  not_an_egg: 'no_egg',
+}
+
+const isSafeInteger = (value) => Number.isInteger(value) && value >= 0
+const hasText = (value) => typeof value === 'string' && value.trim().length > 0
+
+const parseRawResult = (value) => {
+  if (!hasText(value)) {
+    throw new InspectionError('raw_result must contain the classifier JSON line exactly as emitted.', 400, 'RAW_RESULT_REQUIRED')
+  }
+
+  try {
+    JSON.parse(value)
+  } catch {
+    throw new InspectionError('raw_result must be valid JSON from the classifier.', 400, 'INVALID_RAW_RESULT')
+  }
+
+  return value
+}
+
+const parseWeight = (value) => {
+  const weight = Number(value)
+  if (!Number.isFinite(weight) || weight <= 0 || weight > 1000) throw new InspectionError('weight_g must be a number between 0 and 1000.', 400, 'INVALID_WEIGHT')
+  return Number(weight.toFixed(2))
+}
+
+const parseConfidence = (value) => {
+  const confidence = Number(value)
+  if (!Number.isFinite(confidence) || confidence < 0 || confidence > 1) throw new InspectionError('confidence must be a number from 0 to 1.', 400, 'INVALID_CONFIDENCE')
+  return Number(confidence.toFixed(4))
+}
+
+const parseInferenceTime = (value) => {
+  const time = Number(value)
+  if (!isSafeInteger(time)) throw new InspectionError('inference_time_ms must be a non-negative whole number.', 400, 'INVALID_INFERENCE_TIME')
+  return time
+}
+
+const findSizeGrade = async (connection, weight) => {
+  const [rows] = await connection.execute(`
+    SELECT id, label
+    FROM size_grades
+    WHERE is_active = 1
+      AND minimum_weight_g <= ?
+      AND (maximum_weight_g IS NULL OR ? < maximum_weight_g)
+    ORDER BY minimum_weight_g DESC
+    LIMIT 1
+  `, [weight, weight])
+
+  if (!rows[0]) throw new InspectionError('No active size grade matches this weight.', 422, 'SIZE_GRADE_NOT_FOUND')
+  return rows[0]
+}
+
+export function requireDeviceKey(headers) {
+  const configuredKey = process.env.DEVICE_API_KEY
+  if (!hasText(configuredKey)) throw new InspectionError('Device authentication is not configured. Add DEVICE_API_KEY to backend/.env.', 503, 'DEVICE_AUTH_NOT_CONFIGURED')
+
+  const receivedKey = headers['x-device-key']
+  if (!hasText(receivedKey)) throw new InspectionError('A valid X-Device-Key header is required.', 401, 'DEVICE_KEY_REQUIRED')
+
+  const expected = Buffer.from(configuredKey)
+  const received = Buffer.from(receivedKey)
+  if (expected.length !== received.length || !timingSafeEqual(expected, received)) throw new InspectionError('The supplied device key is invalid.', 401, 'DEVICE_KEY_INVALID')
+}
+
+export async function createInspection({ weight_g: weightValue }) {
+  const weight = parseWeight(weightValue)
+  const connection = await database.getConnection()
+
+  try {
+    await connection.beginTransaction()
+    const sizeGrade = await findSizeGrade(connection, weight)
+    const [result] = await connection.execute(`
+      INSERT INTO egg_inspections (
+        inspection_code, station_name, weight_g, size_grade_id, ai_disposition, final_disposition, final_grade
+      ) VALUES (?, ?, ?, ?, 'review', 'review', ?)
+    `, [randomUUID(), process.env.STATION_NAME || 'Station 1', weight, sizeGrade.id, sizeGrade.label])
+    await connection.commit()
+    return { id: result.insertId }
+  } catch (error) {
+    await connection.rollback()
+    throw error
+  } finally {
+    connection.release()
+  }
+}
+
+export async function saveAssessment(inspectionId, assessment) {
+  if (!isSafeInteger(inspectionId) || inspectionId === 0) throw new InspectionError('Inspection id must be a positive whole number.', 400, 'INVALID_INSPECTION_ID')
+
+  const resultLabel = assessment.class
+  if (!Object.hasOwn(classificationDispositions, resultLabel)) throw new InspectionError('class must be good, defective, or not_an_egg.', 400, 'INVALID_RESULT_LABEL')
+  if (!hasText(assessment.image)) throw new InspectionError('image is required.', 400, 'IMAGE_REQUIRED')
+  if (!hasText(assessment.model_name)) throw new InspectionError('model_name is required.', 400, 'MODEL_NAME_REQUIRED')
+  if (!hasText(assessment.model_version)) throw new InspectionError('model_version is required.', 400, 'MODEL_VERSION_REQUIRED')
+
+  const confidence = parseConfidence(assessment.confidence)
+  const inferenceTime = parseInferenceTime(assessment.inference_time_ms)
+  const rawResult = parseRawResult(assessment.raw_result)
+  const disposition = classificationDispositions[resultLabel]
+  const connection = await database.getConnection()
+
+  try {
+    await connection.beginTransaction()
+    const [inspections] = await connection.execute('SELECT id FROM egg_inspections WHERE id = ? FOR UPDATE', [inspectionId])
+    if (!inspections[0]) throw new InspectionError('Inspection not found.', 404, 'INSPECTION_NOT_FOUND')
+
+    const [existingAssessments] = await connection.execute('SELECT id FROM ai_assessments WHERE inspection_id = ? LIMIT 1', [inspectionId])
+    if (existingAssessments[0]) throw new InspectionError('This inspection already has an assessment.', 409, 'ASSESSMENT_ALREADY_EXISTS')
+
+    await connection.execute(`
+      INSERT INTO ai_assessments (
+        inspection_id, assessment_type, result_label, confidence_score, is_defect_detected,
+        model_name, model_version, inference_time_ms, raw_result
+      ) VALUES (?, 'candling', ?, ?, ?, ?, ?, ?, ?)
+    `, [inspectionId, resultLabel, confidence, resultLabel === 'defective' ? 1 : 0, assessment.model_name.trim(), assessment.model_version.trim(), inferenceTime, rawResult])
+
+    await connection.execute(`
+      INSERT INTO inspection_images (inspection_id, image_type, file_path)
+      VALUES (?, 'candling', ?)
+    `, [inspectionId, assessment.image.trim()])
+
+    if (resultLabel === 'not_an_egg') {
+      await connection.execute(`
+        UPDATE egg_inspections
+        SET ai_disposition = ?, final_disposition = ?, size_grade_id = NULL, final_grade = NULL
+        WHERE id = ?
+      `, [disposition, disposition, inspectionId])
+    } else {
+      await connection.execute(`
+        UPDATE egg_inspections
+        SET ai_disposition = ?, final_disposition = ?
+        WHERE id = ?
+      `, [disposition, disposition, inspectionId])
+    }
+
+    await connection.commit()
+    return { id: inspectionId, label: resultLabel, confidence }
+  } catch (error) {
+    await connection.rollback()
+    throw error
+  } finally {
+    connection.release()
+  }
+}
+
+export async function getInspectionResult(inspectionId) {
+  if (!isSafeInteger(inspectionId) || inspectionId === 0) throw new InspectionError('Inspection id must be a positive whole number.', 400, 'INVALID_INSPECTION_ID')
+
+  const [rows] = await database.execute(`
+    SELECT assessments.result_label AS label, assessments.confidence_score AS confidence
+    FROM egg_inspections AS inspections
+    LEFT JOIN ai_assessments AS assessments ON assessments.inspection_id = inspections.id
+    WHERE inspections.id = ?
+    LIMIT 1
+  `, [inspectionId])
+
+  if (!rows[0]) throw new InspectionError('Inspection not found.', 404, 'INSPECTION_NOT_FOUND')
+  if (!rows[0].label) return { status: 'pending' }
+  return { label: rows[0].label, confidence: Number(rows[0].confidence) }
+}
 
 function formatEggId(inspectionCode, batchId, sequenceNumber) {
   const hasBatchId = batchId !== null && batchId !== undefined && String(batchId).trim() !== ''

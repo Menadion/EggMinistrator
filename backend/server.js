@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 import { createAnalyticsInsights } from './routes/analyticsRoutes.js'
 import { handleAuthRoute } from './routes/authRoutes.js'
 import { AuthError, getSessionUser } from './services/authService.js'
-import { listInspections } from './services/inspectionService.js'
+import { createInspection, getInspectionResult, InspectionError, listInspections, requireDeviceKey, saveAssessment } from './services/inspectionService.js'
 
 const backendDirectory = fileURLToPath(new URL('.', import.meta.url))
 const envPath = resolve(backendDirectory, '.env')
@@ -23,7 +23,7 @@ const sendJson = (response, statusCode, body, origin = '') => {
   response.writeHead(statusCode, {
     'Access-Control-Allow-Origin': isAllowedDashboardOrigin(origin) ? origin : 'http://localhost:5173',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+    'Access-Control-Allow-Headers': 'Authorization, Content-Type, X-Device-Key',
     'Content-Type': 'application/json; charset=utf-8',
   })
   response.end(body === null ? undefined : JSON.stringify(body))
@@ -59,6 +59,23 @@ const server = createServer(async (request, response) => {
       return sendJson(response, 200, await listInspections(), origin)
     }
 
+    if (request.method === 'POST' && path === '/api/inspections') {
+      requireDeviceKey(request.headers)
+      return sendJson(response, 201, await createInspection(requestBody || {}), origin)
+    }
+
+    const assessmentMatch = path.match(/^\/api\/inspections\/(\d+)\/assessment$/)
+    if (request.method === 'POST' && assessmentMatch) {
+      requireDeviceKey(request.headers)
+      return sendJson(response, 201, await saveAssessment(Number(assessmentMatch[1]), requestBody || {}), origin)
+    }
+
+    const resultMatch = path.match(/^\/api\/inspections\/(\d+)\/result$/)
+    if (request.method === 'GET' && resultMatch) {
+      requireDeviceKey(request.headers)
+      return sendJson(response, 200, await getInspectionResult(Number(resultMatch[1])), origin)
+    }
+
     if (request.method === 'POST' && path === '/api/analytics/insights') {
       const authorization = request.headers.authorization || ''
       const token = authorization.startsWith('Bearer ') ? authorization.slice(7) : null
@@ -69,7 +86,7 @@ const server = createServer(async (request, response) => {
 
     return sendJson(response, 404, { error: 'Route not found.' }, origin)
   } catch (error) {
-    if (error instanceof AuthError) return sendJson(response, error.statusCode, { error: error.message, code: error.code }, origin)
+    if (error instanceof AuthError || error instanceof InspectionError) return sendJson(response, error.statusCode, { error: error.message, code: error.code }, origin)
     return sendJson(response, 400, { error: error.message || 'Invalid request.', code: 'INVALID_REQUEST' }, origin)
   }
 })
