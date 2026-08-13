@@ -1,12 +1,14 @@
 /*
-  EggMinistrator -- ESP32-S3 firmware (load cell + OLED + LEDs + buzzer only)
+  EggMinistrator -- ESP32-S3 firmware (load cell + LCD + LEDs + buzzer only)
   ----------------------------------------------------------------------------
   This board does NOT handle the camera. The camera is a regular USB webcam
-  plugged straight into the same computer that runs egg_inspector_yolo.py --
-  that app already captures and classifies images on its own. This board's
+  plugged into the laptop, which runs ai/inference/classify.py. This board's
   only job is the physical side: read the load cell, send the weight to the
-  computer over USB serial, and show whatever result comes back on the OLED
-  / LEDs / buzzer.
+  server, and show whatever verdict comes back on the LCD / LEDs / buzzer.
+
+  The display is a 16x2 character LCD on I2C, NOT the SSD1306 OLED this
+  sketch originally targeted. Two lines of sixteen characters is the whole
+  canvas -- there is no graphics library and no text sizing.
 
   NOT COMPILE-TESTED -- I don't have this hardware or an Arduino toolchain
   to verify it on. Grounded in current documentation for the pin
@@ -18,9 +20,9 @@
   REQUIRED LIBRARIES (Arduino IDE > Sketch > Include Library > Manage
   Libraries):
     - "HX711 Arduino Library" by Bogdan Necula
-    - "Adafruit SSD1306" by Adafruit
-    - "Adafruit GFX Library" by Adafruit
+    - "LiquidCrystal I2C" by Frank de Brabander
     - "ArduinoJson" by Benoit Blanchon (v6.x)
+  The two Adafruit libraries the OLED needed are no longer required.
   Board: Tools > Board > ESP32 Arduino > pick your specific ESP32-S3 board
   (e.g. "ESP32S3 Dev Module"). Needs the "esp32" board package installed.
 
@@ -36,8 +38,7 @@
 
 #include <HX711.h>
 #include <Wire.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
+#include <LiquidCrystal_I2C.h>
 #include <ArduinoJson.h>
 
 // -----------------------------------------------------------------------
@@ -50,8 +51,8 @@
 // it -- varies by exact module, safest to just avoid the whole range).
 #define HX711_DT_PIN   4
 #define HX711_SCK_PIN  5
-#define OLED_SDA_PIN   8
-#define OLED_SCL_PIN   9
+#define LCD_SDA_PIN    8
+#define LCD_SCL_PIN    9
 #define BUZZER_PIN    10
 #define LED_RED_PIN   11
 #define LED_GREEN_PIN 12
@@ -73,7 +74,13 @@ const float EGG_REMOVED_THRESHOLD_G = 15.0;
 const unsigned long WEIGHT_SEND_INTERVAL_MS = 300;
 
 HX711 scale;
-Adafruit_SSD1306 display(128, 64, &Wire, -1);
+
+// 0x27 is the usual address for the PCF8574 backpack on these modules; a
+// good number of them are 0x3F instead. If the screen stays blank but the
+// backlight is on, that is the first thing to try. An I2C scanner sketch
+// settles it in a minute.
+#define LCD_I2C_ADDRESS 0x27
+LiquidCrystal_I2C lcd(LCD_I2C_ADDRESS, 16, 2);
 
 // Declared up here, before handleLine() and showResult() use it. It was
 // originally defined further down the file, after its first use, which does
@@ -101,12 +108,12 @@ void setup() {
   digitalWrite(LED_GREEN_PIN, LOW);
   digitalWrite(LED_BLUE_PIN, LOW);
 
-  Wire.begin(OLED_SDA_PIN, OLED_SCL_PIN);
-  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
-    // CHECK: 0x3C is the usual SSD1306 address; some 0.96" boards use 0x3D.
-    Serial.println("OLED not found at 0x3C -- check wiring / try address 0x3D");
-  }
-  display.setTextColor(SSD1306_WHITE);
+  Wire.begin(LCD_SDA_PIN, LCD_SCL_PIN);
+  // Unlike the OLED's begin(), LiquidCrystal_I2C::init() reports nothing back,
+  // so a wrong address fails silently -- blank screen, lit backlight. See the
+  // note on LCD_I2C_ADDRESS above.
+  lcd.init();
+  lcd.backlight();
   showMessage("Starting...");
 
   scale.begin(HX711_DT_PIN, HX711_SCK_PIN);
@@ -147,7 +154,7 @@ void loop() {
 
   // An egg just showed up: send its weight and wait for the PC's verdict.
   if (now - lastWeightSend > WEIGHT_SEND_INTERVAL_MS) {
-    showMessage("Egg detected.\nSending weight...");
+    showMessage("Egg detected.\nSending weight");   // 13 / 14 chars, fits 16x2
     Serial.print("W:");
     Serial.println(weight, 2);
     lastWeightSend = now;
@@ -196,25 +203,36 @@ void handleLine(const String &line) {
 }
 
 // ---------------------------------------------------------------------------
+// Every message is at most two lines of sixteen characters. Call sites keep
+// the original "\n" convention and this splits on it, so the message strings
+// elsewhere in the file did not have to change.
+//
+// Anything past column 16 is CUT, not wrapped. A character LCD wraps a long
+// line onto whichever row it feels like -- on many 16x2 modules row 0
+// continues into row 2 of a 4-line address space, which shows up as nothing
+// at all. Truncating is ugly on purpose; silent disappearance is worse.
 void showMessage(const String &msg) {
-  display.clearDisplay();
-  display.setTextSize(1);
-  display.setCursor(0, 0);
-  display.println(msg);
-  display.display();
+  int split = msg.indexOf('\n');
+  String top    = (split < 0) ? msg : msg.substring(0, split);
+  String bottom = (split < 0) ? ""  : msg.substring(split + 1);
+
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print(top.substring(0, 16));
+  lcd.setCursor(0, 1);
+  lcd.print(bottom.substring(0, 16));
 }
 
+// Verdict on the top row, confidence underneath. The longest label we can
+// receive is "not_an_egg" at 10 characters, so it fits without truncating.
 void showResult(const InspectionResultLocal &result) {
-  display.clearDisplay();
-  display.setTextSize(2);
-  display.setCursor(0, 0);
-  display.println(result.label);
-  display.setTextSize(1);
-  display.setCursor(0, 24);
-  display.print("Conf: ");
-  display.print(result.confidence * 100.0, 0);
-  display.println("%");
-  display.display();
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print(result.label.substring(0, 16));
+  lcd.setCursor(0, 1);
+  lcd.print("Conf: ");
+  lcd.print(result.confidence * 100.0, 0);
+  lcd.print("%");
 }
 
 // ---------------------------------------------------------------------------
