@@ -30,6 +30,33 @@ base = tf.keras.applications.MobileNetV2(
 base.trainable = False
 
 model = tf.keras.Sequential([
+    # Augmentation. Shows the model flipped, rotated and zoomed copies of each
+    # photo so it learns "an egg is an egg whichever way it sits" instead of
+    # memorising the exact framing we happened to shoot.
+    #
+    # These layers only do anything while training -- Keras switches them off
+    # automatically for evaluate() and predict(), so validation and test scores
+    # are measured on undistorted images. That is why they live in the model and
+    # not in the dataset pipeline.
+    #
+    # ⚠️ This multiplies VARIATIONS of the eggs we have. It does not invent new
+    # eggs. Ten eggs augmented into a hundred images is still a model that has
+    # only ever seen ten eggs -- it is not a reason to photograph fewer.
+    tf.keras.layers.RandomFlip("horizontal"),
+    tf.keras.layers.RandomRotation(0.1),
+    tf.keras.layers.RandomZoom(0.1),
+
+    # MobileNetV2 was trained on pixels scaled to -1..1, but
+    # image_dataset_from_directory hands over 0..255. Without this the network
+    # still runs and still reports an accuracy -- it is just quietly much worse
+    # than the photos deserve, which reads as "the dataset is bad."
+    #
+    # It sits INSIDE the model on purpose: classify.py feeds raw pixels straight
+    # from cv2, so keeping the scaling here means inference cannot disagree with
+    # training. Put it in the dataset pipeline instead and classify.py would need
+    # a matching line that nobody remembers to keep in step.
+    tf.keras.layers.Rescaling(1.0 / 127.5, offset=-1),
+
     base,
     tf.keras.layers.GlobalAveragePooling2D(),
     tf.keras.layers.Dense(len(train_ds.class_names), activation="softmax"),

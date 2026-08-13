@@ -6,10 +6,29 @@ This is the whole job, start to finish. You do not need to write any code.
 
 ## 1. Set up, once
 
-You need Python installed. Then, from the folder where you cloned the repo:
+**There are two different setups, and most people only need the small one.**
+
+### If you are only taking photos
+
+One install, and any Python version works:
 
 ```
-python -m venv .venv
+pip install opencv-python
+```
+
+That is genuinely all. You do **not** need TensorFlow to take pictures, and skipping it saves you a
+download of several hundred megabytes and the version problem below.
+
+### If you are training the model
+
+⚠️ **TensorFlow does not work on Python 3.14.** There is no build for it — `pip` will just say
+*"No matching distribution found for tensorflow"* and there is nothing you can do about that except
+use an older Python. **Use 3.13.** Check what you have with `py --list`.
+
+From the folder where you cloned the repo, make a private space for the packages:
+
+```
+py -V:3.13 -m venv .venv
 ```
 
 Turn it on. You have to do this every time you open a new terminal:
@@ -42,6 +61,10 @@ ai/dataset/not_an_egg/
 
 Put every photo into one of those three, based on what the photo shows.
 
+**The easy way is to let the capture script file them for you** — see section 3a. It saves straight
+into the right folder as you shoot, so you never move a file by hand. Copying photos in yourself
+still works fine if you already have them.
+
 | Folder | Put a photo here when |
 |---|---|
 | `good/` | It is an egg and you see nothing wrong inside it. |
@@ -61,6 +84,44 @@ Filenames do not matter at all. `IMG_0041.jpg` is fine.
 Every photo has to be taken the same way: same station, same candling light, same camera position, egg in the same spot. The model learns whatever is consistent in the images. If the good eggs are shot at the station and the defective ones are shot on a table by a window, the model learns "station versus window" instead of "good versus defective", and it will look accurate in testing and fail in real use.
 
 The same rule catches people out on `not_an_egg`. Those photos must also be taken at the station with the candling light on, just with no egg there. **Do not** photograph a mug on a desk. The whole point of that folder is to recognise an empty platform under candling light, so that is what it has to be shown.
+
+---
+
+## 3a. Shooting with the capture script
+
+Run this from the top folder of the repo, with your own name as the tag:
+
+```
+py ai/capture.py --tag yourname
+```
+
+A window opens showing what the webcam sees, live. Put an egg on the candler, **look at it, decide
+what it is, and press one key:**
+
+| Key | Saves the picture into |
+|---|---|
+| **G** | `good/` |
+| **D** | `defective/` |
+| **N** | `not_an_egg/` |
+| **Q** | quit |
+
+That is the whole interface. The photo is saved instantly into the right folder, and the running
+counts are drawn on the window so you can see whether the three are staying even.
+
+**If the window shows your own face**, it grabbed the laptop's built-in camera instead of the USB
+one. Quit and add `--camera 1` (then `2`, if 1 is not it either).
+
+**Why you label as you shoot.** You are already looking at the egg through the candler, so that is
+the moment you know what it is. Taking 200 unlabelled photos and sorting them afterwards means
+deciding all over again from a screen, which is slower and gets more of them wrong.
+
+**The `--tag` is not optional and not cosmetic.** It goes into every filename, like
+`good_jasfer_20260813_232041.jpg`. It is what stops two people's batches overwriting each other when
+they get merged. Use the same tag every time.
+
+⚠️ **Send a small first batch — 10 to 15 photos — and wait for it to be checked** before you shoot
+hundreds. Focus, framing and candler position are cheap to fix after fifteen photos and expensive
+after three hundred. Nobody has yet confirmed the webcam can even focus at candling distance.
 
 ---
 
@@ -93,8 +154,13 @@ python ai/inference/classify.py path/to/some_photo.jpg
 It prints one line, like:
 
 ```
-{"image": "egg_0042.jpg", "class": "defective", "confidence": 0.91}
+{"image": "egg_0042.jpg", "class": "defective", "confidence": 0.91,
+ "model_name": "candling-classifier", "model_version": "0.3.0+20260813T144500Z",
+ "inference_time_ms": 105}
 ```
+
+The last three fields describe *which* model answered. They are written by the training run, so they
+cannot drift from the weights that produced the result.
 
 ---
 
