@@ -34,7 +34,7 @@ export default function HistoryPage() {
 
     loadHistory()
   }, [authenticatedFetch])
-  const filtered = useMemo(() => historyScans.filter((scan) => (!selectedDate || scan.date === selectedDate) && (size === 'All Sizes' || scan.size === size) && (quality === 'All Quality' || scan.quality === quality) && Object.values(scan).join(' ').toLowerCase().includes(search.toLowerCase())), [search, size, quality, selectedDate])
+  const filtered = useMemo(() => historyScans.filter((scan) => (!selectedDate || scan.date === selectedDate) && (size === 'All Sizes' || scan.size === size) && (quality === 'All Quality' || scan.quality === quality) && Object.values(scan).join(' ').toLowerCase().includes(search.toLowerCase())), [historyScans, search, size, quality, selectedDate])
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const visible = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
   const changeFilter = (setter) => (event) => { setter(event.target.value); setPage(1) }
