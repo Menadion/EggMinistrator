@@ -249,13 +249,26 @@ These are unresolved. If your task touches one, ask before assuming.
    spec in 4.3 — `model_version`, `raw_result`, the four server-owned columns — describes an insert
    that no code performs. **Owner: R.** This and item 1 are the two things standing between the
    project and a pipeline that runs end to end.
-4. 🟡 **The ESP32-S3 firmware exists as an untested draft.** `firmware/EggMinistrator_ESP32S3.ino`,
-   written by J, cherry-picked from `origin/Jasfer` on 2026-08-13. Reads the HX711, drives the
-   display, LEDs and buzzer. **Never compiled and never run on hardware** — the banner at the top of
-   the file says so and should stay until someone flashes it. Three known gaps: it posts over USB
-   serial rather than Wi-Fi (contradicts 4.1), its display code targets an SSD1306 OLED rather than
-   the **16x2 I²C LCD** the station actually has, and `handleLine()` waits for the egg to be removed
-   with no timeout. The rest of J's branch was **not** taken; see section 7 resolved notes below.
+4. 🟡 **The ESP32-S3 firmware exists but has never been compiled or flashed.**
+   `firmware/EggMinistrator_ESP32S3.ino`, written by J, cherry-picked from `origin/Jasfer` on
+   2026-08-13 and reworked the same day: it now posts over Wi-Fi per 4.1, drives the **16x2 I²C
+   LCD** the station actually has, and bounds every wait that used to block forever. **Never
+   compiled and never run on hardware** — the banner at the top of the file says so and stays until
+   someone flashes it. The rest of J's branch was **not** taken; see the resolved notes below.
+
+   Two things to know before flashing. **Credentials live in `firmware/secrets.h`**, which is
+   gitignored — copy `secrets.h.example` and fill it in; if `secrets.h` ever appears in
+   `git status`, something is wrong with the ignore rule. And **`LCD_I2C_ADDRESS` is a guess**:
+   `0x27` is the common PCF8574 address but a large share of these modules are `0x3F`, and
+   `LiquidCrystal_I2C::init()` returns nothing, so a wrong address fails silently as a blank screen
+   with a lit backlight.
+
+   ✅ **The firmware can be tested without waiting on item 3.** `firmware/stub_server.py` answers
+   all three calls in 4.1 using nothing but the Python standard library, inventing a verdict a
+   second and a half after each weight arrives and cycling `good` → `defective` → `not_an_egg` so
+   every LED and buzzer path gets exercised. It is a test double for the seam, **not** a preview of
+   the backend — it stores nothing and proves nothing about R's implementation. What it proves is
+   the board against this spec, which is the half that can be finished now.
 
 **Resolved 2026-08-13** *(kept for context, do not re-open)*:
 
