@@ -28,6 +28,7 @@ dataset/**
 # classes.json is written by the same training run as the weights and describes only that
 # model. Committing it leaves a copy in git that can drift from weights nobody has.
 ai/models/classes.json
+ai/models/version.json
 *.h5
 *.keras
 *.tflite

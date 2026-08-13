@@ -37,8 +37,9 @@ The frame yields two kinds of finding:
   nothing else. Run it after adding or renaming a folder (see the warning below).
 - `inference/classify.py` — the script that runs at the station: loads the model, classifies one
   captured egg, prints one JSON line.
-- `models/` — written by `train.py`, **both files gitignored**: `egg.keras` (the weights) and
-  `classes.json` (the class list). Neither is in the repo; you get them by training.
+- `models/` — written by `train.py`, **all three files gitignored**: `egg.keras` (the weights),
+  `classes.json` (the class list), and `version.json` (the model name and version string that
+  `classify.py` reports to the database). None are in the repo; you get them by training.
 - `dataset/` — three class folders, committed empty via `.gitkeep`. The photos themselves stay out
   of git; the folders are tracked so nobody has to type a class name and get it wrong.
 - [`how-to-add-images.md`](how-to-add-images.md) — the shooting and training guide. **Hand this to
@@ -107,8 +108,9 @@ change now reports the wrong label with full confidence — no error, no warning
 
 - `classes.json` is **gitignored on purpose.** It is written by the same run as the weights and
   describes only that model. A committed copy would drift from weights nobody else has.
-- **`classes.json` and `egg.keras` travel together.** Sending one without the other produces
-  confident nonsense.
+- **`classes.json`, `version.json` and `egg.keras` travel together — all three or none.** Sending
+  one without the others produces confident nonsense, or a database row stamped with a version that
+  describes different weights.
 - After touching the dataset folders, run `python ai/training/check_order.py` and retrain.
 
 - **Location:** the three folders in `ai/dataset/`, on each person's own machine. The folders are
@@ -136,7 +138,7 @@ removed once committed). See the repo `CONTRIBUTING.md`.
 
 ### The three splits, and the one you are not allowed to look at
 
-`train.py:14-16` cuts the data three ways, not two:
+`train.py:20-22` cuts the data three ways, not two:
 
 ```python
 half    = len(val_ds) // 2
@@ -145,8 +147,8 @@ val_ds  = val_ds.skip(half)
 ```
 
 `image_dataset_from_directory` can only produce two subsets (`"training"` and `"validation"` — there
-is no `"test"`), so the 20% validation slice is halved again. `train.py:39` trains against `val_ds`;
-`train.py:40` measures `test_ds` once with `model.evaluate()`.
+is no `"test"`), so the 20% validation slice is halved again. `train.py:45` trains against `val_ds`;
+`train.py:46` measures `test_ds` once with `model.evaluate()`.
 
 **Do not reorder those three lines.** `.take()` and `.skip()` return new datasets and leave the
 original alone, so both must read `val_ds` *before* line 16 rebinds it. Rebind first and line 15

@@ -1,5 +1,11 @@
 import tensorflow as tf
 import json
+from datetime import datetime, timezone
+
+# Bump MODEL_VERSION for a meaningful change (new classes, new architecture). The timestamp is
+# appended automatically so that every run is distinguishable even if nobody bumps it.
+MODEL_NAME = "candling-classifier"
+MODEL_VERSION = "0.3.0"
 
 train_ds = tf.keras.utils.image_dataset_from_directory(
     "ai/dataset", image_size=(224, 224),
@@ -39,3 +45,10 @@ model.compile(
 model.fit(train_ds, validation_data=val_ds, epochs=3)
 model.evaluate(test_ds)
 model.save("ai/models/egg.keras")
+
+# Written in the same run that saved the weights above, so the version can never describe a
+# different model than the one on disk. classify.py reports it; the database stores it.
+stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+
+with open("ai/models/version.json", "w") as file:
+    file.write(json.dumps({"name": MODEL_NAME, "version": f"{MODEL_VERSION}+{stamp}"}))
