@@ -75,3 +75,9 @@ dashboard-vocabulary.md
 # a spec — the PNS/BAFS size grades the `size_grades` table implements — moved to database/.
 # Committed images now live beside what they document (assets/, hardware/, dashboard/).
 docs/
+
+# === Firmware credentials (section 6: never commit secrets) ===
+# An Arduino sketch has no .env, so firmware/secrets.h is the equivalent: Wi-Fi password, the
+# server's LAN IP, and the device key. secrets.h.example is committed with placeholders and is
+# the file you copy from.
+firmware/secrets.h
