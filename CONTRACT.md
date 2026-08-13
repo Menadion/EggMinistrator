@@ -240,7 +240,20 @@ These are unresolved. If your task touches one, ask before assuming.
 1. 🔴 **There is no dataset yet.** No labelled defective eggs exist, so the **85% accuracy target in
    the paper (Table 9) cannot be measured.** The model has trained on 2 eggs and 10 noise images and
    returns ~0.50 confidence. **This is the highest-value open item in the project** and no document
-   edit touches it. Collection is team work, not one person's.
+   edit touches it.
+
+   ⚠️ **Collection is NOT team work, and this line used to say it was.** There is one candler and it
+   is J's, so J is the only person who can see inside an egg. Everything follows from that: hunting
+   blood and meat spots across the group is impossible, and at ~1% natural occurrence one person's
+   consumption yields near zero. **Blood and meat spots are effectively uncollectable on this
+   timeline** — see item 5. What one person *can* batch: cracks made on a counter edge (free,
+   unlimited, and exactly FR-14) and aged eggs with enlarged air cells (free, needs a week, and
+   genuinely *internal* quality, which is what FR-12 claims). Those two carry the defective class.
+
+   ⚠️ **No usable photo can be taken until the egg stands up on its own.** Fingers holding the egg
+   appear in the candling frame and will not exist at inference, so the model would learn a grip.
+   The final holder (BOM item 4) also has to transfer weight to the load cell — the photo rig does
+   not. A bottle cap with the centre cut out is enough, provided it is the same every shot.
 2. 🟡 **The load cell spec is chosen but not bought.** The paper previously specified 5 kg against a
    ±2 g target, which wastes resolution on a 60 g object. The BOM now specifies **1 kg**. Confirm on
    purchase.
@@ -269,6 +282,30 @@ These are unresolved. If your task touches one, ask before assuming.
    every LED and buzzer path gets exercised. It is a test double for the seam, **not** a preview of
    the backend — it stores nothing and proves nothing about R's implementation. What it proves is
    the board against this spec, which is the half that can be finished now.
+
+5. 🟡 **Paper revisions owed. None applied yet. Owner: M.** Parked here so they are not quietly
+   buried — the paper is not in this repo, so this list is the only record that they are outstanding.
+
+   - **Parts list.** The station gets a **16x2 I²C LCD and a buzzer** (plus indicator LEDs) for
+     FR-15. All pre-owned, so they go in the *already owned* table at ₱0. ⚠️ **State explicitly that
+     the total is unchanged** — a reader who sees new components will assume the money moved.
+     Tables 2, 6 and 15 keep **₱3,432.00**.
+   - **Defect scope.** Blood and meat spots are **under-sampled, not removed.** Write them as a
+     stated limitation with the sampling constraint named (one candler, ~1% natural occurrence) and
+     list them as future work. ⚠️ **Do not delete the capability.** FR-12 claims *internal* quality;
+     if `defective` collapses to cracks alone, the system is transilluminating in order to find a
+     shell defect, and the candler and the light-sealed chamber lose their justification. The
+     internal claim is carried by **air-cell / ageing** defects, which are free.
+   - **Transport wording.** Confirm §2.2 and the Ch4 sensing layer match section 4.1: the ESP32-S3
+     posts weight over **HTTP on Wi-Fi**, and its USB cable carries power only. The design did not
+     change, but the prose should be checked against it.
+   - **FR-14 phrasing.** It says *detect* cracks, and the model outputs `defective` without naming
+     the defect type. That satisfies it as written — make sure the paper does not overclaim
+     per-defect classification anywhere.
+
+   ⏳ **This list is incomplete.** The TENTREP panel's full revision list is still pending a
+   transcription of the 2026-08-11 recording, and that transcription has not been done. Nothing here
+   should be treated as the whole set until it has.
 
 **Resolved 2026-08-13** *(kept for context, do not re-open)*:
 
