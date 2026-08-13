@@ -1,0 +1,17 @@
+# NOTE: train_yolo.py trains a YOLOv8 *classification* model, which derives
+# its classes automatically from the subfolder names under dataset/train/
+# and dataset/val/ (created by prepare_dataset.py from dataset/collected/).
+# This file isn't read by that script -- it's kept as a single place that
+# documents the 3 official output classes from the project doc (Section
+# 3.2.2 Success Criteria), so the folder names above and this list don't
+# quietly drift apart. If a future version switches to an object-detection
+# model, this becomes load-bearing again -- keep it in sync either way.
+
+path: ./dataset
+train: images/train
+val: images/val
+
+names:
+  0: good
+  1: cracked-damaged
+  2: blood-meat-spot

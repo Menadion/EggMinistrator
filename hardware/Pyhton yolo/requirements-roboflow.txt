@@ -1,0 +1,9 @@
+# Optional -- only needed if you want the "Analyze (Roboflow)" cloud-model
+# button / roboflow_classifier.py. The app works fully without this.
+#
+# Install with:  pip install -r requirements-roboflow.txt
+#
+# If this fails on a very new Python version (this package can lag behind
+# new Python releases by a few months), the rest of the app is unaffected --
+# just skip it and use the local model instead.
+inference-sdk>=0.9.0

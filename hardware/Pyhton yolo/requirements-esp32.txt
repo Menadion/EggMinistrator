@@ -1,0 +1,6 @@
+# Optional -- only needed if you're using the ESP32-S3 board (load cell +
+# OLED + LEDs + buzzer). The app works fully without this -- weight entry
+# just stays manual and there's no physical LED/buzzer feedback.
+#
+# Install with:  pip install -r requirements-esp32.txt
+pyserial>=3.5

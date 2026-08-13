@@ -1,0 +1,4 @@
+# Optional -- only needed to run egg_server.py (the bridge between the
+# ESP32-CAM hardware and this project's existing classifier code).
+# Install with: pip install -r requirements-server.txt
+flask>=3.0.0

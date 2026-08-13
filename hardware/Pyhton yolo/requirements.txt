@@ -1,0 +1,6 @@
+ultralytics>=8.2.0
+opencv-python
+numpy
+Pillow
+requests
+customtkinter>=6.0.0    # <6.0.0 can crash on Python 3.12+ (imports the removed 'distutils' module)
