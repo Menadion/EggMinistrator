@@ -322,7 +322,51 @@ These are unresolved. If your task touches one, ask before assuming.
 
 ---
 
-## 8. How to use this with your AI
+## 8. Functional requirements — the live checklist
+
+Transcribed from the paper, **Table 10 / §3.2.3**. It lived only in the PDF, which meant nobody could
+check their own work against the thing being graded. **The bar is 50% for SOFTDEV and 100% for
+finals.** Update the status column when something lands; it is the project plan now, not just a
+defense aid.
+
+**Status as of 2026-08-13: 4 met, 5 partial, 6 not met — 27%. Eight are needed for 50%.**
+
+| FR | Requirement | | Where it stands |
+|---|---|---|---|
+| 01 | Capture egg images using a stationary camera | 🔴 | no capture code exists. `classify.py` reads a file off disk (`cv2.imread(sys.argv[1])`); nothing opens a webcam |
+| 02 | Automatically detect eggs on the platform | 🟡 | firmware triggers at 20 g — written, never flashed |
+| 03 | Allow authorized personnel to override an AI result | 🔴 | schema has `is_overridden`, `final_disposition`, `final_grade`; **no code touches any of them.** Cheapest unmet FR in the table |
+| 04 | Assign a size class from weight (PNS, Table 11) | 🟡 | `size_grades` + display exist; nothing *assigns* `size_grade_id`. Do it inside the 4.1 step-1 write |
+| 05 | Automatically count inspected eggs | ✅ | dashboard |
+| 06 | Store inspection records in the database | 🔴 | no ingest route — see section 7 item 3 |
+| 07 | Display results on the monitoring dashboard | ✅ | builds clean |
+| 08 | Generate inspection reports | 🟡 | `ReportsPage.jsx` exists, never verified |
+| 09 | Display daily production statistics | ✅ | Analytics: per-day averages, volume charts |
+| 10 | Allow administrators to access inspection history | ✅ | HistoryPage + admin accounts |
+| 11 | Capture a candling image under transillumination | 🔴 | **same missing capture code as FR-01** |
+| 12 | Classify internal egg quality from the candling image | 🔴 | `classify.py` is written but no trained model exists — `ai/models/` is absent |
+| 13 | Measure the weight of each inspected egg | 🟡 | firmware written, never flashed |
+| 14 | Detect large cracks and gross shell damage | 🔴 | **same missing model as FR-12** |
+| 15 | Indicate the result at the station, visual + audible | 🟡 | firmware drives LCD, LEDs and buzzer — written, never flashed |
+
+### They move in clusters, not one at a time
+
+- **Software cluster (R, mostly) — clears 50% with no hardware and no model.** `FR-08` needs only
+  verifying. `FR-06` is the ingest already in progress. `FR-04` comes with it. `FR-03` needs a button
+  and an endpoint against columns that have been sitting ready. **That is 8/15 = 53%.**
+- **Hardware cluster (J) — `FR-02`, `FR-13`, `FR-15` all flip on the first successful flash.** → 11/15.
+- **AI cluster (M) — `FR-01`+`FR-11` are one capture script, `FR-12`+`FR-14` are one training run.**
+  Two jobs, four requirements, blocked on nobody.
+
+⚠️ **FR-14 asks you to *detect* cracks, not to name them.** The model outputs `defective`, and it does
+not distinguish a crack from a blood spot. That satisfies the requirement as written — but say so
+deliberately rather than discovering it in front of a panel. This is also where J's `data.yaml`
+class list came from: FR-12 names internal quality and FR-14 names cracks, and he read two
+*detection* requirements as a *labelling* scheme. §3.2.2 has the correct three classes.
+
+---
+
+## 9. How to use this with your AI
 
 1. Paste this whole file into a new chat before your first request.
 2. Say which folder you own and what you are trying to build.
