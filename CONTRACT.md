@@ -122,7 +122,7 @@ These land in the `ai_assessments` table:
 | `model_name` | `VARCHAR(100)` | nullable |
 | `model_version` | `VARCHAR(50)` | **`NOT NULL`** |
 | `inference_time_ms` | `INT UNSIGNED` | nullable |
-| `raw_result` | `LONGTEXT` | nullable |
+| `raw_result` | `LONGTEXT` | nullable; the verbatim JSON line above |
 
 > ✅ **Settled 2026-08-13 — `model_version` is supplied by the classifier, not typed by hand.**
 > `train.py` writes `ai/models/version.json` in the same run that saves the weights, and
@@ -134,8 +134,20 @@ These land in the `ai_assessments` table:
 > that produced the row. Same failure as a committed `classes.json`. ⚠️ `version.json` now travels
 > with `egg.keras` and `classes.json` — **all three or none.**
 
-> 🔧 **TO FILL (M + R):** is `raw_result` meant to hold the full JSON above? If so, say so here, so
-> the dashboard knows what it can read out of it.
+> ✅ **Settled 2026-08-13 — `raw_result` holds the full JSON line, stored verbatim.**
+> The server stores the exact string `classify.py` printed, character for character — **not** a
+> re-serialised copy. Parsing the JSON and dumping it again reorders keys and changes spacing, and
+> the point of the column is that it is the classifier's own output rather than a version of it.
+> Photocopy the letter; do not retype it.
+>
+> **Why it is kept.** Every other column here is written by the insert code. `raw_result` is the only
+> value in the row that arrived untouched, so when a stored result looks wrong it answers *"did the
+> model say this, or did our code change it?"* without re-running the pipeline. The six emitted
+> fields also land in **two** tables — five columns here, and `image` in `inspection_images` — so this
+> is the one place the whole payload stays together.
+>
+> ⚠️ **Diagnostic record, not a data source.** Nothing should query, filter or chart it. The columns
+> are what the dashboard reads; this is what you open when one of them looks wrong.
 
 ### 4.4 Database → dashboard
 
