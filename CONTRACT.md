@@ -287,7 +287,18 @@ These are unresolved. If your task touches one, ask before assuming.
    `LiquidCrystal_I2C::init()` returns nothing, so a wrong address fails silently as a blank screen
    with a lit backlight.
 
-   ✅ **The firmware can be tested without waiting on item 3.** `firmware/stub_server.py` answers
+   ✅ **SOFTDEV will be demonstrated by simulation, not by the prototype.** Team decision,
+   2026-08-14: a working simulation beats a half-wired board on the day. `firmware/simulate_station.py`
+   plays the board and the laptop against the **real** backend — real endpoints, real device-key
+   check, real size-grade lookup, real database writes, real dashboard. Only four numbers per egg are
+   invented: weight, class, confidence, filename. Run it beside the browser and rows appear in
+   History as it goes.
+
+   ⚠️ **Say it out loud before anyone asks.** *"The sensing hardware is in assembly, so this stands
+   in for the load cell and camera — everything downstream is the real system."* Announcing it is
+   normal practice; being caught by it is not.
+
+   ✅ **The firmware can also be tested without waiting on item 3.** `firmware/stub_server.py` answers
    all three calls in 4.1 using nothing but the Python standard library, inventing a verdict a
    second and a half after each weight arrives and cycling `good` → `defective` → `not_an_egg` so
    every LED and buzzer path gets exercised. It is a test double for the seam, **not** a preview of
