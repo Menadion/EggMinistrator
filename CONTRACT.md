@@ -254,9 +254,16 @@ These are unresolved. If your task touches one, ask before assuming.
    appear in the candling frame and will not exist at inference, so the model would learn a grip.
    The final holder (BOM item 4) also has to transfer weight to the load cell — the photo rig does
    not. A bottle cap with the centre cut out is enough, provided it is the same every shot.
-2. 🟡 **The load cell spec is chosen but not bought.** The paper previously specified 5 kg against a
-   ±2 g target, which wastes resolution on a 60 g object. The BOM now specifies **1 kg**. Confirm on
-   purchase.
+2. ✅ **RESOLVED 2026-08-14 — the 1 kg load cell and HX711 arrived.** The paper previously specified
+   5 kg against a ±2 g target, which wastes resolution on a 60 g object; the BOM specifies **1 kg**
+   and that is what was bought. **This was the only outstanding item with a shipping delay attached**
+   — everything remaining is work, not waiting.
+
+   Next on it, in order: wire load cell → HX711 → ESP32-S3, then **calibrate**, which is the longest
+   job and needs no network, no server and no enclosure. The procedure is in the header comment of
+   `firmware/EggMinistrator_ESP32S3.ino` — print `get_units(10)` in a loop, place a known weight,
+   divide. ⚠️ `LOADCELL_CALIBRATION_FACTOR` is still the library's placeholder `2280.0` and every
+   weight the board reports is meaningless until that number is replaced.
 3. ✅ **RESOLVED 2026-08-14 — the server receives inspections.** Built by R, merged in `de64b77`,
    and verified end to end against MariaDB. All three calls in section 4.1 exist and behave as
    specified. `DEVICE_API_KEY` now has a real value in `backend/.env`; **the same string has to go
