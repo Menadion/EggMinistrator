@@ -257,11 +257,15 @@ These are unresolved. If your task touches one, ask before assuming.
 2. 🟡 **The load cell spec is chosen but not bought.** The paper previously specified 5 kg against a
    ±2 g target, which wastes resolution on a 60 g object. The BOM now specifies **1 kg**. Confirm on
    purchase.
-3. 🔴 **The server cannot receive an inspection.** None of the three calls in section 4.1 exist. The
-   backend on `main` serves `GET /api/inspections` and has no route that writes one, so every column
-   spec in 4.3 — `model_version`, `raw_result`, the four server-owned columns — describes an insert
-   that no code performs. **Owner: R.** This and item 1 are the two things standing between the
-   project and a pipeline that runs end to end.
+3. ✅ **RESOLVED 2026-08-14 — the server receives inspections.** Built by R, merged in `de64b77`,
+   and verified end to end against MariaDB. All three calls in section 4.1 exist and behave as
+   specified. `DEVICE_API_KEY` now has a real value in `backend/.env`; **the same string has to go
+   into `firmware/secrets.h` or the board gets a 401.** `requireDeviceKey` fails closed when the key
+   is unset — 503 rather than allowing anything through — and compares with `timingSafeEqual`.
+
+   🟡 **One cosmetic gap left.** `createInspection` sets no `batch_id` or `sequence_number`, so
+   `formatEggId` falls back to a truncated UUID: new rows read `78919cdf…` in the dashboard while
+   the seeded ones read `B001-EGG-001`. Harmless, and it will look like a bug on a projector.
 4. 🟡 **The ESP32-S3 firmware exists but has never been compiled or flashed.**
    `firmware/EggMinistrator_ESP32S3.ino`, written by J, cherry-picked from `origin/Jasfer` on
    2026-08-13 and reworked the same day: it now posts over Wi-Fi per 4.1, drives the **16x2 I²C
@@ -394,7 +398,9 @@ check their own work against the thing being graded. **The bar is 50% for SOFTDE
 finals.** Update the status column when something lands; it is the project plan now, not just a
 defense aid.
 
-**Status as of 2026-08-13: 6 met, 4 partial, 5 not met — 40%. Eight are needed for 50%.**
+**Status as of 2026-08-14: 8 met, 3 partial, 4 not met — 53%. ✅ The SOFTDEV bar of 50% is cleared**
+**on software alone**, with no hardware flashed and no model trained. The remaining four are all
+`ai/` and all wait on one thing: photographs.
 
 > ⚠️ **`final_grade` holds the SIZE, not the verdict.** The sample data puts `Medium` and `Large` in
 > it. An early cut of the FR-03 override wrote `"defective"` there and corrupted the size shown on
@@ -407,9 +413,9 @@ defense aid.
 | 01 | Capture egg images using a stationary camera | 🔴 | no capture code exists. `classify.py` reads a file off disk (`cv2.imread(sys.argv[1])`); nothing opens a webcam |
 | 02 | Automatically detect eggs on the platform | 🟡 | firmware triggers at 20 g — written, never flashed |
 | 03 | Allow authorized personnel to override an AI result | ✅ | **built and verified 2026-08-13** against MariaDB — `PATCH /api/inspections/:code/override`, any signed-in account, per-row control on History. Writes `final_disposition` + `is_overridden`, appends who and when to `notes`, and never touches `ai_disposition`. `400` on an invalid label, `401` without a token |
-| 04 | Assign a size class from weight (PNS, Table 11) | 🟡 | `size_grades` + display exist; nothing *assigns* `size_grade_id`. Do it inside the 4.1 step-1 write |
+| 04 | Assign a size class from weight (PNS, Table 11) | ✅ | **verified 2026-08-14** — R's `findSizeGrade()` matches the weight against the `size_grades` bands and sets `size_grade_id` on insert. Tested: 58.20 g → `Medium`. A `not_an_egg` verdict nulls it again, since a misload has no size |
 | 05 | Automatically count inspected eggs | ✅ | dashboard |
-| 06 | Store inspection records in the database | 🔴 | no ingest route — see section 7 item 3 |
+| 06 | Store inspection records in the database | ✅ | **verified end to end 2026-08-14.** Built by R, merged in `de64b77`. Weight POSTed → row minted with an id → assessment POSTed against it → verdict polled back. Every 4.3 column lands, including the four the server owns, `raw_result` byte-identical to what was sent, and the `inspection_images` row created |
 | 07 | Display results on the monitoring dashboard | ✅ | builds clean |
 | 08 | Generate inspection reports | ✅ | verified 2026-08-13: report builder + filters + paginated preview over real DB rows, and `downloadCsv()` genuinely produces a file. ⚠️ the **"Export PDF" button just calls `window.print()`** — same handler as Print, nothing generates a PDF. Relabel or remove before a demo |
 | 09 | Display daily production statistics | ✅ | Analytics: per-day averages, volume charts |
