@@ -286,10 +286,17 @@ These are unresolved. If your task touches one, ask before assuming.
 5. 🟡 **Paper revisions owed. None applied yet. Owner: M.** Parked here so they are not quietly
    buried — the paper is not in this repo, so this list is the only record that they are outstanding.
 
-   - **Parts list.** The station gets a **16x2 I²C LCD and a buzzer** (plus indicator LEDs) for
-     FR-15. All pre-owned, so they go in the *already owned* table at ₱0. ⚠️ **State explicitly that
-     the total is unchanged** — a reader who sees new components will assume the money moved.
-     Tables 2, 6 and 15 keep **₱3,432.00**.
+   - **Parts list.** The station gets a **16x2 I²C LCD and three indicator LEDs**, both pre-owned,
+     so they go in the *already owned* table at ₱0. ⚠️ **State explicitly that the total is
+     unchanged** — a reader who sees new components will assume the money moved. Tables 2, 6 and 15
+     keep **₱3,432.00**.
+   - 🔴 **FR-15 is half met and there is no buzzer.** The requirement asks for a visual indicator
+     **and an audible signal**; the LCD and LEDs cover the first, nothing covers the second. The
+     firmware is already written for it — `BUZZER_PIN` on GPIO10, `beep()` sounding 1/2/3 tones for
+     good/defective/not_an_egg — so **the code exists and the part does not.** A passive piezo
+     buzzer is ₱20–50 and two wires. If it is bought it joins the parts-to-buy table and the totals
+     *do* move; if the audible signal is instead played through the laptop speaker, say so in the
+     paper, because the laptop is at the station but it is not the station.
    - **Defect scope.** Blood and meat spots are **under-sampled, not removed.** Write them as a
      stated limitation with the sampling constraint named (one candler, ~1% natural occurrence) and
      list them as future work. ⚠️ **Do not delete the capability.** FR-12 claims *internal* quality;
@@ -306,6 +313,27 @@ These are unresolved. If your task touches one, ask before assuming.
    ⏳ **This list is incomplete.** The TENTREP panel's full revision list is still pending a
    transcription of the 2026-08-11 recording, and that transcription has not been done. Nothing here
    should be treated as the whole set until it has.
+
+6. 🔴 **Nobody has asked LH Deli what they reject an egg for, and that answer defines `defective`.**
+   Not a documentation question — it decides what the model is trained to do.
+
+   The defective class currently leans on **aged eggs / enlarged air cells**, because they are the
+   only *internal* defect that can be produced for free (item 1). But an aged egg is a lower
+   **grade**, not necessarily a **reject** — commercial graders sort by air cell depth into AA/A/B
+   rather than throwing the egg away. ⚠️ **If the client does not reject old eggs and we train the
+   model to call them `defective`, we have built a machine that rejects sellable stock.** It would
+   still score well on our own test set, because that test set agrees with our labels and the client
+   does not. That failure is invisible from inside the project.
+
+   **Ask "what makes you reject an egg today?"** rather than "do you check age?" — the first defines
+   the class, the second only invites a yes/no. If the answer is that they assess nothing internal,
+   that is a genuine innovation claim and worth making; but it has to be their answer, not our
+   assumption.
+
+   **Bundle this with the client contact already owed.** The TENTREP panel called the economic value
+   unspecific and asked for baseline data from the client's operation. One conversation, three
+   questions: what gets rejected today, is anything internal assessed today, and how many eggs per
+   day / how many graders / how long. Do not make two calls.
 
 **Resolved 2026-08-13** *(kept for context, do not re-open)*:
 
@@ -390,7 +418,7 @@ defense aid.
 | 12 | Classify internal egg quality from the candling image | 🔴 | `classify.py` is written but no trained model exists — `ai/models/` is absent |
 | 13 | Measure the weight of each inspected egg | 🟡 | firmware written, never flashed |
 | 14 | Detect large cracks and gross shell damage | 🔴 | **same missing model as FR-12** |
-| 15 | Indicate the result at the station, visual + audible | 🟡 | firmware drives LCD, LEDs and buzzer — written, never flashed |
+| 15 | Indicate the result at the station, visual + audible | 🟡 | **visual half only.** LCD + 3 LEDs exist and the firmware drives them; **there is no buzzer**, so nothing satisfies "audible signal". The `beep()` code is already written and waiting on a ₱20–50 part — see section 7 item 5 |
 
 ### They move in clusters, not one at a time
 
