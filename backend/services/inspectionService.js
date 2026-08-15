@@ -77,18 +77,51 @@ export function requireDeviceKey(headers) {
   if (expected.length !== received.length || !timingSafeEqual(expected, received)) throw new InspectionError('The supplied device key is invalid.', 401, 'DEVICE_KEY_INVALID')
 }
 
+// A batch is one day's inspection run at one station. Decided 2026-08-15.
+// The station has no operator screen to open and close a batch by hand, so the
+// day is the unit that needs nobody to remember anything: the first egg of the
+// day opens the batch and the rest join it.
+//
+// The date comes from CURDATE() rather than from JavaScript so that it agrees
+// with captured_at, which defaults to the database clock. Deriving it in Node
+// puts the batch a day out whenever UTC and local time fall either side of
+// midnight, which in Manila is every evening.
+async function findOrCreateDailyBatch(connection, stationName) {
+  const [result] = await connection.execute(`
+    INSERT INTO inspection_batches (batch_code, source_name, notes, started_at)
+    VALUES (CONCAT(?, ' ', CURDATE()), ?, 'Daily inspection run, opened automatically by the station.', CURRENT_TIMESTAMP)
+    ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id)
+  `, [stationName, stationName])
+  return result.insertId
+}
+
+// sequence_number counts within its own batch, so it restarts at 1 each day.
+// The batch row is locked first: two eggs arriving together would otherwise
+// read the same MAX and both claim the same number.
+async function nextSequenceNumber(connection, batchId) {
+  await connection.execute('SELECT id FROM inspection_batches WHERE id = ? FOR UPDATE', [batchId])
+  const [rows] = await connection.execute(
+    'SELECT COALESCE(MAX(sequence_number), 0) + 1 AS nextNumber FROM egg_inspections WHERE batch_id = ?',
+    [batchId],
+  )
+  return Number(rows[0].nextNumber)
+}
+
 export async function createInspection({ weight_g: weightValue }) {
   const weight = parseWeight(weightValue)
   const connection = await database.getConnection()
 
   try {
     await connection.beginTransaction()
+    const stationName = process.env.STATION_NAME || 'Station 1'
     const sizeGrade = await findSizeGrade(connection, weight)
+    const batchId = await findOrCreateDailyBatch(connection, stationName)
+    const sequenceNumber = await nextSequenceNumber(connection, batchId)
     const [result] = await connection.execute(`
       INSERT INTO egg_inspections (
-        inspection_code, station_name, weight_g, size_grade_id, ai_disposition, final_disposition, final_grade
-      ) VALUES (?, ?, ?, ?, 'review', 'review', ?)
-    `, [randomUUID(), process.env.STATION_NAME || 'Station 1', weight, sizeGrade.id, sizeGrade.label])
+        inspection_code, batch_id, sequence_number, station_name, weight_g, size_grade_id, ai_disposition, final_disposition, final_grade
+      ) VALUES (?, ?, ?, ?, ?, ?, 'review', 'review', ?)
+    `, [randomUUID(), batchId, sequenceNumber, stationName, weight, sizeGrade.id, sizeGrade.label])
     await connection.commit()
     return { id: result.insertId }
   } catch (error) {
