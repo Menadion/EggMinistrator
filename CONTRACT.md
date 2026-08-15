@@ -416,9 +416,17 @@ check their own work against the thing being graded. **The bar is 50% for SOFTDE
 finals.** Update the status column when something lands; it is the project plan now, not just a
 defense aid.
 
-**Status as of 2026-08-14: 8 met, 3 partial, 4 not met — 53%. ✅ The SOFTDEV bar of 50% is cleared**
+**Status as of 2026-08-15: 8 met, 3 partial, 4 not met — 53%. ✅ The SOFTDEV bar of 50% is cleared**
 **on software alone**, with no hardware flashed and no model trained. The remaining four are all
 `ai/` and all wait on one thing: photographs.
+
+> ✅ **All eight met requirements now carry a dated verification, checked 2026-08-15.**
+> Four of them — FR-05, FR-07, FR-09 and FR-10 — previously held only a one-line assertion
+> (*"dashboard"*, *"builds clean"*, *"Analytics: per-day averages"*, *"HistoryPage + admin
+> accounts"*) and had never been re-checked since they were written. They were run against a live
+> stack: MariaDB, the real backend, the real dashboard, with fresh inspections driven through
+> `simulate_station.py`. All four held. **The 53% is now evidence rather than a claim**, which
+> matters because the margin over the bar is a single requirement.
 
 > ⚠️ **`final_grade` holds the SIZE, not the verdict.** The sample data puts `Medium` and `Large` in
 > it. An early cut of the FR-03 override wrote `"defective"` there and corrupted the size shown on
@@ -432,12 +440,12 @@ defense aid.
 | 02 | Automatically detect eggs on the platform | 🟡 | firmware triggers at 20 g — written, never flashed |
 | 03 | Allow authorized personnel to override an AI result | ✅ | **built and verified 2026-08-13** against MariaDB — `PATCH /api/inspections/:code/override`, any signed-in account, per-row control on History. Writes `final_disposition` + `is_overridden`, appends who and when to `notes`, and never touches `ai_disposition`. `400` on an invalid label, `401` without a token |
 | 04 | Assign a size class from weight (PNS, Table 11) | ✅ | **verified 2026-08-14** — R's `findSizeGrade()` matches the weight against the `size_grades` bands and sets `size_grade_id` on insert. Tested: 58.20 g → `Medium`. A `not_an_egg` verdict nulls it again, since a misload has no size |
-| 05 | Automatically count inspected eggs | ✅ | dashboard |
+| 05 | Automatically count inspected eggs | ✅ | **verified 2026-08-15** against a live stack. `DashboardPage.jsx:31` renders `inspections.length` straight off `GET /api/inspections`; the endpoint returned 5,234 rows over a database holding 5,337, the difference being the 103 `no_egg` rows decision 8 filters out. A real count over real rows, not a stored total |
 | 06 | Store inspection records in the database | ✅ | **verified end to end 2026-08-14.** Built by R, merged in `de64b77`. Weight POSTed → row minted with an id → assessment POSTed against it → verdict polled back. Every 4.3 column lands, including the four the server owns, `raw_result` byte-identical to what was sent, and the `inspection_images` row created |
-| 07 | Display results on the monitoring dashboard | ✅ | builds clean |
+| 07 | Display results on the monitoring dashboard | ✅ | **verified 2026-08-15** against a live stack, replacing "builds clean", which was never a check that anything displayed. Dashboard and History both render live rows carrying egg ID, weight, size grade, quality verdict, station and timestamp. Confirmed by driving fresh inspections through `simulate_station.py` and watching them arrive |
 | 08 | Generate inspection reports | ✅ | verified 2026-08-13: report builder + filters + paginated preview over real DB rows, and `downloadCsv()` genuinely produces a file. ⚠️ the **"Export PDF" button just calls `window.print()`** — same handler as Print, nothing generates a PDF. Relabel or remove before a demo |
-| 09 | Display daily production statistics | ✅ | Analytics: per-day averages, volume charts |
-| 10 | Allow administrators to access inspection history | ✅ | HistoryPage + admin accounts |
+| 09 | Display daily production statistics | ✅ | **verified 2026-08-15** against a live stack. Analytics computes volume, defect rate, size mix, weight bands and hour-of-day from live rows, and widens its own date range to span the data on load (`AnalyticsPage.jsx:74-82`), so the 7-day default never hides anything. ⚠️ It was demonstrating over 2 days and 13 eggs until the `database/` demo seeds were applied on 2026-08-15; it now covers 2026-03-01 onward and aggregates monthly. **The requirement was met either way, the demo was not** |
+| 10 | Allow administrators to access inspection history | ✅ | **verified 2026-08-15** against a live stack. `HistoryPage.jsx:50` fetches `/api/inspections` through `authenticatedFetch`; unauthenticated calls get `AUTH_REQUIRED`. ⚠️ **There is no role check on that route** — `server.js:55-59` calls only `getSessionUser`, and signing in as `inspector` returned all 5,234 rows. Role gating exists only on `/api/admin/*`. The requirement says administrators *can* reach the history, not that only they can, so it is met as written — same reading R applied to FR-03. **Say this deliberately if asked** |
 | 11 | Capture a candling image under transillumination | 🔴 | **same missing capture code as FR-01** |
 | 12 | Classify internal egg quality from the candling image | 🔴 | `classify.py` is written but no trained model exists — `ai/models/` is absent |
 | 13 | Measure the weight of each inspected egg | 🟡 | firmware written, never flashed |
