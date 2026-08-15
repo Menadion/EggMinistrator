@@ -71,21 +71,31 @@
 #include "secrets.h"   // WIFI_SSID, WIFI_PASSWORD, SERVER_HOST, SERVER_PORT, DEVICE_KEY
 
 // -----------------------------------------------------------------------
-// Pins. ESP32-S3 dev boards have far more usable GPIOs than the ESP32-CAM
-// did (no camera consuming 15 of them), so this is a much simpler pin
-// budget. Explicitly avoided: GPIO0/3/45/46 (strapping pins -- can put
-// the board into download mode or the wrong boot voltage if pulled the
-// wrong way at power-on), GPIO19/20 (used by native USB-JTAG on most
-// ESP32-S3 boards), and GPIO26-37 (SPI flash / PSRAM on boards that have
-// it -- varies by exact module, safest to just avoid the whole range).
-#define HX711_DT_PIN   4
-#define HX711_SCK_PIN  5
-#define LCD_SDA_PIN    8
-#define LCD_SCL_PIN    9
-#define BUZZER_PIN    10
-#define LED_RED_PIN   11
-#define LED_GREEN_PIN 12
-#define LED_BLUE_PIN  13   // only used for the "not an egg" indicator -- see indicateResult()
+// Pins. REMAPPED 2026-08-15 for a CLASSIC ESP32, not the S3.
+//
+// The board is an ESP32-D0WD-V3, confirmed by reading it with
+// firmware/board-id/board-id.ino rather than from the can, which is marked
+// only "ESP32-32X" -- a reseller marking, not an Espressif part number.
+//
+// The earlier map was written for an ESP32-S3 and four of its pins were
+// unusable here: on a classic ESP32, GPIO6 to GPIO11 are wired to the
+// integrated SPI flash, and the LCD (8, 9), the buzzer (10) and the red LED
+// (11) all sat in that range. Driving them crashes the chip. GPIO12 was also
+// a poor choice -- it is MTDI, and held high at boot it selects a 1.8 V flash
+// voltage and the board may not start at all.
+//
+// Avoided on this chip: GPIO6-11 (SPI flash), GPIO0/2/12/15 (strapping),
+// GPIO1/3 (UART0, in use by the serial monitor), GPIO34-39 (input only, no
+// output driver). GPIO16/17 are also skipped so that this map works unchanged
+// on a WROVER module, where those two carry PSRAM.
+#define HX711_DT_PIN  32
+#define HX711_SCK_PIN 33
+#define LCD_SDA_PIN   21   // the classic ESP32 I2C default pair, so stock
+#define LCD_SCL_PIN   22   // wiring guides for this board apply as written
+#define BUZZER_PIN    25
+#define LED_RED_PIN   26
+#define LED_GREEN_PIN 27
+#define LED_BLUE_PIN  23   // only used for the "not an egg" indicator -- see indicateResult()
 
 // HX711 calibration factor -- MUST be calibrated for your specific load
 // cell, the same procedure regardless of which ESP32 board drives it:
