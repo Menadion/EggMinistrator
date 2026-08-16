@@ -88,14 +88,29 @@
 // GPIO1/3 (UART0, in use by the serial monitor), GPIO34-39 (input only, no
 // output driver). GPIO16/17 are also skipped so that this map works unchanged
 // on a WROVER module, where those two carry PSRAM.
-#define HX711_DT_PIN  32
-#define HX711_SCK_PIN 33
+// ⚠️ HX711 on 4/5 because J has that wired and reading correctly on the real
+// board, and both are legitimate on a classic ESP32. An earlier pass moved
+// them to 32/33 on paper; verified hardware beats a tidier theory.
+#define HX711_DT_PIN   4
+#define HX711_SCK_PIN  5
 #define LCD_SDA_PIN   21   // the classic ESP32 I2C default pair, so stock
 #define LCD_SCL_PIN   22   // wiring guides for this board apply as written
 #define BUZZER_PIN    25
 #define LED_RED_PIN   26
 #define LED_GREEN_PIN 27
 #define LED_BLUE_PIN  23   // only used for the "not an egg" indicator -- see indicateResult()
+
+// ✅ CONFIRMED 2026-08-16: the station has TWO LEDs, red and green. There is
+// no third. CONTRACT and the paper both say three, so both need correcting.
+// With this false, indicateResult() signals "not an egg" by blinking red and
+// green together -- visibly distinct from either verdict, which is what FR-15
+// actually asks for, without inventing a part that does not exist.
+#define HAS_BLUE_LED false
+
+// ⚠️ J currently has his two LEDs on GPIO12 and GPIO13. 13 is fine. 12 is
+// MTDI: held HIGH at boot it selects a 1.8 V flash voltage and the board may
+// not start at all. His works because his code drives it LOW, but that is one
+// stray pull-up away from an unbootable board, so the pins above move it clear.
 
 // HX711 calibration factor -- MUST be calibrated for your specific load
 // cell, the same procedure regardless of which ESP32 board drives it:
@@ -106,7 +121,13 @@
 //   3. LOADCELL_CALIBRATION_FACTOR = raw_reading / known_weight_grams
 //   4. Re-flash with that value; confirm get_units() reports correctly
 //      for a couple of different test weights before trusting it.
-float LOADCELL_CALIBRATION_FACTOR = 2280.0;   // TODO: replace after calibrating
+// ✅ CALIBRATED 2026-08-16 by J, on the load cell this project owns.
+// He measured a raw difference of 503206 - 458939 = 44267 counts for a known
+// 60 g weight, giving 44267 / 60 = 737.8, and settled on 735.25 in testing.
+// An egg then read 58.6 g, which is a plausible egg rather than a coincidence.
+// Re-calibrate if the load cell, the HX711 or the egg holder ever changes --
+// the factor describes that whole mechanical assembly, not just the cell.
+float LOADCELL_CALIBRATION_FACTOR = 735.25;
 
 const float EGG_PRESENT_THRESHOLD_G = 20.0;
 const float EGG_REMOVED_THRESHOLD_G = 15.0;
@@ -195,8 +216,26 @@ void setup() {
   }
 
   scale.begin(HX711_DT_PIN, HX711_SCK_PIN);
+
+  // Taken from J's bench sketch, and it fixes a real defect here. tare() calls
+  // wait_ready() internally, which spins until the HX711's DOUT pin goes low.
+  // With the amplifier unwired or on the wrong pins that never happens and
+  // setup() hangs forever -- no serial past this point, no HTTP, nothing. It
+  // reads as a dead board rather than a wiring fault. Ask first, with a bound.
+  if (!scale.wait_ready_timeout(3000)) {
+    Serial.println("ERROR: HX711 not responding -- check DT/SCK wiring and power");
+    showMessage("HX711 error\nCheck wiring");
+    beepError();
+    // Deliberately does not continue. Every weight from here would be garbage,
+    // and a station silently reporting nonsense is worse than one that stops.
+    while (true) delay(1000);
+  }
+
   scale.set_scale(LOADCELL_CALIBRATION_FACTOR);
-  scale.tare();   // make sure the platform is empty when this runs
+
+  showMessage("Taring...\nEmpty the plate");
+  delay(2000);      // give the operator a moment to take anything off
+  scale.tare(20);   // 20 readings rather than the default; steadier zero
 
   showMessage("Ready.\nPlace an egg.");
 }
@@ -205,6 +244,52 @@ void setup() {
 float readWeightGrams() {
   if (!scale.is_ready()) return 0.0;
   return scale.get_units(5);
+}
+
+// ---------------------------------------------------------------------------
+// The weight that actually gets sent. A single get_units() reading taken the
+// instant an egg lands is still settling, so this waits for the mechanical
+// bounce to die down and then averages. From J's bench sketch, where it was
+// the difference between a stable number and one that drifted a gram either
+// way while you watched it.
+float settledWeightGrams() {
+  delay(800);   // let the egg stop rocking before measuring anything
+
+  const int readings = 20;
+  float total = 0;
+  for (int i = 0; i < readings; i++) {
+    float grams = scale.get_units(1);
+    if (grams < 0) grams = 0;   // a hair below zero is noise, not a negative egg
+    total += grams;
+    delay(30);
+  }
+  return total / readings;
+}
+
+// ---------------------------------------------------------------------------
+// ⚠️ TEMPORARY, AND IT IS A SECOND COPY OF SOMETHING THE SERVER OWNS.
+//
+// Size grading belongs to the server: CONTRACT decision 4, implemented by
+// findSizeGrade() against the size_grades table. This exists only so the board
+// can show something useful on the LCD while running standalone on the bench,
+// before the laptop half of section 4.1 exists.
+//
+// DELETE THIS the moment the board is getting real verdicts back from the
+// server. Two copies of a grading rule is two rules, and the one on the LCD
+// will eventually disagree with the one on the dashboard in front of somebody.
+//
+// The bands are PNS/BAFS 321:2021, matching database/sample-data.sql exactly.
+// J's bench sketch used the USDA sizes instead (Small 42.52, Medium 49.61,
+// Large 56.70, X-Large 63.79, Jumbo 70.87), which is a different national
+// standard: a 58.6 g egg is Medium under PNS and Large under USDA. The paper
+// cites PNS, so PNS wins here.
+String localSizeGrade(float grams) {
+  if (grams <  45.0) return "Pewee";
+  if (grams <  55.0) return "Small";
+  if (grams <  60.0) return "Medium";
+  if (grams <  65.0) return "Large";
+  if (grams <  70.0) return "Extra Large";
+  return "Jumbo";
 }
 
 // ---------------------------------------------------------------------------
@@ -332,12 +417,27 @@ void loop() {
     return;   // nothing on the platform yet
   }
 
-  // An egg just showed up: send its weight, then wait for the verdict.
+  // An egg just showed up: settle, measure properly, then send.
   if (now - lastWeightSend > WEIGHT_SEND_INTERVAL_MS) {
-    showMessage("Egg detected.\nSending weight");   // 13 / 14 chars, fits 16x2
+    showMessage("Egg detected.\nMeasuring...");
     lastWeightSend = now;
 
-    if (postWeight(weight)) {
+    // The trigger reading above only had to clear a 20 g threshold. It is not
+    // the measurement -- the egg is still settling when it crosses that line.
+    // This is the number that goes in the database and drives the size grade,
+    // so it is worth the extra second.
+    float finalWeight = settledWeightGrams();
+
+    // Bench aid only: shows a grade before the server has answered. Goes away
+    // with localSizeGrade() once the laptop half of section 4.1 exists.
+    Serial.print("Final weight: ");
+    Serial.print(finalWeight, 2);
+    Serial.print(" g, local grade ");
+    Serial.println(localSizeGrade(finalWeight));
+
+    showMessage("Sending weight");
+
+    if (postWeight(finalWeight)) {
       waitingForResult = true;
       resultRequestedAt = now;
       lastPoll = now;
@@ -396,7 +496,22 @@ void indicateResult(const InspectionResultLocal &result) {
     digitalWrite(LED_RED_PIN, HIGH);
     beep(2, 120);
   } else {
-    digitalWrite(LED_BLUE_PIN, HIGH);   // "not an egg" -- distinct from either real verdict
+    // "not an egg". With three LEDs this gets its own colour. With two, blue
+    // does not exist, so fall back to blinking red and green together -- still
+    // visibly different from either verdict, which is the whole requirement,
+    // rather than silently doing nothing and looking like a crash.
+    if (HAS_BLUE_LED) {
+      digitalWrite(LED_BLUE_PIN, HIGH);
+    } else {
+      for (int i = 0; i < 3; i++) {
+        digitalWrite(LED_RED_PIN, HIGH);
+        digitalWrite(LED_GREEN_PIN, HIGH);
+        delay(150);
+        digitalWrite(LED_RED_PIN, LOW);
+        digitalWrite(LED_GREEN_PIN, LOW);
+        delay(150);
+      }
+    }
     beep(3, 80);
   }
 }
