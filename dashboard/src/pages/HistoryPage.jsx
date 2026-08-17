@@ -27,33 +27,6 @@ export default function HistoryPage() {
   const [quality, setQuality] = useState('All Quality')
   const [page, setPage] = useState(1)
   const [selectedDate, setSelectedDate] = useState('')
-  const [overridingCode, setOverridingCode] = useState('')
-  const [overrideError, setOverrideError] = useState('')
-
-  // FR-03. The row is updated in place rather than refetched so the operator
-  // sees the change immediately. Note that overriding to "not_an_egg" makes the
-  // row vanish on the next load: the API filters no_egg dispositions out, by
-  // settled decision 8. That is intended -- it is no longer an egg.
-  const applyOverride = async (scan, label) => {
-    if (!label || label === scan.quality) return
-    setOverridingCode(scan.inspectionCode)
-    setOverrideError('')
-    try {
-      const response = await authenticatedFetch(`/api/inspections/${encodeURIComponent(scan.inspectionCode)}/override`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ label }),
-      })
-      const result = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(result.error || 'Unable to save the override.')
-      setHistoryScans((scans) => scans.map((item) => item.inspectionCode === scan.inspectionCode ? { ...item, quality: label, isOverridden: true } : item))
-    } catch (error) {
-      setOverrideError(error.message || 'Unable to save the override.')
-    } finally {
-      setOverridingCode('')
-    }
-  }
-
   useEffect(() => {
     const loadHistory = async () => {
       setIsLoading(true)
@@ -83,14 +56,42 @@ export default function HistoryPage() {
       <PageHeader title="History" />
       <section className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4">
         {loadError && <p role="alert" className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{loadError}</p>}
-        {overrideError && <p role="alert" className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{overrideError}</p>}
         <div className="grid gap-3 lg:grid-cols-[170px_minmax(0,1fr)_150px_150px]">
           <input type="date" value={selectedDate} onChange={(event) => { setSelectedDate(event.target.value); setPage(1) }} className="min-h-11 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-600" />
           <SearchInput value={search} onChange={(event) => { setSearch(event.target.value); setPage(1) }} placeholder="Search Egg ID or device" />
           <select value={size} onChange={changeFilter(setSize)} className="min-h-11 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600"><option>All Sizes</option>{['Peewee', 'Small', 'Medium', 'Large', 'Extra Large', 'Jumbo'].map((item) => <option key={item}>{item}</option>)}</select>
           <select value={quality} onChange={changeFilter(setQuality)} className="min-h-11 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600"><option value="All Quality">All Quality Results</option><option value="good">Good</option><option value="defective">Defective</option></select>
         </div>
-        <div className="mt-5 overflow-x-auto"><table className="w-full min-w-[760px] text-left text-sm"><thead className="border-y border-slate-100 bg-slate-50 text-xs text-slate-500"><tr><th className="px-3 py-3 font-semibold">Date</th><th className="px-3 py-3 font-semibold">Time</th><th className="px-3 py-3 font-semibold">Egg ID</th><th className="px-3 py-3 font-semibold">Weight (g)</th><th className="px-3 py-3 font-semibold">Size</th><th className="px-3 py-3 font-semibold">Quality</th><th className="px-3 py-3 font-semibold">Device</th><th className="px-3 py-3 font-semibold">Override</th></tr></thead><tbody>{isLoading && <tr><td colSpan="8" className="px-3 py-10 text-center text-slate-500">Loading MariaDB records...</td></tr>}{!isLoading && visible.map((scan) => <tr key={scan.eggId} className="border-b border-slate-100 text-slate-600"><td className="px-3 py-3">{scan.displayDate}</td><td className="px-3 py-3">{scan.time}</td><td className="px-3 py-3 font-semibold text-slate-800">{scan.eggId}</td><td className="px-3 py-3">{scan.weight ?? '—'}</td><td className="px-3 py-3"><SizeBadge size={scan.size} /></td><td className="px-3 py-3"><QualityBadge quality={scan.quality} /></td><td className="px-3 py-3">{scan.device}</td><td className="px-3 py-3"><select value={scan.quality || ''} disabled={overridingCode === scan.inspectionCode} onChange={(event) => applyOverride(scan, event.target.value)} aria-label={`Override result for ${scan.eggId}`} className="min-h-9 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-600 disabled:opacity-40"><option value="good">Good</option><option value="defective">Defective</option><option value="not_an_egg">Not an Egg</option></select>{scan.isOverridden && <span title={`AI said: ${scan.aiQuality || 'unknown'}`} className="ml-2 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-800">overridden</span>}</td></tr>)}{!isLoading && visible.length === 0 && <tr><td colSpan="8" className="px-3 py-10 text-center text-slate-500">No inspections match your filters.</td></tr>}</tbody></table></div>
+        <div className="mt-5 overflow-x-auto">
+          <table className="w-full min-w-[700px] text-left text-sm">
+            <thead className="border-y border-slate-100 bg-slate-50 text-xs text-slate-500">
+              <tr>
+                <th className="px-3 py-3 font-semibold">Date</th>
+                <th className="px-3 py-3 font-semibold">Time</th>
+                <th className="px-3 py-3 font-semibold">Egg ID</th>
+                <th className="px-3 py-3 font-semibold">Weight (g)</th>
+                <th className="px-3 py-3 font-semibold">Size</th>
+                <th className="px-3 py-3 font-semibold">Quality</th>
+                <th className="px-3 py-3 font-semibold">Device</th>
+              </tr>
+            </thead>
+            <tbody>
+              {isLoading && <tr><td colSpan="7" className="px-3 py-10 text-center text-slate-500">Loading MariaDB records...</td></tr>}
+              {!isLoading && visible.map((scan) => (
+                <tr key={scan.eggId} className="border-b border-slate-100 text-slate-600">
+                  <td className="px-3 py-3">{scan.displayDate}</td>
+                  <td className="px-3 py-3">{scan.time}</td>
+                  <td className="px-3 py-3 font-semibold text-slate-800">{scan.eggId}</td>
+                  <td className="px-3 py-3">{scan.weight ?? '—'}</td>
+                  <td className="px-3 py-3"><SizeBadge size={scan.size} /></td>
+                  <td className="px-3 py-3"><QualityBadge quality={scan.quality} /></td>
+                  <td className="px-3 py-3">{scan.device}</td>
+                </tr>
+              ))}
+              {!isLoading && visible.length === 0 && <tr><td colSpan="7" className="px-3 py-10 text-center text-slate-500">No inspections match your filters.</td></tr>}
+            </tbody>
+          </table>
+        </div>
         <div className="mt-4 flex flex-col gap-3 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between"><span>Showing {visible.length ? (page - 1) * PAGE_SIZE + 1 : 0}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length} records</span><div className="flex flex-wrap items-center gap-1"><button disabled={page === 1} onClick={() => setPage(page - 1)} aria-label="Previous page" className="rounded-md border border-slate-200 p-1.5 disabled:opacity-40"><ChevronLeft size={16} /></button>{pages.map((item) => typeof item === 'string' ? <span key={item} className="grid h-8 w-6 place-items-center text-slate-400">…</span> : <button key={item} onClick={() => setPage(item)} aria-label={`Page ${item}`} aria-current={page === item ? 'page' : undefined} className={`h-8 w-8 rounded-md text-xs font-semibold ${page === item ? 'bg-forest-800 text-white' : 'hover:bg-slate-100'}`}>{item}</button>)}<button disabled={page === pageCount} onClick={() => setPage(page + 1)} aria-label="Next page" className="rounded-md border border-slate-200 p-1.5 disabled:opacity-40"><ChevronRight size={16} /></button></div></div>
       </section>
     </div>
