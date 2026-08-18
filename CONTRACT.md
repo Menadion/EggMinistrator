@@ -357,6 +357,34 @@ These are unresolved. If your task touches one, ask before assuming.
    questions: what gets rejected today, is anything internal assessed today, and how many eggs per
    day / how many graders / how long. Do not make two calls.
 
+7. 🟡 **The override audit trail is a text column, and `staff_overrides` is dead furniture.**
+   `inspectionService.js:286` — `overrideInspection()` — does one `UPDATE` on `egg_inspections`
+   (`is_overridden = 1`, `final_disposition`, and a sentence appended to `notes`). **It never inserts
+   into `staff_overrides`. Nothing in this codebase ever has.** The table has existed since the first
+   schema, has indexes and two foreign keys, and has never received a row.
+
+   So the answer to *"where is override history stored?"* is currently **a free-text `notes` field**,
+   parsed by nobody, holding lines like `Overridden to "defective" by admin at 2026-08-17T…`. There
+   is no `overridden_by` column — `inspectionService.js:296` says so and points here.
+
+   **Why this matters on 2026-08-26 and not before.** FR-03 is met as written: staff can override,
+   and the override sticks. Nothing is broken. But the schema advertises a structured, queryable,
+   user-attributed override log, and the running system does not produce one. A panelist who reads
+   `staff_overrides` in the ERD and asks to see its contents gets an empty table. **Know the answer
+   before the room asks the question.** Either say the table is provisioned for the audit log and the
+   current build writes the trail to `notes`, or spend the hour and make the write real.
+
+   ⚠️ **Do not "clean up" the unused table.** It is provisioned, not abandoned, and
+   `schema.sql:145-146` was widened on 2026-08-18 (audit item 1, migration
+   `20260818_allow_no_egg_in_staff_overrides.sql`) so it can accept a `no_egg` correction whenever the
+   write is wired. Dropping it re-opens a settled question.
+
+   ⚠️ **"Override" means two different things in this repo and it has already caused damage.**
+   The FR-03 dropdown on the History page and the `staff_overrides` table are separate; the audit item
+   about the table's ENUM was read as an instruction to delete the dropdown, and `f6fa589` removed a
+   delivered FR. Restored in `5b104fd`. **Before touching anything with "override" in the name, check
+   which of the two it is.**
+
 **Resolved 2026-08-13** *(kept for context, do not re-open)*:
 
 - ~~`not_an_egg`: store the row, or discard it and only warn?~~ **Store it — Option A stands**, now
@@ -438,7 +466,7 @@ defense aid.
 |---|---|---|---|
 | 01 | Capture egg images using a stationary camera | 🔴 | no capture code exists. `classify.py` reads a file off disk (`cv2.imread(sys.argv[1])`); nothing opens a webcam |
 | 02 | Automatically detect eggs on the platform | 🟡 | firmware triggers at 20 g — written, never flashed |
-| 03 | Allow authorized personnel to override an AI result | ✅ | **built and verified 2026-08-13** against MariaDB — `PATCH /api/inspections/:code/override`, any signed-in account, per-row control on History. Writes `final_disposition` + `is_overridden`, appends who and when to `notes`, and never touches `ai_disposition`. `400` on an invalid label, `401` without a token |
+| 03 | Allow authorized personnel to override an AI result | ✅ | **built and verified 2026-08-13** against MariaDB — `PATCH /api/inspections/:code/override`, any signed-in account, per-row control on History. Writes `final_disposition` + `is_overridden`, appends who and when to `notes`, and never touches `ai_disposition`. `400` on an invalid label, `401` without a token. ⚠️ The History control was deleted in `f6fa589` and restored in `5b104fd` — do not remove it again, see section 7 item 7. The override is logged to `egg_inspections.notes`, **not** to `staff_overrides` |
 | 04 | Assign a size class from weight (PNS, Table 11) | ✅ | **verified 2026-08-14** — R's `findSizeGrade()` matches the weight against the `size_grades` bands and sets `size_grade_id` on insert. Tested: 58.20 g → `Medium`. A `not_an_egg` verdict nulls it again, since a misload has no size |
 | 05 | Automatically count inspected eggs | ✅ | **verified 2026-08-15** against a live stack. `DashboardPage.jsx:31` renders `inspections.length` straight off `GET /api/inspections`; the endpoint returned 5,234 rows over a database holding 5,337, the difference being the 103 `no_egg` rows decision 8 filters out. A real count over real rows, not a stored total |
 | 06 | Store inspection records in the database | ✅ | **verified end to end 2026-08-14.** Built by R, merged in `de64b77`. Weight POSTed → row minted with an id → assessment POSTed against it → verdict polled back. Every 4.3 column lands, including the four the server owns, `raw_result` byte-identical to what was sent, and the `inspection_images` row created |
