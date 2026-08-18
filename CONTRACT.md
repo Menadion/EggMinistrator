@@ -360,8 +360,14 @@ These are unresolved. If your task touches one, ask before assuming.
 7. 🟡 **The override audit trail is a text column, and `staff_overrides` is dead furniture.**
    `inspectionService.js:286` — `overrideInspection()` — does one `UPDATE` on `egg_inspections`
    (`is_overridden = 1`, `final_disposition`, and a sentence appended to `notes`). **It never inserts
-   into `staff_overrides`. Nothing in this codebase ever has.** The table has existed since the first
-   schema, has indexes and two foreign keys, and has never received a row.
+   into `staff_overrides`. No application code path ever has.** The table has existed since the first
+   schema and has indexes and two foreign keys.
+
+   ⚠️ **It is not empty, and that is worse than empty.** `sample-data.sql:50` seeds exactly one
+   row — `review` → `accepted`, *"Visual check confirmed minor, non-defective shell variation"*, dated
+   **2026-07-25**. Verified against the live local database 2026-08-18: one row, and overriding an egg
+   through the dashboard does not add a second. An empty table reads as *not built yet*; one plausible
+   hand-written row reads as *working* until someone checks the date.
 
    So the answer to *"where is override history stored?"* is currently **a free-text `notes` field**,
    parsed by nobody, holding lines like `Overridden to "defective" by admin at 2026-08-17T…`. There
@@ -369,9 +375,9 @@ These are unresolved. If your task touches one, ask before assuming.
 
    **Why this matters on 2026-08-26 and not before.** FR-03 is met as written: staff can override,
    and the override sticks. Nothing is broken. But the schema advertises a structured, queryable,
-   user-attributed override log, and the running system does not produce one. A panelist who reads
-   `staff_overrides` in the ERD and asks to see its contents gets an empty table. **Know the answer
-   before the room asks the question.** Either say the table is provisioned for the audit log and the
+   user-attributed override log, and the running system does not produce one. A panelist who overrides
+   an egg on the projector and then opens `staff_overrides` sees the count sit at one, timestamped
+   three weeks before the demo. **Know the answer before the room asks the question.** Either say the table is provisioned for the audit log and the
    current build writes the trail to `notes`, or spend the hour and make the write real.
 
    ⚠️ **Do not "clean up" the unused table.** It is provisioned, not abandoned, and
