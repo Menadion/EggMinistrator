@@ -285,9 +285,27 @@ These are unresolved. If your task touches one, ask before assuming.
    is J's, so J is the only person who can see inside an egg. Everything follows from that: hunting
    blood and meat spots across the group is impossible, and at ~1% natural occurrence one person's
    consumption yields near zero. **Blood and meat spots are effectively uncollectable on this
-   timeline** — see item 5. What one person *can* batch: cracks made on a counter edge (free,
-   unlimited, and exactly FR-14) and aged eggs with enlarged air cells (free, needs a week, and
-   genuinely *internal* quality, which is what FR-12 claims). Those two carry the defective class.
+   timeline** — see item 5. What one person *can* batch: cracks made on a counter
+   edge, free, unlimited, and exactly FR-14.
+
+   🔴 **UPDATED 2026-08-20 — the defective class is now CRACKS ALONE.** This used to add aged eggs
+   with enlarged air cells as the second member. **Air-cell ageing is out**, and not because it is
+   hard to collect: the station sits at the laying house at pickup, so every egg it sees is hours
+   old and the air cell has not developed. It is **not present in the population**. Training on
+   artificially aged eggs would teach a class that never appears at inference, which is a
+   false-positive source rather than a capability. Blood and meat spots are out too — the client
+   confirmed on 2026-08-20 that they do not grade for them at all, so they are not a requirement
+   rather than a gap we are covering for.
+
+   ⚠️ **Consequence for FR-12.** With air cell and spots both gone, "internal quality" narrows to
+   cracks revealed by transillumination. Do not claim the station reads the *contents* of an egg.
+   The defensible claim is that the candler shows hairline cracks the naked eye misses at pickup.
+
+   🔴 **THIS IS BLOCKED ON J, AND THAT IS THE PROJECT'S BIGGEST SINGLE-POINT RISK.** There is one
+   candler and it is J's. No candler, no image; no image, no dataset; no dataset, no model; and the
+   adviser ruled 2026-08-20 that the defense runs on live hardware in front of the panel. **A second
+   candler is BOM item 3 at ₱180 and would decouple the entire AI track from one person's
+   availability.** Cheapest risk reduction available to this project.
 
    ⚠️ **No usable photo can be taken until the egg stands up on its own.** Fingers holding the egg
    appear in the candling frame and will not exist at inference, so the model would learn a grip.
