@@ -103,6 +103,9 @@ what it is, and press one key:**
 | **G** | `good/` |
 | **D** | `defective/` |
 | **N** | `not_an_egg/` |
+| **+** or **=** | zoom in |
+| **-** or **_** | zoom out |
+| **0** | reset zoom to 1.0x |
 | **Q** | quit |
 
 That is the whole interface. The photo is saved instantly into the right folder, and the running
@@ -116,8 +119,35 @@ the moment you know what it is. Taking 200 unlabelled photos and sorting them af
 deciding all over again from a screen, which is slower and gets more of them wrong.
 
 **The `--tag` is not optional and not cosmetic.** It goes into every filename, like
-`good_jasfer_20260813_232041.jpg`. It is what stops two people's batches overwriting each other when
-they get merged. Use the same tag every time.
+`good_jasfer_20260813_232041_z18.jpg`. It is what stops two people's batches overwriting each other
+when they get merged. Use the same tag every time.
+
+### Zoom, and the one rule about it
+
+The webcam sees the whole chamber. The egg is the only part worth training on, so zooming crops in
+on the middle of the frame until the egg fills it. **The crop is what gets saved, not just what you
+see on screen** — the window blows it back up so it stays the same size while you work, but the file
+on disk is the crop at its real pixels.
+
+🔴 **Set the zoom once, then do not touch it for the rest of the dataset.** Every photo has to be
+framed the same way, because the station will be framed that way when it is actually running.
+Changing it mid-batch teaches the model that the size of an egg means nothing.
+
+The way to do it: shoot the first few, find the number where the egg comfortably fills the frame,
+then start every session there.
+
+```
+py ai/capture.py --tag yourname --zoom 1.8
+```
+
+The zoom is stamped into every filename as `z18`, so if a batch does come out at the wrong setting
+it can be found and pulled instead of quietly poisoning a training run. The window prints the number
+in the corner the whole time, and reminds you what to pass next session when you quit.
+
+⚠️ **If the overlay says `TOO FAR IN`, back off.** Training feeds the network 224x224 pixels. Zoom
+past about 2.5x on a 640x480 webcam and the crop is smaller than that, so the training stack has to
+stretch it back up, which invents no detail and softens exactly the thin lines a hairline crack is
+made of. Either zoom out or set the webcam to a higher resolution.
 
 ⚠️ **Send a small first batch — 10 to 15 photos — and wait for it to be checked** before you shoot
 hundreds. Focus, framing and candler position are cheap to fix after fifteen photos and expensive

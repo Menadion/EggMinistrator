@@ -24,7 +24,22 @@ RUNNING IT
         G  good
         D  defective
         N  not an egg   (empty platform, a hand, anything that is not one egg)
+        + or =  zoom in       (also -- or _ to zoom out, 0 to reset)
         Q  quit
+
+    ZOOM. The webcam sees more of the chamber than the egg. Zooming crops in on
+    the middle of the frame so the egg fills more of the picture, and the crop
+    is what gets SAVED, not just what you see. That is the point: an egg that
+    fills the frame gives the model more to look at than an egg sitting in the
+    middle of a mostly-black photo.
+
+    SET THE ZOOM ONCE AND LEAVE IT. Every photo in the dataset should be framed
+    the same way, because the station will be framed that way at inference too.
+    Fiddling with it mid-batch teaches the model that scale is meaningless. Find
+    the number on the first few shots, then start it there every time with
+    --zoom 1.8 so you never have to remember. The zoom is stamped into every
+    filename (z18) so a batch shot at the wrong setting can be found later
+    instead of quietly poisoning the training run.
 
     You label at the moment you shoot, because that is when you are looking at
     the egg and know what it is. Sorting 200 unlabelled photos afterwards means
@@ -61,6 +76,48 @@ CLASS_KEYS = {
 
 QUIT_KEYS = {ord("q"), 27}   # q or Esc
 
+# Zoom is a centre crop, not an optical change -- the webcam has no zoom motor.
+# Cropping throws pixels away, so there is a floor on how far in it can go
+# before the saved image is too small to be worth training on.
+ZOOM_MIN = 1.0
+ZOOM_MAX = 4.0
+ZOOM_STEP = 0.1
+MIN_CROP_PIXELS = 64
+
+# train.py feeds the network 224x224. Cropping below that means the training
+# stack has to upscale, which invents nothing and just softens the very detail
+# a hairline crack is made of. Warn rather than forbid -- a higher-resolution
+# webcam setting fixes it without lowering the zoom.
+TRAINING_INPUT_PIXELS = 224
+
+ZOOM_IN_KEYS = {ord("+"), ord("=")}    # = as well, so nobody has to hold shift
+ZOOM_OUT_KEYS = {ord("-"), ord("_")}
+ZOOM_RESET_KEYS = {ord("0")}
+
+
+def clamp_zoom(value):
+    # round() keeps repeated += 0.1 from drifting to 1.7999999999999998, which
+    # would otherwise end up in a filename.
+    return round(min(ZOOM_MAX, max(ZOOM_MIN, value)), 2)
+
+
+def crop_to_zoom(frame, zoom):
+    """Centre-crop the frame by the zoom factor. Returns the frame itself at 1.0."""
+    if zoom <= ZOOM_MIN:
+        return frame
+
+    height, width = frame.shape[:2]
+    crop_width = max(MIN_CROP_PIXELS, int(width / zoom))
+    crop_height = max(MIN_CROP_PIXELS, int(height / zoom))
+    left = (width - crop_width) // 2
+    top = (height - crop_height) // 2
+    return frame[top:top + crop_height, left:left + crop_width]
+
+
+def zoom_tag(zoom):
+    """1.8 -> 'z18'. No dot, because a dot in a filename reads as an extension."""
+    return f"z{int(round(zoom * 10)):02d}"
+
 
 def count_images(class_name):
     folder = DATASET_ROOT / class_name
@@ -69,7 +126,7 @@ def count_images(class_name):
     return sum(1 for path in folder.iterdir() if path.suffix.lower() in {".jpg", ".jpeg", ".png"})
 
 
-def save_frame(frame, class_name, tag):
+def save_frame(frame, class_name, tag, zoom):
     folder = DATASET_ROOT / class_name
     folder.mkdir(parents=True, exist_ok=True)
 
@@ -77,26 +134,37 @@ def save_frame(frame, class_name, tag):
     # the same moment on different machines and still not collide, and the
     # filename says who took it when a photo turns out to be bad.
     stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    path = folder / f"{class_name}_{tag}_{stamp}.jpg"
+    zoom_part = zoom_tag(zoom)
+    path = folder / f"{class_name}_{tag}_{stamp}_{zoom_part}.jpg"
 
     # If you fire twice inside one second, don't overwrite the first shot.
     suffix = 1
     while path.exists():
-        path = folder / f"{class_name}_{tag}_{stamp}_{suffix}.jpg"
+        path = folder / f"{class_name}_{tag}_{stamp}_{zoom_part}_{suffix}.jpg"
         suffix += 1
 
-    # Saved at the camera's native resolution, NOT 224x224. train.py resizes on
-    # the way in, and keeping the originals means a future model can be trained
-    # at a different size without reshooting everything.
+    # Saved at the crop's native resolution, NOT 224x224 and NOT scaled back up
+    # to the full frame size. Upscaling a crop invents no detail and only makes
+    # the file bigger. train.py resizes on the way in, and keeping the originals
+    # means a future model can be trained at a different size without reshooting
+    # everything. The folder name is the label, so the filename is free to carry
+    # the tag and the zoom without confusing training.
     cv2.imwrite(str(path), frame)
     return path
 
 
-def draw_overlay(frame, counts, tag):
+def draw_overlay(frame, counts, tag, zoom, crop_shape):
+    height, width = frame.shape[:2]
+    zoom_line = f"[+/-] zoom {zoom:.1f}x ({zoom_tag(zoom)})   [0] reset"
     lines = [
         f"[G] good {counts['good']}   [D] defective {counts['defective']}   [N] not_an_egg {counts['not_an_egg']}",
+        zoom_line,
         f"[Q] quit    tag: {tag}",
     ]
+    crop_height, crop_width = crop_shape[:2]
+    if min(crop_width, crop_height) < TRAINING_INPUT_PIXELS:
+        lines.append(f"TOO FAR IN: saving {crop_width}x{crop_height}, training wants {TRAINING_INPUT_PIXELS}")
+
     for index, text in enumerate(lines):
         origin = (10, 25 + index * 26)
         # Drawn twice: a thick dark pass under a thin light one, so the text
@@ -109,11 +177,21 @@ def main():
     parser = argparse.ArgumentParser(description="Capture labelled egg photos into ai/dataset/.")
     parser.add_argument("--tag", required=True, help="Who is shooting, e.g. --tag jasfer. Goes into every filename.")
     parser.add_argument("--camera", type=int, default=0, help="Camera index. 0 is usually the built-in; try 1 for a USB webcam.")
+    parser.add_argument(
+        "--zoom",
+        type=float,
+        default=ZOOM_MIN,
+        help=f"Starting zoom, {ZOOM_MIN}-{ZOOM_MAX}. Pass the same number every session so the whole dataset is framed alike.",
+    )
     args = parser.parse_args()
 
     tag = "".join(character for character in args.tag.lower() if character.isalnum())
     if not tag:
         raise SystemExit("--tag must contain at least one letter or number.")
+
+    zoom = clamp_zoom(args.zoom)
+    if zoom != args.zoom:
+        print(f"--zoom {args.zoom} is outside {ZOOM_MIN}-{ZOOM_MAX}; using {zoom}.")
 
     camera = cv2.VideoCapture(args.camera)
     if not camera.isOpened():
@@ -123,6 +201,7 @@ def main():
 
     counts = {name: count_images(name) for name in CLASS_KEYS.values()}
     print("Capturing. Focus the preview window, then press G / D / N to save, Q to quit.")
+    print("Zoom with + and -, 0 resets. Set it before the batch and leave it alone.")
     print(f"Starting counts: {counts}")
 
     try:
@@ -132,16 +211,33 @@ def main():
                 print("Lost the camera feed. Check the cable and rerun.")
                 break
 
-            preview = frame.copy()          # overlay on the copy, never on what gets saved
-            draw_overlay(preview, counts, tag)
+            # What the shutter would save right now. Everything below previews
+            # this, so the window is a true viewfinder rather than a hint.
+            shot = crop_to_zoom(frame, zoom)
+
+            # Blown back up to the full frame size for display only, so the
+            # window does not shrink as you zoom in. The saved file keeps the
+            # crop's real pixels.
+            if zoom > ZOOM_MIN:
+                preview = cv2.resize(shot, (frame.shape[1], frame.shape[0]), interpolation=cv2.INTER_NEAREST)
+            else:
+                preview = shot.copy()   # overlay on a copy, never on what gets saved
+
+            draw_overlay(preview, counts, tag, zoom, shot.shape)
             cv2.imshow("EggMinistrator capture", preview)
 
             key = cv2.waitKey(1) & 0xFF
             if key in QUIT_KEYS:
                 break
-            if key in CLASS_KEYS:
+            if key in ZOOM_IN_KEYS:
+                zoom = clamp_zoom(zoom + ZOOM_STEP)
+            elif key in ZOOM_OUT_KEYS:
+                zoom = clamp_zoom(zoom - ZOOM_STEP)
+            elif key in ZOOM_RESET_KEYS:
+                zoom = ZOOM_MIN
+            elif key in CLASS_KEYS:
                 class_name = CLASS_KEYS[key]
-                path = save_frame(frame, class_name, tag)
+                path = save_frame(shot, class_name, tag, zoom)
                 counts[class_name] += 1
                 print(f"saved {path}  ({class_name}: {counts[class_name]})")
     finally:
@@ -151,6 +247,8 @@ def main():
     print(f"Final counts: {counts}")
     total = sum(counts.values())
     print(f"{total} image(s) in ai/dataset/. Zip that folder and send it on.")
+    if total:
+        print(f"Shot at zoom {zoom:.1f}x. Use --zoom {zoom:.1f} next session so the framing matches.")
 
     # A model cannot learn a class it has barely seen, and it will happily call
     # everything by whichever label it saw most. Say so before it wastes a run.
