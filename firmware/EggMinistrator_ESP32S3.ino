@@ -1,5 +1,10 @@
 /*
-  EggMinistrator -- ESP32-S3 firmware (load cell + LCD + LEDs + buzzer only)
+  EggMinistrator -- ESP32 firmware (load cell + LCD + LEDs + buzzer only)
+
+  BOARD: ESP32-D0WD-V3 rev v3.1, a CLASSIC ESP32. Not an S3, despite this
+  file's name. Confirmed 2026-08-20 by running firmware/board-id/ over COM3.
+  The filename is left alone deliberately -- renaming it this close to the
+  defense buys nothing and breaks every link that points at it.
   ----------------------------------------------------------------------------
   This board does NOT handle the camera. The camera is a regular USB webcam
   plugged into the laptop, which runs ai/inference/classify.py. This board's
@@ -31,13 +36,47 @@
     - "ArduinoJson" by Benoit Blanchon (v6.x)
   WiFi.h and HTTPClient.h ship with the esp32 board package -- nothing to
   install. The two Adafruit libraries the OLED needed are no longer required.
-  Board: Tools > Board > ESP32 Arduino > pick your specific ESP32-S3 board
-  (e.g. "ESP32S3 Dev Module"). Needs the "esp32" board package installed.
+  BOARD SELECTION -- GET THIS RIGHT OR THE UPLOAD FAILS:
+    Tools > Board > ESP32 Arduino > "ESP32 Dev Module"
+                                     ^^^^^^^^^^^^^^^^
+    NOT "ESP32S3 Dev Module". This is a classic ESP32-D0WD-V3. Picking the S3
+    entry compiles for the wrong chip and the upload will not take. Needs the
+    "esp32" board package installed (Boards Manager > search esp32 > Espressif
+    Systems).
+
+    Port: Tools > Port > COM3 (that is where board-id found it).
+    Everything else can stay on its default. If the upload stalls at
+    "Connecting........", hold the BOOT button while it starts.
 
   ============================================================================
-  BEFORE YOU FLASH: copy secrets.h.example to secrets.h and fill it in. That
-  file holds the Wi-Fi password and the server address, and it is gitignored.
-  Never put a real password in this file -- CONTRACT.md section 6.
+  BEFORE YOU FLASH -- four things, in this order. J, this list is for you.
+
+  1. MOVE THE LEDs. You have them on GPIO12 and GPIO13. This sketch drives
+     26 (red), 27 (green) and 23 (blue). Move your wires to match, or the
+     indicators will not light. Do not "fix" it by changing the pins back:
+     GPIO12 is MTDI, and if anything holds it HIGH at boot the chip selects a
+     1.8 V flash voltage and may not start at all. Your code drives it LOW so
+     your bench setup works, but it is one stray pull-up from a dead board.
+
+  2. MAKE secrets.h. Copy secrets.h.example to secrets.h in this same folder
+     and fill in all five values. It is gitignored, so it does not exist on a
+     fresh clone and the sketch will not compile without it. SERVER_HOST is
+     the LAN IP of the LAPTOP running the backend, not the board's own IP --
+     `ipconfig` on Windows, the IPv4 Address line. DEVICE_KEY must match
+     DEVICE_API_KEY in backend/.env exactly or every request comes back 401.
+     Never put a real password in THIS file -- CONTRACT.md section 6.
+
+  3. PICK THE RIGHT BOARD. See BOARD SELECTION above. "ESP32 Dev Module".
+
+  4. EXPECT THE LCD TO BE BLANK THE FIRST TIME. LCD_I2C_ADDRESS below is set
+     to 0x27, the common PCF8574 address, but a good share of these backpacks
+     are 0x3F instead. A wrong address fails SILENTLY -- lit backlight, no
+     characters. If that happens, change the one constant and reflash before
+     assuming anything else is broken.
+
+  Then: the serial monitor at 115200 is the fastest way to see what it is
+  doing. It prints the Wi-Fi join, every weight it reads, and every HTTP
+  status it gets back.
 
   ============================================================================
   PROTOCOL -- see CONTRACT.md section 4.1, which is the authority. Three

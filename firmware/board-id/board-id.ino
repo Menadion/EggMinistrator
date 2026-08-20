@@ -1,4 +1,22 @@
 /*
+  ============================================================================
+  ✅ ALREADY RUN -- 2026-08-20, on COM3. You do not need to run this again
+  unless the board is replaced.
+
+      Chip type:          ESP32-D0WD-V3 (revision v3.1)
+      Features:           Wi-Fi, BT, Dual Core + LP Core, 240MHz,
+                          Vref calibration in eFuse, Coding Scheme None
+      Crystal frequency:  40MHz
+      MAC:                1c:69:20:a3:f8:8c
+
+  VERDICT: a CLASSIC ESP32, not an S3. The main sketch's pin map was already
+  written for this chip and is safe -- see EggMinistrator_ESP32S3.ino lines
+  76 to 101. The warning below about the pin map being unsafe is HISTORICAL
+  and was resolved on 2026-08-15.
+  ============================================================================
+*/
+
+/*
   board-id -- what chip is this actually?
 
   WHY THIS EXISTS

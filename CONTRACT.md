@@ -546,7 +546,7 @@ defense aid.
 | 12 | Classify internal egg quality from the candling image | 🔴 | `classify.py` is written but no trained model exists — `ai/models/` is absent |
 | 13 | Measure the weight of each inspected egg | 🟡 | firmware written (535 lines) and **calibrated 2026-08-16, factor 735.25**. Amber only because the board has never been compiled or flashed. *(Descoped 2026-08-19, restored 2026-08-20.)* |
 | 14 | Detect large cracks and gross shell damage | 🔴 | **same missing model as FR-12** |
-| 15 | Indicate the result at the station, visual + audible | 🟡 | **visual half only.** LCD + 3 LEDs exist and the firmware drives them; **there is no buzzer**, so nothing satisfies "audible signal". The `beep()` code is already written and waiting on a ₱20–50 part — see section 7 item 5 |
+| 15 | Indicate the result at the station, visual + audible | 🟡 | **visual half only.** LCD + 3 LEDs exist and the firmware drives them. ✅ **The adviser ruled 2026-08-20 that the laptop speaker is an acceptable audible cue**, so no buzzer needs buying and the cost tables do not move. ⚠️ **But nothing plays it yet** — there is no audio anywhere in `dashboard/` or `backend/`. The firmware's `beep()` drives a pin with no buzzer attached, so it does not close this either. Small React job: sound on verdict, ideally distinct for `defective` |
 
 ### They move in clusters, not one at a time
 
