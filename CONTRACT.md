@@ -15,15 +15,40 @@ rather than editing it, and it gets fixed in one place.
 
 ## 1. What the system is, in one paragraph
 
-A single, stationary inspection station for eggs. An egg is placed on the station by hand. One
-**candling** photo is taken (light shone through the shell, so the camera sees the inside), and a
-load cell weighs the same egg. An AI model classifies the photo, the weight determines a size grade,
-and the result is written to a local MySQL database and shown on a web dashboard. It replaces manual
-inspection and handwritten tally sheets at a commercial egg operation.
+A single, stationary inspection station for eggs. An egg is placed on the station by hand. A load cell under the
+platform weighs it; the weight both triggers the capture and determines the size grade. One
+**candling** photo is taken (light
+shone through the shell, so the camera sees the inside), an AI model classifies it, and the result is
+written to a local MySQL database and shown on a web dashboard. It replaces manual inspection and
+handwritten tally sheets at a commercial egg operation.
 
-The reference operation runs **white and tinted** (partially pigmented) shells. Not brown.
+The client runs **white and tinted** (partially pigmented) shells. Not brown.
 
-> ⚠️ The paper title is being revised as of 2026-08-04 and is not final. Do not quote the old title.
+> ✅ **DESCOPE REVERSED, 2026-08-20.** Weight was descoped on 2026-08-19 and restored the next
+> morning. **The load cell and HX711 are in the build**, the station weighs the egg, and weight
+> determines a size grade. The paragraph above describes the live design. The descope is a dead end:
+> `docs/projman/weight-descope.md` is marked VOID and nothing in it should be acted on.
+>
+> **Nothing was lost.** Both parts arrived 2026-08-14 and are on the shelf; no size-grading code was
+> ever deleted; R was never told, so there is nothing to walk back with him.
+>
+> **Three adviser rulings on 2026-08-20 drove this, and all three reach further than the descope:**
+>
+> 1. 🔴 **The title cannot change.** It names *"Load Cell Weight Measurement"*, and a locked title
+>    means the component it names has to exist. This is what forced the reversal.
+> 2. 🔴 **The defense requires physical hardware. A simulator will not be accepted** — a simulated
+>    demo is read as no programming having been done. **This overrules the 2026-08-14 team decision
+>    to demo by simulation.** See open item 4; it is the largest change on this page.
+> 3. ✅ **Scope changes do not need to be written into the paper.** Different panelists on the day,
+>    so quiet changes are fine. Neither the descope nor its reversal is ever explained to anyone.
+
+> 🔴 **A fourth ruling, unrelated to weight, constrains everything the project says out loud.**
+> **Never present the client as already operating a system that does what we do.** The panel reads
+> "an existing system" as the project being defeated, even when the framing is integration or
+> complement. Industry competitors in the comparison matrix are fine and were explicitly requested by
+> Ferrer; *this client already owns a grading machine* is not sayable. This kills the warehouse-machine
+> contrast as a public argument, though it stays usable as a defensive answer if a panelist raises it
+> first. See `docs/projman/gaps.md`.
 
 ---
 
@@ -51,12 +76,21 @@ work crosses a boundary, that is a conversation, not a commit.
 2. **The model emits exactly three classes: `good`, `defective`, `not_an_egg`.** One verdict per
    egg. It does not report which defect it found. (This is "Decision G".)
 3. **Weight is not vision.** Size grading comes from the load cell, not the camera. Accuracy target
-   is ±2 g.
+   is ±2 g. *(Briefly voided 2026-08-19, restored 2026-08-20 — see section 1.)*
 4. **Size grades follow PNS/BAFS 321:2021 weight bands**, stored in the `size_grades` table.
+   *(Briefly voided 2026-08-19, restored 2026-08-20 — see section 1.)*
 5. **Embryo development and balut are out of scope, by input.** The reference operation receives
    only unfertilised eggs; fertilised eggs are separated upstream into a different production line
    and never reach the station. An embryo cannot arrive here, so nothing needs to detect one.
-6. **Dirt is out of scope**, because eggs are washed upstream before they reach the station.
+6. **Dirt is out of scope, because a backlit frame cannot show it.** Surface dirt and shell
+   discoloration are reflected-light features; the station captures one transilluminated image and
+   nothing else.
+   > ⚠️ **The reason changed on 2026-08-19 and the old one must not be used.** It used to read
+   > *"because eggs are washed upstream before they reach the station."* That died twice over: the
+   > station now sits at the **laying house, upstream of the wash**, and the client's own process
+   > description has the candling stage **after** the wash still finding dirt, so washing was never
+   > removing all of it. The capture-design reason is stronger anyway — it is a fact about optics
+   > rather than about a workflow, so it cannot be invalidated by the workflow changing again.
 7. **The stack is fixed:** Python for `ai/`, Node/Express for the backend, React + Vite for the
    dashboard, MySQL for the database, ESP32 for firmware. **The paper says PHP in one place. The
    paper is wrong.** Do not let an AI generate PHP.
@@ -74,20 +108,25 @@ This is the part that matters most. These are the handoffs between people.
 
 ### 4.1 Firmware → server
 
-**The board sends weight. It does not send an image.** That changed with the 2026-08-07 descope: the
-camera is a USB webcam on the laptop, and the ESP32-S3 reads the load cell through the HX711, which
-has no USB and cannot reach a laptop on its own.
+**The board sends a weight. It does not send an image.** The camera is a USB webcam on the laptop;
+the board reads the load cell through the HX711 and reports the number.
+
+> ✅ **Restored 2026-08-20.** This briefly read *"the board sends a placement event"* during the
+> 24-hour weight descope. **The weight payload below is correct and R's endpoint already accepts it.**
+> No coordination with J or R is needed here after all.
 
 **Transport: HTTP over Wi-Fi, never USB serial.** The board's USB cable carries power only. This is
 not a style preference — `hardware/bill-of-materials.md` is explicit that a USB *data* path makes the
-board a peripheral attached to a computer, which contradicts the paper's title and §2.2. Whoever
-touches this: the weight leaves over the network.
+board a peripheral attached to a computer, which contradicts the paper's title and §2.2. **This is the
+load-bearing half of the IoT claim**: the board runs its own firmware and reports over the network
+rather than hanging off a USB port.
 
 #### The three calls, in order
 
 ```
 1. BOARD  →  POST /api/inspections            { "weight_g": 58.23 }
    SERVER →  creates the egg_inspections row, replies { "id": 41 }
+             ⚠️ and must also trigger the capture — see FR-01, still unwritten
 
 2. LAPTOP →  POST /api/inspections/41/assessment
              the six fields from classify.py (see 4.3) + raw_result
@@ -252,18 +291,33 @@ These are unresolved. If your task touches one, ask before assuming.
 
    ⚠️ **No usable photo can be taken until the egg stands up on its own.** Fingers holding the egg
    appear in the candling frame and will not exist at inference, so the model would learn a grip.
-   The final holder (BOM item 4) also has to transfer weight to the load cell — the photo rig does
-   not. A bottle cap with the centre cut out is enough, provided it is the same every shot.
-2. ✅ **RESOLVED 2026-08-14 — the 1 kg load cell and HX711 arrived.** The paper previously specified
-   5 kg against a ±2 g target, which wastes resolution on a 60 g object; the BOM specifies **1 kg**
-   and that is what was bought. **This was the only outstanding item with a shipping delay attached**
-   — everything remaining is work, not waiting.
+   A bottle cap with the centre cut out is enough, provided it is the same every shot.
+   ⚠️ **The final holder (BOM item 4) is a harder part than the photo rig**, because it must also
+   transfer the egg's weight to the load cell while the rig does not. Do not assume that a working
+   photo rig means the station holder is solved.
+2. 🔴 **The load cell and HX711 arrived 2026-08-14 and still need wiring and calibration.**
+   *(Briefly voided by the 2026-08-19 descope; restored 2026-08-20 with both parts still on the
+   shelf.)*
 
-   Next on it, in order: wire load cell → HX711 → ESP32-S3, then **calibrate**, which is the longest
-   job and needs no network, no server and no enclosure. The procedure is in the header comment of
-   `firmware/EggMinistrator_ESP32S3.ino` — print `get_units(10)` in a loop, place a known weight,
-   divide. ⚠️ `LOADCELL_CALIBRATION_FACTOR` is still the library's placeholder `2280.0` and every
-   weight the board reports is meaningless until that number is replaced.
+   ✅ **CALIBRATION IS DONE.** This entry used to say the factor was still the library's placeholder
+   `2280.0`. **That is out of date.** `LOADCELL_CALIBRATION_FACTOR = 735.25`, calibrated by J on
+   2026-08-16 against the cell this project owns — the sketch shows the working at line 129: a raw
+   reading of 44267 against a known 60 g gives 737.8, settled to 735.25 in testing. **The longest job
+   on the hardware list was already finished four days ago.**
+
+   ✅ **Wiring is only two signal pins**, DOUT and SCK, plus power. The interface is documented, so
+   nothing here is blocked on an unknown part.
+
+   ✅ **The chip is identified and the pin map already suits it.** `board-id/` was run on COM3 and
+   returned **ESP32-D0WD-V3 rev v3.1**, MAC `1c:69:20:a3:f8:8c` — a **classic ESP32, not an S3**. The
+   sketch was rewritten for it and avoids GPIO6-11 (SPI flash), the strapping pins and the input-only
+   range. Nothing is blocked here.
+
+   🔴 **One physical job before flashing: J's LEDs are wired to GPIO12 and GPIO13, and the sketch
+   drives 26, 27 and 23.** They have to move, or the indicators simply will not light. GPIO12 is MTDI
+   and, held high at boot, selects a 1.8 V flash voltage and the board may not start — J's own code
+   drives it low so his bench setup works, but that is one stray pull-up from an unbootable board,
+   which is why the sketch moved off it. See the sketch at line 113.
 3. ✅ **RESOLVED 2026-08-14 — the server receives inspections.** Built by R, merged in `de64b77`,
    and verified end to end against MariaDB. All three calls in section 4.1 exist and behave as
    specified. `DEVICE_API_KEY` now has a real value in `backend/.env`; **the same string has to go
@@ -287,16 +341,17 @@ These are unresolved. If your task touches one, ask before assuming.
    `LiquidCrystal_I2C::init()` returns nothing, so a wrong address fails silently as a blank screen
    with a lit backlight.
 
-   ✅ **SOFTDEV will be demonstrated by simulation, not by the prototype.** Team decision,
-   2026-08-14: a working simulation beats a half-wired board on the day. `firmware/simulate_station.py`
-   plays the board and the laptop against the **real** backend — real endpoints, real device-key
-   check, real size-grade lookup, real database writes, real dashboard. Only four numbers per egg are
-   invented: weight, class, confidence, filename. Run it beside the browser and rows appear in
-   History as it goes.
+   🔴 ~~**SOFTDEV will be demonstrated by simulation, not by the prototype.** Team decision,
+   2026-08-14.~~ **OVERRULED BY THE ADVISER, 2026-08-20. The defense requires physical hardware.**
+   A simulated demo is read as no programming having been done. **The board must be flashed, wired
+   and working on 2026-08-26.** This is the single largest change on this page and it makes flashing
+   the critical path for the whole project.
 
-   ⚠️ **Say it out loud before anyone asks.** *"The sensing hardware is in assembly, so this stands
-   in for the load cell and camera — everything downstream is the real system."* Announcing it is
-   normal practice; being caught by it is not.
+   ✅ **`firmware/simulate_station.py` keeps a job, just not that one.** It plays the board and the
+   laptop against the **real** backend — real endpoints, real device-key check, real database writes,
+   real dashboard — which makes it the fastest way to exercise the server while the hardware is being
+   built. It still POSTs `weight_g`, which is **correct again** after the descope reversal, so no
+   change is needed to it. Use it for development. Do not use it on the day.
 
    ✅ **The firmware can also be tested without waiting on item 3.** `firmware/stub_server.py` answers
    all three calls in 4.1 using nothing but the Python standard library, inventing a verdict a
@@ -432,14 +487,21 @@ These are unresolved. If your task touches one, ask before assuming.
 
 **Resolved 2026-08-07** *(kept for context, do not re-open)*:
 
-- ~~Which ESP32 board the team owns.~~ **The ESP32-S3.** The classic ESP32-CAM is out of the build
+- ~~Which ESP32 board the team owns.~~ **An ESP32-D0WD-V3, a classic ESP32** — confirmed 2026-08-20
+  by running `firmware/board-id/`, not read off the can, which says only "ESP32-32X". *(Earlier notes
+  here and elsewhere in the repo call it an ESP32-S3. They are wrong; the paper says only "ESP32" and
+  is correct.)* The ESP32-CAM is out of the build
   entirely. The camera is deliberately **not** on the ESP32 — capture is a USB webcam on the laptop.
-  The ESP32-S3 reads the HX711 and posts weight **over Wi-Fi**, which is what keeps the IoT claim in
-  the title true. ⚠️ **Wiring it over USB serial instead would break the cover page** — see
-  `firmware/README.md`.
-- ~~The final paper title.~~ Confirmed by the professor and landed in Ver6.1.4:
+  The ESP32-S3 posts **over Wi-Fi**, which is what keeps the IoT claim in the title true. ⚠️ **Wiring
+  it over USB serial instead would break the cover page** — see `firmware/README.md`.
+  > ✅ **Unchanged.** A 2026-08-19 note here said the board reads a presence sensor rather than the
+  > HX711. That descope was reversed on 2026-08-20; it reads the HX711 and posts a weight.
+- ~~The final paper title.~~ ✅ **CLOSED AND LOCKED 2026-08-20.** It stands as
   *"EggMinistrator: An AI-Powered IoT System for Real-Time Egg Grading and Counting Using Candling
-  Computer Vision and Load Cell Weight Measurement **for Leong Hup Philippines Inc.**"*
+  Computer Vision and Load Cell Weight Measurement **for Leong Hup Philippines Inc.**"* Briefly
+  re-opened on 2026-08-19 when weight was descoped; **the adviser declined the change on 2026-08-20**,
+  which is what forced the descope to be reversed rather than the title. **Do not re-open this.** The
+  title is now a constraint on the build, not the other way round.
 
 ---
 
@@ -470,10 +532,10 @@ defense aid.
 
 | FR | Requirement | | Where it stands |
 |---|---|---|---|
-| 01 | Capture egg images using a stationary camera | 🔴 | no capture code exists. `classify.py` reads a file off disk (`cv2.imread(sys.argv[1])`); nothing opens a webcam |
-| 02 | Automatically detect eggs on the platform | 🟡 | firmware triggers at 20 g — written, never flashed |
+| 01 | Capture egg images using a stationary camera | 🔴 | no capture code exists. `classify.py` reads a file off disk (`cv2.imread(sys.argv[1])`); nothing opens a webcam. ⚠️ **The load cell does NOT close this.** It supplies the *trigger*; something on the laptop must still receive that event, open the webcam, classify, and POST back against the inspection ID. **That listener is still unwritten**, and with the simulator ruled out of the defense it is now required to exist by 2026-08-26 |
+| 02 | Automatically detect eggs on the platform | 🟡 | firmware triggers at a 20 g threshold on the load cell. *(A 2026-08-19 note replaced this with a presence sensor; the descope was reversed 2026-08-20 and the weight threshold stands.)* Still amber: board never flashed. A pre-owned presence sensor sits in the drawer as a fallback if the threshold proves jumpy in testing |
 | 03 | Allow authorized personnel to override an AI result | ✅ | **built and verified 2026-08-13** against MariaDB — `PATCH /api/inspections/:code/override`, any signed-in account, per-row control on History. Writes `final_disposition` + `is_overridden`, appends who and when to `notes`, and never touches `ai_disposition`. `400` on an invalid label, `401` without a token. ⚠️ The History control was deleted in `f6fa589` and restored in `5b104fd` — do not remove it again, see section 7 item 7. The override is logged to `egg_inspections.notes`, **not** to `staff_overrides` |
-| 04 | Assign a size class from weight (PNS, Table 11) | ✅ | **verified 2026-08-14** — R's `findSizeGrade()` matches the weight against the `size_grades` bands and sets `size_grade_id` on insert. Tested: 58.20 g → `Medium`. A `not_an_egg` verdict nulls it again, since a misload has no size |
+| 04 | Assign a size class from weight (PNS, Table 11) | ✅ | R's `findSizeGrade()` verified 2026-08-14, tested 58.20 g → `Medium`. *(Descoped 2026-08-19, restored 2026-08-20. R was never told, and no code was deleted, so this row never actually moved.)* |
 | 05 | Automatically count inspected eggs | ✅ | **verified 2026-08-15** against a live stack. `DashboardPage.jsx:31` renders `inspections.length` straight off `GET /api/inspections`; the endpoint returned 5,234 rows over a database holding 5,337, the difference being the 103 `no_egg` rows decision 8 filters out. A real count over real rows, not a stored total |
 | 06 | Store inspection records in the database | ✅ | **verified end to end 2026-08-14.** Built by R, merged in `de64b77`. Weight POSTed → row minted with an id → assessment POSTed against it → verdict polled back. Every 4.3 column lands, including the four the server owns, `raw_result` byte-identical to what was sent, and the `inspection_images` row created |
 | 07 | Display results on the monitoring dashboard | ✅ | **verified 2026-08-15** against a live stack, replacing "builds clean", which was never a check that anything displayed. Dashboard and History both render live rows carrying egg ID, weight, size grade, quality verdict, station and timestamp. Confirmed by driving fresh inspections through `simulate_station.py` and watching them arrive |
@@ -482,15 +544,18 @@ defense aid.
 | 10 | Allow administrators to access inspection history | ✅ | **verified 2026-08-15** against a live stack. `HistoryPage.jsx:50` fetches `/api/inspections` through `authenticatedFetch`; unauthenticated calls get `AUTH_REQUIRED`. ⚠️ **There is no role check on that route** — `server.js:55-59` calls only `getSessionUser`, and signing in as `inspector` returned all 5,234 rows. Role gating exists only on `/api/admin/*`. The requirement says administrators *can* reach the history, not that only they can, so it is met as written — same reading R applied to FR-03. **Say this deliberately if asked** |
 | 11 | Capture a candling image under transillumination | 🔴 | **same missing capture code as FR-01** |
 | 12 | Classify internal egg quality from the candling image | 🔴 | `classify.py` is written but no trained model exists — `ai/models/` is absent |
-| 13 | Measure the weight of each inspected egg | 🟡 | firmware written, never flashed |
+| 13 | Measure the weight of each inspected egg | 🟡 | firmware written (535 lines) and **calibrated 2026-08-16, factor 735.25**. Amber only because the board has never been compiled or flashed. *(Descoped 2026-08-19, restored 2026-08-20.)* |
 | 14 | Detect large cracks and gross shell damage | 🔴 | **same missing model as FR-12** |
 | 15 | Indicate the result at the station, visual + audible | 🟡 | **visual half only.** LCD + 3 LEDs exist and the firmware drives them; **there is no buzzer**, so nothing satisfies "audible signal". The `beep()` code is already written and waiting on a ₱20–50 part — see section 7 item 5 |
 
 ### They move in clusters, not one at a time
 
 - **Software cluster (R, mostly) — clears 50% with no hardware and no model.** `FR-08` needs only
-  verifying. `FR-06` is the ingest already in progress. `FR-04` comes with it. `FR-03` needs a button
-  and an endpoint against columns that have been sitting ready. **That is 8/15 = 53%.**
+  verifying. `FR-06` is the ingest already in progress. ~~`FR-04` comes with it.~~ `FR-03` needs a
+  button and an endpoint against columns that have been sitting ready. ~~**That is 8/15 = 53%.**~~
+  > ✅ **8 of 15 = 53% stands.** A 2026-08-19 recount here read 7 of 13 after FR-04 and FR-13 were
+  > descoped. **The descope was reversed on 2026-08-20**, both requirements are back, and the count
+  > returns to the printed figure. Nothing about the denominator needs explaining to anyone.
 - **Hardware cluster (J) — `FR-02`, `FR-13`, `FR-15` all flip on the first successful flash.** → 11/15.
 - **AI cluster (M) — `FR-01`+`FR-11` are one capture script, `FR-12`+`FR-14` are one training run.**
   Two jobs, four requirements, blocked on nobody.
