@@ -100,12 +100,15 @@
 #define LED_GREEN_PIN 27
 #define LED_BLUE_PIN  23   // only used for the "not an egg" indicator -- see indicateResult()
 
-// ✅ CONFIRMED 2026-08-16: the station has TWO LEDs, red and green. There is
-// no third. CONTRACT and the paper both say three, so both need correcting.
-// With this false, indicateResult() signals "not an egg" by blinking red and
-// green together -- visibly distinct from either verdict, which is what FR-15
-// actually asks for, without inventing a part that does not exist.
-#define HAS_BLUE_LED false
+// ✅ CONFIRMED 2026-08-16: three LEDs exist. J found a third beyond the red
+// and green, so each of the three verdicts gets its own colour and the BOM
+// now reads 3 pieces. CONTRACT and the paper were right all along and need
+// no correction.
+//
+// Set this false if the third LED is ever lost or reassigned: indicateResult()
+// then signals "not an egg" by blinking red and green together, which is still
+// visibly distinct from either verdict and still satisfies FR-15's visual half.
+#define HAS_BLUE_LED true
 
 // ⚠️ J currently has his two LEDs on GPIO12 and GPIO13. 13 is fine. 12 is
 // MTDI: held HIGH at boot it selects a 1.8 V flash voltage and the board may

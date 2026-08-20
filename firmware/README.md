@@ -7,25 +7,68 @@ The ESP32-S3 weight node.
 > attached to the laptop**, and the ESP32-S3 is repurposed from "the programmer" to **the networked
 > sensor**.
 
-## ⚠️ Not written yet
+## Status — written, never run (2026-08-18)
 
-**There is no firmware in this directory.** The paper (Ver6.1.4, §2.2 and Ch4 sensing layer) states
-that the ESP32-S3 *"executes its own firmware"* and transmits weight over Wi-Fi. That is a commitment
-made on 2026-08-07 and it is not yet met. Until it is written, the paper describes something that
-does not exist.
+**The firmware exists.** `EggMinistrator_ESP32S3.ino`, 535 lines. The paper's claim (Ver6.1.4, §2.2
+and Ch4 sensing layer) that the ESP32-S3 *"executes its own firmware"* and transmits weight over
+Wi-Fi is met **in code**. It is not yet met on a board.
 
-It is small — an HX711 library read plus an HTTP POST, realistically under a hundred lines — but it is
-not zero.
+- 🔴 **Never compiled, never flashed.** The sketch says so itself at line 20: *"NOT COMPILE-TESTED."*
+  Nothing in this directory has run on hardware.
+- ✅ **The chip is identified, and the pin map is already correct for it.** `board-id/` was run over
+  USB on COM3 and the board answered:
 
-## What it has to do
+  ```
+  Chip type:          ESP32-D0WD-V3 (revision v3.1)
+  Features:           Wi-Fi, BT, Dual Core + LP Core, 240MHz, Vref calibration in eFuse
+  Crystal frequency:  40MHz
+  MAC:                1c:69:20:a3:f8:8c
+  ```
 
-1. Connect to Wi-Fi.
-2. Read the load cell through the HX711 (`DOUT` / `PD_SCK`, bit-banged — use a library, e.g. HX711 for
-   Arduino).
-3. On trigger, POST the weight reading to the local server as an HTTP request.
+  **It is a classic ESP32, not an S3.** The can is marked only "ESP32-32X", a reseller marking rather
+  than an Espressif part number, which is why it had to be asked rather than read. The sketch's pin
+  map was rewritten for this chip: GPIO6-11 (SPI flash), GPIO0/2/12/15 (strapping), GPIO1/3 (UART0)
+  and GPIO34-39 (input only) are all avoided, and GPIO16/17 are skipped so the same map works on a
+  WROVER. See the commentary at lines 76-101 of the sketch.
 
-That is the whole job. **Inference stays on the computer** (see [`../ai/`](../ai/)) — the node is
-responsible for sensing and reporting, nothing else.
+  ⚠️ **The file is still named `EggMinistrator_ESP32S3.ino`, and several repo docs still say
+  "ESP32-S3".** Cosmetic and deliberately not renamed this close to the defense. **The paper says
+  only "ESP32" throughout and is correct as printed.**
+- ⚠️ **`LCD_I2C_ADDRESS` is a guess.** Set to `0x27`, the usual PCF8574 backpack address, but a good
+  number of these modules are `0x3F` instead. First thing to change if the screen stays blank.
+- ✅ **The load cell is calibrated.** `LOADCELL_CALIBRATION_FACTOR = 735.25`, calibrated 2026-08-16 by
+  J against the load cell this project owns.
+
+## What it does
+
+1. Connects to Wi-Fi.
+2. Reads the load cell through the HX711 (`DOUT` / `PD_SCK`).
+3. **Triggers on weight, not on a keypress.** Placing the egg is the button press: above
+   `EGG_PRESENT_THRESHOLD_G` (20.0 g) the station wakes and shows `Egg detected. Measuring...`; below
+   `EGG_REMOVED_THRESHOLD_G` (15.0 g) it resets for the next egg.
+4. `POST /api/inspections` with `{ "weight_g": 58.23 }`, which opens an inspection record.
+5. `GET /api/inspections/<id>/result`, polled every 500 ms, until the verdict lands.
+6. Drives the LCD, LEDs and buzzer from that verdict.
+
+**Inference stays on the computer** (see [`../ai/`](../ai/)) — the node senses and reports, nothing
+else. It never sees the image.
+
+> 🔴 **The step between 4 and 5 is not written.** Something on the laptop has to notice the new
+> inspection, shoot the webcam, run `ai/inference/classify.py`, and POST the result back against that
+> id. No such code exists. `ai/capture.py` is not it — that is the dataset collection tool, where a
+> human presses G/D/N and the images go to folders, not to the API. This is the same hole the
+> contract records as **FR-01 and FR-11 red, "missing capture code."** The board will post a weight
+> and then poll forever.
+
+## What is in here
+
+| File | What it is |
+|---|---|
+| `EggMinistrator_ESP32S3.ino` | the node firmware, 535 lines |
+| `board-id/board-id.ino` | asks the chip what silicon it actually is, because the can's marking does not say. Run this before flashing anything else |
+| `secrets.h.example` | placeholder Wi-Fi credentials and device key. Copy to `secrets.h`, which is gitignored and never committed |
+| `simulate_station.py` | plays both hardware roles against the **real** backend, so History fills with real rows when nothing is wired up |
+| `stub_server.py` | plays the backend against the **real** board, so the LCD, LEDs and buzzer can be tested before R's routes exist |
 
 ## Why it must be Wi-Fi, not USB serial
 
@@ -39,18 +82,20 @@ true. Over USB it becomes a peripheral and the cover page stops being defensible
 
 The ESP32-S3 has **native USB** — no FTDI adapter, no CP2102, no GPIO0 jumper. Plug it in.
 
-1. Open the sketch in the **Arduino IDE** (ESP32 board support installed), select an ESP32-S3 board.
-2. Set the Wi-Fi SSID/password and the server address in a local config — **do not commit real Wi-Fi
-   credentials.**
-3. Compile and upload.
+1. **Flash `board-id/` first** and read the serial output. If the chip is not an ESP32-S3, stop — the
+   main sketch's pin map is unsafe on classic ESP32 silicon.
+2. Copy `secrets.h.example` to `secrets.h` and fill it in — **do not commit real Wi-Fi credentials.**
+3. Open the sketch in the **Arduino IDE** (ESP32 board support installed), select the board `board-id`
+   reported.
+4. Compile and upload. This has never been done, so budget for compile errors on the first pass.
 
 *(The old ESP32-CAM flashing procedure — USB-to-serial adapter wired to U0T/U0R/GND/5V with GPIO0
 pulled to GND — no longer applies to anything in this project.)*
 
 ## Notes
 
-- The load cell needs **calibration** against a known mass before readings mean anything. Size class is
-  assigned by comparing weight to the PNS bands in the paper's Table 11, so a calibration error becomes
-  a grading error directly.
+- The load cell **is calibrated** (735.25, by J, 2026-08-16). Size class is assigned by comparing
+  weight to the PNS bands in the paper's Table 11, so a calibration error becomes a grading error
+  directly — re-calibrate if the load cell, the HX711 or the egg holder ever changes.
 - Weight and image are joined **on the server**, against the same inspection record. The node does not
   see the image.
