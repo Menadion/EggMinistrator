@@ -1,10 +1,17 @@
 /*
   EggMinistrator -- ESP32 firmware (load cell + LCD + LEDs + buzzer only)
 
-  BOARD: ESP32-D0WD-V3 rev v3.1, a CLASSIC ESP32. Not an S3, despite this
-  file's name. Confirmed 2026-08-20 by running firmware/board-id/ over COM3.
-  The filename is left alone deliberately -- renaming it this close to the
-  defense buys nothing and breaks every link that points at it.
+  BOARD: ESP32-D0WD-V3 rev v3.1, a CLASSIC ESP32. Confirmed 2026-08-20 by
+  running firmware/board-id/ over COM3.
+
+  RENAMED 2026-08-20. This was EggMinistrator_ESP32S3.ino, loose in firmware/.
+  Two things were wrong with that. The chip is not an S3, and the Arduino IDE
+  requires a .ino to sit inside a folder of the same name -- opening a loose
+  sketch makes the IDE offer to move it into a new folder, and it moves ONLY
+  the .ino, leaving secrets.h behind and breaking the #include. secrets.h now
+  lives in this folder, beside the sketch, where the IDE cannot separate them.
+
+  ⚠️ J: if you already made a secrets.h in firmware/, move it in here.
   ----------------------------------------------------------------------------
   This board does NOT handle the camera. The camera is a regular USB webcam
   plugged into the laptop, which runs ai/inference/classify.py. This board's

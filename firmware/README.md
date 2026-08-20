@@ -9,7 +9,7 @@ The ESP32-S3 weight node.
 
 ## Status — written, never run (2026-08-18)
 
-**The firmware exists.** `EggMinistrator_ESP32S3.ino`, 535 lines. The paper's claim (Ver6.1.4, §2.2
+**The firmware exists.** `EggMinistrator_ESP32.ino`, 535 lines. The paper's claim (Ver6.1.4, §2.2
 and Ch4 sensing layer) that the ESP32-S3 *"executes its own firmware"* and transmits weight over
 Wi-Fi is met **in code**. It is not yet met on a board.
 
@@ -31,7 +31,7 @@ Wi-Fi is met **in code**. It is not yet met on a board.
   and GPIO34-39 (input only) are all avoided, and GPIO16/17 are skipped so the same map works on a
   WROVER. See the commentary at lines 76-101 of the sketch.
 
-  ⚠️ **The file is still named `EggMinistrator_ESP32S3.ino`, and several repo docs still say
+  ⚠️ **The file is still named `EggMinistrator_ESP32.ino`, and several repo docs still say
   "ESP32-S3".** Cosmetic and deliberately not renamed this close to the defense. **The paper says
   only "ESP32" throughout and is correct as printed.**
 - ⚠️ **`LCD_I2C_ADDRESS` is a guess.** Set to `0x27`, the usual PCF8574 backpack address, but a good
@@ -64,7 +64,7 @@ else. It never sees the image.
 
 | File | What it is |
 |---|---|
-| `EggMinistrator_ESP32S3.ino` | the node firmware, 535 lines |
+| `EggMinistrator_ESP32.ino` | the node firmware, 535 lines |
 | `board-id/board-id.ino` | asks the chip what silicon it actually is, because the can's marking does not say. Run this before flashing anything else |
 | `secrets.h.example` | placeholder Wi-Fi credentials and device key. Copy to `secrets.h`, which is gitignored and never committed |
 | `simulate_station.py` | plays both hardware roles against the **real** backend, so History fills with real rows when nothing is wired up |

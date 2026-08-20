@@ -77,7 +77,10 @@ dashboard-vocabulary.md
 docs/
 
 # === Firmware credentials (section 6: never commit secrets) ===
-# An Arduino sketch has no .env, so firmware/secrets.h is the equivalent: Wi-Fi password, the
+# An Arduino sketch has no .env, so secrets.h is the equivalent: Wi-Fi password, the
 # server's LAN IP, and the device key. secrets.h.example is committed with placeholders and is
 # the file you copy from.
+# Matched at any depth under firmware/ -- the sketch moved into its own folder on
+# 2026-08-20 and secrets.h moved with it, so a path-specific rule would have gone stale.
+firmware/**/secrets.h
 firmware/secrets.h

@@ -10,7 +10,7 @@
       MAC:                1c:69:20:a3:f8:8c
 
   VERDICT: a CLASSIC ESP32, not an S3. The main sketch's pin map was already
-  written for this chip and is safe -- see EggMinistrator_ESP32S3.ino lines
+  written for this chip and is safe -- see EggMinistrator_ESP32.ino lines
   76 to 101. The warning below about the pin map being unsafe is HISTORICAL
   and was resolved on 2026-08-15.
   ============================================================================
@@ -22,7 +22,7 @@
   WHY THIS EXISTS
     The module's can is marked "ESP32-32X", which is a reseller marking and
     not an Espressif part number, so it does not tell us which silicon is
-    inside. The pin map in EggMinistrator_ESP32S3.ino was written for an
+    inside. The pin map in EggMinistrator_ESP32.ino was written for an
     ESP32-S3 and is unsafe on a classic ESP32: GPIO6-11 are wired to the
     integrated SPI flash there, and the sketch puts the LCD, the buzzer and
     one LED on 8, 9, 10 and 11.

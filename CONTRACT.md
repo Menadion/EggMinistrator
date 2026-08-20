@@ -321,20 +321,20 @@ These are unresolved. If your task touches one, ask before assuming.
 3. ✅ **RESOLVED 2026-08-14 — the server receives inspections.** Built by R, merged in `de64b77`,
    and verified end to end against MariaDB. All three calls in section 4.1 exist and behave as
    specified. `DEVICE_API_KEY` now has a real value in `backend/.env`; **the same string has to go
-   into `firmware/secrets.h` or the board gets a 401.** `requireDeviceKey` fails closed when the key
+   into `firmware/EggMinistrator_ESP32/secrets.h` or the board gets a 401.** `requireDeviceKey` fails closed when the key
    is unset — 503 rather than allowing anything through — and compares with `timingSafeEqual`.
 
    🟡 **One cosmetic gap left.** `createInspection` sets no `batch_id` or `sequence_number`, so
    `formatEggId` falls back to a truncated UUID: new rows read `78919cdf…` in the dashboard while
    the seeded ones read `B001-EGG-001`. Harmless, and it will look like a bug on a projector.
 4. 🟡 **The ESP32-S3 firmware exists but has never been compiled or flashed.**
-   `firmware/EggMinistrator_ESP32S3.ino`, written by J, cherry-picked from `origin/Jasfer` on
+   `firmware/EggMinistrator_ESP32/EggMinistrator_ESP32.ino`, written by J, cherry-picked from `origin/Jasfer` on
    2026-08-13 and reworked the same day: it now posts over Wi-Fi per 4.1, drives the **16x2 I²C
    LCD** the station actually has, and bounds every wait that used to block forever. **Never
    compiled and never run on hardware** — the banner at the top of the file says so and stays until
    someone flashes it. The rest of J's branch was **not** taken; see the resolved notes below.
 
-   Two things to know before flashing. **Credentials live in `firmware/secrets.h`**, which is
+   Two things to know before flashing. **Credentials live in `firmware/EggMinistrator_ESP32/secrets.h`**, which is
    gitignored — copy `secrets.h.example` and fill it in; if `secrets.h` ever appears in
    `git status`, something is wrong with the ignore rule. And **`LCD_I2C_ADDRESS` is a guess**:
    `0x27` is the common PCF8574 address but a large share of these modules are `0x3F`, and

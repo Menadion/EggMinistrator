@@ -84,7 +84,7 @@ def read_device_key():
             return match.group(1)
     raise SystemExit(
         "DEVICE_API_KEY is empty in backend/.env. Pick any string, put it there, "
-        "and put the same one in firmware/secrets.h."
+        "and put the same one in firmware/EggMinistrator_ESP32/secrets.h."
     )
 
 
