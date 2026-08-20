@@ -424,6 +424,42 @@ These are unresolved. If your task touches one, ask before assuming.
    through the dashboard does not add a second. An empty table reads as *not built yet*; one plausible
    hand-written row reads as *working* until someone checks the date.
 
+8. 🟡 **PENDING, DELIBERATELY NOT STARTED — the dashboard does not update itself, and nothing plays
+   a sound. Owner: R. Held until the hardware works.**
+
+   *Parked on purpose 2026-08-20. Building this against a simulator risks building it wrong, so it
+   waits until real inspections are arriving from a real board. Recorded here so it is not forgotten,
+   not so it is worked on now.*
+
+   **Two problems, one fix.**
+
+   **a. No live update.** `dashboard/src/hooks/useDatabaseInspections.js` fetches once on mount —
+   `useEffect(() => { refresh() }, [refresh])` — and there is no `setInterval` anywhere in
+   `dashboard/src`. With `simulate_station.py` you run a batch and refresh once at the end, which is
+   how FR-07 was verified and it was honest at the time. **With eggs placed one at a time in front of
+   a panel, the screen shows nothing until somebody clicks refresh.** The adviser's 2026-08-20 ruling
+   that the defense requires physical hardware is what turned this from a non-issue into a demo
+   problem.
+
+   **b. No audible cue.** FR-15 wants visual *and* audible. ✅ The adviser ruled 2026-08-20 that **the
+   laptop speaker is acceptable**, so no buzzer is bought and no cost table moves. But there is no
+   audio anywhere in `dashboard/` or `backend/` — no `new Audio`, no `.play()`. The firmware's
+   `beep()` at lines 524-534 drives `BUZZER_PIN` with **no buzzer wired to it**, so the ESP32 cannot
+   close this either. It has no speaker of its own and no way to reach the laptop's.
+
+   **The fix is one change:** poll for new inspections, and play a sound when one arrives. The poll
+   is what the demo actually depends on; the sound rides along on the same event.
+
+   🔴 **The trap, and it will bite on the day.** Browsers block audio until the user has interacted
+   with the page. If nobody clicks before the first egg, the first cue is silently swallowed. Either
+   the operator logs in on that same page load, or the dashboard gets a deliberate "Start session"
+   button that unlocks audio. The second is more reliable.
+
+   *Rejected alternatives: having Node shell out to a system sound player per egg, and having
+   `classify.py` beep — both add moving parts for the same chirp, and the classifier is invoked by a
+   listener that does not exist yet. A ₱20-50 buzzer remains available as insurance against the
+   autoplay problem, but it moves the cost tables, which nothing else this week does.*
+
    So the answer to *"where is override history stored?"* is currently **a free-text `notes` field**,
    parsed by nobody, holding lines like `Overridden to "defective" by admin at 2026-08-17T…`. There
    is no `overridden_by` column — `inspectionService.js:296` says so and points here.
