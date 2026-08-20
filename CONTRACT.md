@@ -301,11 +301,30 @@ These are unresolved. If your task touches one, ask before assuming.
    cracks revealed by transillumination. Do not claim the station reads the *contents* of an egg.
    The defensible claim is that the candler shows hairline cracks the naked eye misses at pickup.
 
-   🔴 **THIS IS BLOCKED ON J, AND THAT IS THE PROJECT'S BIGGEST SINGLE-POINT RISK.** There is one
-   candler and it is J's. No candler, no image; no image, no dataset; no dataset, no model; and the
-   adviser ruled 2026-08-20 that the defense runs on live hardware in front of the panel. **A second
-   candler is BOM item 3 at ₱180 and would decouple the entire AI track from one person's
-   availability.** Cheapest risk reduction available to this project.
+   🔴 **THE DATASET IS SERIAL, NOT PARALLEL. This is the project's biggest schedule risk.**
+
+   **chamber built → dataset shot → model trained → demo works.** Four steps, and the adviser ruled
+   2026-08-20 that the defense runs on live hardware, so all four have to complete.
+
+   ⚠️ **Buying a second candler does NOT fix this, and the idea was rejected 2026-08-20.** Training
+   images must come from the same environment the model runs in — same candler, same chamber, same
+   seal, same distance, same background. Shooting somewhere else with a second candler produces a
+   dataset the prototype cannot use. A candler on its own is not a rig. Shipping would also land
+   after the bottleneck cleared.
+
+   ✅ **What DOES recover the parallelism: split J's hardware work in two.**
+
+   - **(a) The optical chamber** — candler fixed in place, egg holder, camera fixed, light sealed.
+   - **(b) The electronics** — load cell wiring, LED rewiring, flashing, LCD.
+
+   **Collection waits only on (a).** It does not need the board flashed, the load cell wired, or the
+   LCD working. **So (a) must be done first and frozen**, at which point shooting and flashing run
+   side by side.
+
+   🔴 **The chamber does not need to be good. It needs to be FINAL.** A cardboard box that never
+   moves again beats a better one finished on the 24th, because every day the geometry stays
+   unfrozen is a day nobody can shoot a usable image. Freeze it crude, mark every position, and do
+   not improve it afterwards — a change to the rig invalidates every photo taken before it.
 
    ⚠️ **No usable photo can be taken until the egg stands up on its own.** Fingers holding the egg
    appear in the candling frame and will not exist at inference, so the model would learn a grip.
