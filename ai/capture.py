@@ -119,6 +119,30 @@ def zoom_tag(zoom):
     return f"z{int(round(zoom * 10)):02d}"
 
 
+def open_camera(index):
+    """Open a camera, falling back to DirectShow if the default backend will not.
+
+    On Windows OpenCV defaults to Media Foundation, which frequently fails or
+    hangs for ten-plus seconds on high-resolution UVC webcams -- a 4K camera is
+    exactly the case that trips it. DirectShow opens the same device without
+    complaint. Trying the default first means nothing changes on machines where
+    it already works.
+    """
+    camera = cv2.VideoCapture(index)
+    if camera.isOpened():
+        return camera
+
+    camera.release()
+    fallback = getattr(cv2, "CAP_DSHOW", None)
+    if fallback is not None:
+        camera = cv2.VideoCapture(index, fallback)
+        if camera.isOpened():
+            print(f"Camera {index} opened with the DirectShow backend (the default one refused).")
+            return camera
+        camera.release()
+    return None
+
+
 def count_images(class_name):
     folder = DATASET_ROOT / class_name
     if not folder.exists():
@@ -161,6 +185,13 @@ def draw_overlay(frame, counts, tag, zoom, crop_shape):
         zoom_line,
         f"[Q] quit    tag: {tag}",
     ]
+    # The sensor resolution OpenCV actually negotiated, which is not always the
+    # one the camera can do. A wide-angle webcam asked for a smaller or squarer
+    # frame often CENTRE-CROPS rather than scaling, so the picture looks zoomed
+    # in while the zoom factor is still 1.0. Showing both makes that obvious
+    # instead of looking like a bug in the crop.
+    lines.append(f"sensor {width}x{height}   saving {crop_shape[1]}x{crop_shape[0]}")
+
     crop_height, crop_width = crop_shape[:2]
     if min(crop_width, crop_height) < TRAINING_INPUT_PIXELS:
         lines.append(f"TOO FAR IN: saving {crop_width}x{crop_height}, training wants {TRAINING_INPUT_PIXELS}")
@@ -193,10 +224,13 @@ def main():
     if zoom != args.zoom:
         print(f"--zoom {args.zoom} is outside {ZOOM_MIN}-{ZOOM_MAX}; using {zoom}.")
 
-    camera = cv2.VideoCapture(args.camera)
-    if not camera.isOpened():
+    camera = open_camera(args.camera)
+    if camera is None:
         raise SystemExit(
-            f"Could not open camera {args.camera}. If the USB webcam is plugged in, try --camera 1 or --camera 2."
+            f"""Could not open camera {args.camera}.
+  - The built-in camera is usually 0, so a USB webcam is 1 or 2. Try --camera 1.
+  - Close anything else using it: Teams, Zoom, Discord, a browser tab.
+  - Windows Settings > Privacy & security > Camera > allow desktop apps."""
         )
 
     counts = {name: count_images(name) for name in CLASS_KEYS.values()}

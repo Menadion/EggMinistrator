@@ -56,7 +56,7 @@ import numpy as np
 # copied, deliberately: if these two ever disagree, the model trains on one
 # framing and infers on another, and nothing about the failure looks like a
 # framing problem. See --zoom below.
-from capture import crop_to_zoom
+from capture import crop_to_zoom, open_camera
 
 MODEL_DIR = Path("ai/models")
 CAPTURE_DIR = Path("ai/captures")
@@ -200,9 +200,13 @@ def main():
     model, classes, version = load_model_and_labels()
     print(f"Model loaded: {version['name']} {version['version']}, classes {classes}")
 
-    camera = cv2.VideoCapture(arguments.camera)
-    if not camera.isOpened():
-        raise SystemExit(f"Could not open camera {arguments.camera}. Try --camera 1 or --camera 2.")
+    camera = open_camera(arguments.camera)
+    if camera is None:
+        raise SystemExit(
+            f"""Could not open camera {arguments.camera}.
+The built-in is usually 0, so a USB webcam is 1 or 2. Also check that nothing
+else is holding it, and that Windows allows desktop apps to use the camera."""
+        )
 
     print(f"Zoom {arguments.zoom:.1f}x. This must match the dataset, or the model sees a framing it was never trained on.")
     print(f"Listening at {arguments.api}. Place an egg on the platform. Ctrl+C to stop.")
