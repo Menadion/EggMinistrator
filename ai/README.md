@@ -34,9 +34,14 @@ The frame yields **one verdict per egg**, and the model does not report which de
 > station at all.** Nothing needs to detect one. The model has **no embryo class** and emits a
 > quality verdict only.
 >
-> ⚠️ Ver4 carried two leftover promises of balut routing (§3.4 Key Deliverables, and the Expected
-> Benefits table valuing it at ₱48,000/yr). **Not re-checked against Ver6.1.4** — if they survived,
-> they are paper bugs, not requirements. Do not build to them.
+> ✅ **Checked against Ver9.1 on 2026-08-22: the Ver4 leftovers did not survive.** This warning used
+> to say two balut-routing promises might still be in the paper (§3.4 Key Deliverables, and an
+> Expected Benefits row valuing it at ₱48,000/yr) and had never been re-checked. Both are gone. Every
+> mention of balut or embryo in Ver9.1 sits in an **Out of Scope** list, with the reason stated as
+> *"the facility receives only unfertilised eggs. Fertilised eggs are separated upstream into a
+> separate production line and never reach the inspection station."* The ₱48,000 benefit row is now
+> "Improved Inspection Accuracy" and has nothing to do with balut. **Nothing to fix; do not build to
+> a balut requirement.**
 
 ## Structure
 
