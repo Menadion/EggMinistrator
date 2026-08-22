@@ -80,14 +80,24 @@ true. Over USB it becomes a peripheral and the cover page stops being defensible
 
 ## Flashing
 
-The ESP32-S3 has **native USB** — no FTDI adapter, no CP2102, no GPIO0 jumper. Plug it in.
+> ⚠️ **Corrected 2026-08-22.** This section still described an ESP32-S3 and told you to **stop if
+> the chip was not an S3**. That is backwards now. `board-id/` was already run on 2026-08-18 and the
+> board answered **`ESP32-D0WD-V3`, a classic ESP32**, and the sketch's pin map was then rewritten
+> **for that silicon**. Following the old step 1 would have stopped the person who was holding the
+> right board.
 
-1. **Flash `board-id/` first** and read the serial output. If the chip is not an ESP32-S3, stop — the
-   main sketch's pin map is unsafe on classic ESP32 silicon.
-2. Copy `secrets.h.example` to `secrets.h` and fill it in — **do not commit real Wi-Fi credentials.**
-3. Open the sketch in the **Arduino IDE** (ESP32 board support installed), select the board `board-id`
-   reported.
-4. Compile and upload. This has never been done, so budget for compile errors on the first pass.
+The board is a **classic ESP32**, so it reaches the host through an **onboard USB-to-serial bridge**
+(CP2102 or CH340 on most dev boards), not native USB. Install that bridge's driver if the port does
+not appear. No FTDI adapter and no GPIO0 jumper are needed — these boards auto-reset into the
+bootloader.
+
+1. Copy `secrets.h.example` to `secrets.h` and fill it in — **do not commit real Wi-Fi credentials.**
+2. Open the sketch in the **Arduino IDE** with ESP32 board support installed, and select a plain
+   **ESP32 Dev Module** board. Do **not** select an S3 variant.
+3. Compile and upload. This has never been done, so budget for compile errors on the first pass.
+
+*(Re-run `board-id/` only if the physical board is swapped for a different one. It has already
+answered for the board this project owns.)*
 
 *(The old ESP32-CAM flashing procedure — USB-to-serial adapter wired to U0T/U0R/GND/5V with GPIO0
 pulled to GND — no longer applies to anything in this project.)*

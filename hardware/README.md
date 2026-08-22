@@ -2,11 +2,15 @@
 
 Physical build reference for the inspection station.
 
+> ⚠️ **The board is a classic ESP32, not an S3** (identified 2026-08-18 via `firmware/board-id/`:
+> `ESP32-D0WD-V3`). This file used to say ESP32-S3 throughout. The paper says only "ESP32" and is
+> correct as printed; some repo filenames still say S3 and are cosmetic. See `firmware/README.md`.
+
 ## Files
 
 - **`bill-of-materials.md`** — parts, quantities, costs. ✅ Written; prices not yet filled.
   Split into two purchase waves on purpose (see below).
-- `wiring-diagram.png` — load cell → HX711 → ESP32-S3, and the light-sealed enclosure. *(Not created
+- `wiring-diagram.png` — load cell → HX711 → ESP32, and the light-sealed enclosure. *(Not created
   yet.* Committed when it is — see the `!hardware/**/*.png` exception in `.gitignore`.) **Much
   smaller than it used to be** — the webcam is a USB cable and the candler has its own power.
 - Enclosure model — the 3D print deliverable. See below. *(Not created yet.)*
@@ -22,7 +26,7 @@ Physical build reference for the inspection station.
 > would have changed the enclosure geometry. **Capture is now a USB webcam from the start**, so that
 > risk is gone. The sequencing below is still sensible, just no longer load-bearing.
 
-1. **Wave 1 — electronics.** Load cell, HX711, ESP32-S3, candler. Rig them on a table, no enclosure.
+1. **Wave 1 — electronics.** Load cell, HX711, ESP32, candler. Rig them on a table, no enclosure.
    Photograph real cracked eggs and confirm the candler penetrates a **white or tinted** shell.
 2. **Wave 2 — the rig.** Enclosure, blackout material, egg platform, fasteners.
 

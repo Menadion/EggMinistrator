@@ -2,7 +2,7 @@
 
 The AI image-processing subsystem — Python, OpenCV, TensorFlow. Inference runs on the
 **laptop/desktop**, not on the microcontroller. Since 2026-08-07 the image is captured by a **USB
-webcam attached to that same laptop**; the ESP32-S3 handles weight only.
+webcam attached to that same laptop**; the ESP32 handles weight only.
 
 ## What the model reads
 
@@ -10,12 +10,21 @@ webcam attached to that same laptop**; the ESP32-S3 handles weight only.
 Anything that requires reflected light — surface dirt, shell discoloration — is out of scope and must
 not appear as a class.
 
-The frame yields two kinds of finding:
+The frame yields **one verdict per egg**, and the model does not report which defect it saw:
 
-| Kind | Examples | Decision |
+| Verdict | What goes in it | Decision |
 |---|---|---|
-| Internal quality | blood/meat spots, air cell size | grade / downgrade |
-| Shell condition | large cracks (light leakage), gross damage | reject |
+| `good` | nothing visible under transillumination | accept |
+| `defective` | large cracks (light leakage), gross shell damage | reject |
+| `not_an_egg` | empty platform, a hand, a misload | record, do not count as an egg |
+
+> ⚠️ **Narrowed 2026-08-20 — do not re-add spots or air cell.** This table used to carry an
+> "internal quality" row promising **blood/meat spots** and **air cell size**. The client confirmed on
+> 2026-08-20 that they **do not grade for spots at all**, so they are not a requirement rather than a
+> gap being covered for; air cell went with them. `CONTRACT.md` §7 records the ruling and its
+> consequence: *"internal quality" narrows to cracks revealed by transillumination.* Do not claim the
+> station reads the *contents* of an egg. Ver9 agrees — FR-14 reads *"Detect large cracks and gross
+> shell damage,"* and the paper claims no spot or air-cell capability anywhere.
 
 > **Balut routing is out of scope by input, not by decision** (`CONTRACT.md` §3.5, confirmed
 > 2026-08-04). Earlier revisions of this file required a third, *routing* output that separated eggs
@@ -79,14 +88,17 @@ labels its own eggs, or sources a public set. That has not changed and is the pa
   | Class | What goes in it |
   |---|---|
   | `good` | No internal defect visible under transillumination. |
-  | `defective` | **Any** of: blood or meat spot, large crack revealed by light leakage, gross shell damage. The model does **not** report which. |
+  | `defective` | **Either**: a large crack revealed by light leakage, or gross shell damage. The model does **not** report which. |
   | `not_an_egg` | Empty platform, a hand, a misload. |
 
   **Why three and not four or five.** Softmax scores sum to 1, so a per-defect class list cannot
-  represent an egg with two defects at once — blood-spot-and-crack and one-unidentifiable-defect
-  produce the same output. More decisive: blood and meat spots cannot be sourced on demand, so
-  splitting the scarcest images across several boxes is the worst thing you can do to this dataset.
-  Three classes pools them and is materially likelier to clear the 85% target.
+  represent an egg with two defects at once — crack-and-gross-damage and one-unidentifiable-defect
+  produce the same output. More decisive: the defect images are the scarce ones, and splitting the
+  scarcest images across several boxes is the worst thing you can do to this dataset. Three classes
+  pools them and is materially likelier to clear the 85% target.
+
+  *(This paragraph used to rest on blood and meat spots being unsourceable. That argument is retired
+  with the class — see the narrowing note above. The pooling argument stands on its own.)*
 
   **`not_an_egg` is not padding.** Nothing forces the platform to hold an egg and softmax always
   returns a winner, so without it a thumb in frame gets scored `good` or `defective`.
@@ -118,10 +130,13 @@ change now reports the wrong label with full confidence — no error, no warning
   zip — see [`how-to-add-images.md`](how-to-add-images.md) §8.
 - **Image counts per class:** <!-- fill: state them — imbalance matters -->
 
-Defective eggs are rarer than good ones, so the set will be imbalanced on exactly the classes that
-matter. Blood and meat spots cannot be ordered on demand — plan collection early. (Fertile eggs
-are no longer needed as a *class*, but they are still the cheapest way to source a known-abnormal
-candling image while you validate the camera.)
+Defective eggs are rarer than good ones, so the set will be imbalanced on exactly the class that
+matters — plan collection early.
+
+✅ **Cracks are the one defect the team can manufacture**, which is why the dataset no longer depends
+on client access (`docs/projman/context.md`). That mattered on 2026-08-20 when the client dataset
+channel closed. Crack them under controlled conditions, shoot them **in the same rig the model will
+run in** — same candler, same chamber, same distance, same background — and they count.
 
 The dataset is kept out of git (thousands of photos blow past GitHub's limits and can't be cleanly
 removed once committed). See the repo `CONTRIBUTING.md`.
