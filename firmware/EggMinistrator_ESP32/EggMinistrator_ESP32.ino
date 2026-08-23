@@ -58,12 +58,17 @@
   ============================================================================
   BEFORE YOU FLASH -- four things, in this order. J, this list is for you.
 
-  1. MOVE THE LEDs. You have them on GPIO12 and GPIO13. This sketch drives
-     26 (red), 27 (green) and 23 (blue). Move your wires to match, or the
-     indicators will not light. Do not "fix" it by changing the pins back:
-     GPIO12 is MTDI, and if anything holds it HIGH at boot the chip selects a
-     1.8 V flash voltage and may not start at all. Your code drives it LOW so
-     your bench setup works, but it is one stray pull-up from a dead board.
+  1. CHANGE NOTHING ON THE BOARD. Updated 2026-08-23: this sketch now uses
+     YOUR pin map, copied from firmware/tester/tester.ino -- HX711 on 32/33,
+     buzzer on 4, RGB module on 25 (red), 26 (green), 27 (blue). Your wiring
+     is already correct and this step is now a no-op.
+
+     This replaces the old instruction to move LEDs off GPIO12/13 onto
+     26/27/23. That is obsolete; you already moved them.
+
+     One rule survives: do NOT put anything back on GPIO12. It is MTDI, and
+     if anything holds it HIGH at boot the chip selects a 1.8 V flash voltage
+     and may not start at all.
 
   2. MAKE secrets.h. Copy secrets.h.example to secrets.h in this same folder
      and fill in all five values. It is gitignored, so it does not exist on a
