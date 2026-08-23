@@ -336,11 +336,17 @@ These are unresolved. If your task touches one, ask before assuming.
    *(Briefly voided by the 2026-08-19 descope; restored 2026-08-20 with both parts still on the
    shelf.)*
 
-   ✅ **CALIBRATION IS DONE.** This entry used to say the factor was still the library's placeholder
-   `2280.0`. **That is out of date.** `LOADCELL_CALIBRATION_FACTOR = 735.25`, calibrated by J on
-   2026-08-16 against the cell this project owns — the sketch shows the working at line 129: a raw
-   reading of 44267 against a known 60 g gives 737.8, settled to 735.25 in testing. **The longest job
-   on the hardware list was already finished four days ago.**
+   ✅ **CALIBRATION IS DONE**, but 🟡 **two factors now disagree.** This entry used to say the factor
+   was still the library's placeholder `2280.0`; that was already out of date. J calibrated **735.25**
+   on 2026-08-16 against the cell this project owns — a raw reading of 44267 against a known 60 g
+   gives 737.8, settled to 735.25 in testing.
+
+   **Changed 2026-08-23 to `LOADCELL_CALIBRATION_FACTOR = 698.0`**, adopted from J's bench sketch
+   (`firmware/tester/tester.ino`) on M's ruling that the station follows the board J is physically
+   running. The two figures differ by 5.3% — roughly 3 g on a 60 g egg, and therefore wider than
+   this document's own ±2 g tolerance. 698.0 is adopted on recency, not on re-measurement.
+   🔴 **Owed: re-run the calibration once the egg holder is final and delete whichever loses.** The
+   factor describes the whole mechanical assembly, so fitting the holder invalidates both anyway.
 
    ✅ **Wiring is only two signal pins**, DOUT and SCK, plus power. The interface is documented, so
    nothing here is blocked on an unknown part.
@@ -617,7 +623,7 @@ defense aid.
 | 10 | Allow administrators to access inspection history | ✅ | **verified 2026-08-15** against a live stack. `HistoryPage.jsx:50` fetches `/api/inspections` through `authenticatedFetch`; unauthenticated calls get `AUTH_REQUIRED`. ⚠️ **There is no role check on that route** — `server.js:55-59` calls only `getSessionUser`, and signing in as `inspector` returned all 5,234 rows. Role gating exists only on `/api/admin/*`. The requirement says administrators *can* reach the history, not that only they can, so it is met as written — same reading R applied to FR-03. **Say this deliberately if asked** |
 | 11 | Capture a candling image under transillumination | 🔴 | **same missing capture code as FR-01** |
 | 12 | Classify internal egg quality from the candling image | 🔴 | `classify.py` is written but no trained model exists — `ai/models/` is absent |
-| 13 | Measure the weight of each inspected egg | 🟡 | firmware written (535 lines) and **calibrated 2026-08-16, factor 735.25**. Amber only because the board has never been compiled or flashed. *(Descoped 2026-08-19, restored 2026-08-20.)* |
+| 13 | Measure the weight of each inspected egg | 🟡 | firmware written (535 lines), **factor 698.0 as of 2026-08-23** (adopted from J's bench sketch; supersedes the 735.25 calibrated 2026-08-16, and the two disagree by more than the ±2 g tolerance). Amber because the board has never been compiled or flashed, and because the factor is owed a re-measurement once the holder is final. *(Descoped 2026-08-19, restored 2026-08-20.)* |
 | 14 | Detect large cracks and gross shell damage | 🔴 | **same missing model as FR-12** |
 | 15 | Indicate the result at the station, visual + audible | 🟡 | **visual half only.** LCD + 3 LEDs exist and the firmware drives them. ✅ **The adviser ruled 2026-08-20 that the laptop speaker is an acceptable audible cue**, so no buzzer needs buying and the cost tables do not move. ⚠️ **But nothing plays it yet** — there is no audio anywhere in `dashboard/` or `backend/`. The firmware's `beep()` drives a pin with no buzzer attached, so it does not close this either. Small React job: sound on verdict, ideally distinct for `defective` |
 

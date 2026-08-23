@@ -36,8 +36,13 @@ Wi-Fi is met **in code**. It is not yet met on a board.
   only "ESP32" throughout and is correct as printed.**
 - ⚠️ **`LCD_I2C_ADDRESS` is a guess.** Set to `0x27`, the usual PCF8574 backpack address, but a good
   number of these modules are `0x3F` instead. First thing to change if the screen stays blank.
-- ✅ **The load cell is calibrated.** `LOADCELL_CALIBRATION_FACTOR = 735.25`, calibrated 2026-08-16 by
-  J against the load cell this project owns.
+- 🟡 **The load cell is calibrated, but two factors disagree.** `LOADCELL_CALIBRATION_FACTOR = 698.0`
+  as of 2026-08-23, adopted from J's bench sketch (`firmware/tester/tester.ino`) so the station
+  matches the board he is actually running. The previous value, **735.25**, was calibrated by J on
+  2026-08-16 against the same cell. The two differ by 5.3% — about 3 g on a 60 g egg, which is
+  wider than the paper's own ±2 g KPI. 698.0 wins on recency, not on re-measurement; nobody has
+  re-run the procedure since the 16th. **Owed: re-calibrate once the egg holder is final, then
+  delete the loser.**
 
 ## What it does
 
@@ -104,7 +109,8 @@ pulled to GND — no longer applies to anything in this project.)*
 
 ## Notes
 
-- The load cell **is calibrated** (735.25, by J, 2026-08-16). Size class is assigned by comparing
+- The load cell **is calibrated** (698.0 as of 2026-08-23, superseding 735.25 — see the status
+  section above; the two disagree by more than the ±2 g KPI). Size class is assigned by comparing
   weight to the PNS bands in the paper's Table 11, so a calibration error becomes a grading error
   directly — re-calibrate if the load cell, the HX711 or the egg holder ever changes.
 - Weight and image are joined **on the server**, against the same inspection record. The node does not

@@ -134,32 +134,46 @@
 // GPIO1/3 (UART0, in use by the serial monitor), GPIO34-39 (input only, no
 // output driver). GPIO16/17 are also skipped so that this map works unchanged
 // on a WROVER module, where those two carry PSRAM.
-// ⚠️ HX711 on 4/5 because J has that wired and reading correctly on the real
-// board, and both are legitimate on a classic ESP32. An earlier pass moved
-// them to 32/33 on paper; verified hardware beats a tidier theory.
-#define HX711_DT_PIN   4
-#define HX711_SCK_PIN  5
+// ⚠️ REMAPPED 2026-08-23 to match J's board, which is now soldered and cannot
+// be changed before the defense. The map below is copied from his working
+// bench sketch (firmware/tester/tester.ino), not chosen here.
+//
+// This SUPERSEDES the 2026-08-20 note that pinned HX711 to 4/5 "because J has
+// that wired and reading correctly." That was true on the 20th. He re-wired
+// since, and GPIO4 is now his buzzer -- so the old map would have driven the
+// buzzer onto the load cell's data line. Confirmed with him directly before
+// this edit rather than inferred from the file.
+//
+// The standing rule that produced the 4/5 entry still holds and produced this
+// one too: verified hardware beats a tidier theory. Only the hardware moved.
+#define HX711_DT_PIN  32
+#define HX711_SCK_PIN 33
 #define LCD_SDA_PIN   21   // the classic ESP32 I2C default pair, so stock
 #define LCD_SCL_PIN   22   // wiring guides for this board apply as written
-#define BUZZER_PIN    25
-#define LED_RED_PIN   26
-#define LED_GREEN_PIN 27
-#define LED_BLUE_PIN  23   // only used for the "not an egg" indicator -- see indicateResult()
+#define BUZZER_PIN     4
+#define LED_RED_PIN   25
+#define LED_GREEN_PIN 26
+#define LED_BLUE_PIN  27   // only used for the "not an egg" indicator -- see indicateResult()
 
-// ✅ CONFIRMED 2026-08-16: three LEDs exist. J found a third beyond the red
-// and green, so each of the three verdicts gets its own colour and the BOM
-// now reads 3 pieces. CONTRACT and the paper were right all along and need
-// no correction.
+// ✅ Three colour channels still exist, so each of the three verdicts keeps its
+// own colour and FR-15's visual half is satisfied.
 //
-// Set this false if the third LED is ever lost or reassigned: indicateResult()
+// ⚠️ CHANGED 2026-08-23: this is now ONE RGB LED module on 25/26/27, not three
+// discrete LEDs. The 2026-08-16 note said "J found a third LED beyond the red
+// and green" and set the BOM to 3 pieces -- that is now wrong on both counts.
+// The module is newly bought, is NOT in the pre-owned list, and appears in no
+// document yet. The BOM, Table 2 and the paper all still need this change.
+//
+// Set this false if the module is ever lost or reassigned: indicateResult()
 // then signals "not an egg" by blinking red and green together, which is still
-// visibly distinct from either verdict and still satisfies FR-15's visual half.
+// visibly distinct from either verdict.
 #define HAS_BLUE_LED true
 
-// ⚠️ J currently has his two LEDs on GPIO12 and GPIO13. 13 is fine. 12 is
-// MTDI: held HIGH at boot it selects a 1.8 V flash voltage and the board may
-// not start at all. His works because his code drives it LOW, but that is one
-// stray pull-up away from an unbootable board, so the pins above move it clear.
+// The GPIO12/13 warning that stood here is retired: J's LEDs are no longer on
+// those pins. Keeping the reason on record because it still constrains any
+// future remap -- GPIO12 is MTDI, and held HIGH at boot it selects a 1.8 V
+// flash voltage and the board may not start at all. Do not put anything back
+// on 12.
 
 // HX711 calibration factor -- MUST be calibrated for your specific load
 // cell, the same procedure regardless of which ESP32 board drives it:
@@ -170,13 +184,24 @@
 //   3. LOADCELL_CALIBRATION_FACTOR = raw_reading / known_weight_grams
 //   4. Re-flash with that value; confirm get_units() reports correctly
 //      for a couple of different test weights before trusting it.
-// ✅ CALIBRATED 2026-08-16 by J, on the load cell this project owns.
-// He measured a raw difference of 503206 - 458939 = 44267 counts for a known
-// 60 g weight, giving 44267 / 60 = 737.8, and settled on 735.25 in testing.
-// An egg then read 58.6 g, which is a plausible egg rather than a coincidence.
-// Re-calibrate if the load cell, the HX711 or the egg holder ever changes --
-// the factor describes that whole mechanical assembly, not just the cell.
-float LOADCELL_CALIBRATION_FACTOR = 735.25;
+// ✅ 2026-08-16, J: raw difference of 503206 - 458939 = 44267 counts for a
+// known 60 g weight, giving 44267 / 60 = 737.8; he settled on 735.25 in
+// testing, and an egg then read 58.6 g -- a plausible egg, not a coincidence.
+//
+// ⚠️ CHANGED 2026-08-23 to 698.0, taken from J's bench sketch
+// (firmware/tester/tester.ino), on M's ruling that the station follows the
+// number on the board J is actually running.
+//
+// The two numbers disagree by 5.3%, which is ~3 g on a 60 g egg and therefore
+// wider than the paper's own +/-2 g KPI. Only one of them can describe this
+// assembly. 698.0 is adopted because it is the more recent of the two and the
+// bench rig is the one physically wired, NOT because it was re-derived --
+// nobody has re-run the four steps above since the 16th.
+//
+// 🔴 OWED: re-run the calibration once the egg holder is final and delete the
+// loser. The factor describes the whole mechanical assembly, not just the
+// cell, so adding the holder invalidates both figures anyway.
+float LOADCELL_CALIBRATION_FACTOR = 698.0;
 
 const float EGG_PRESENT_THRESHOLD_G = 20.0;
 const float EGG_REMOVED_THRESHOLD_G = 15.0;
