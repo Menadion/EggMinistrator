@@ -244,6 +244,35 @@ function formatEggId(inspectionCode, batchId, sequenceNumber) {
   return code ? `${code.slice(0, 8)}…` : '—'
 }
 
+// A deliberately tiny companion to listInspections(). The dashboard polls this
+// every few seconds so it can notice a new egg without refetching every row.
+//
+// listInspections() has no LIMIT: it returns every non-'no_egg' inspection,
+// which is over five thousand rows on a seeded database. Polling THAT would
+// move about a megabyte every few seconds and re-render the charts each time,
+// which is visible jank during a live demo.
+//
+// Three signals, because one is not enough:
+//   total       a new inspection arrives, or a row leaves via 'no_egg'
+//   latestId    a new row, even if another left in the same window
+//   lastChange  an assessment or an override edits a row IN PLACE, so neither
+//               of the above moves, but updated_at does
+export async function getInspectionsRevision() {
+  const [rows] = await database.execute(`
+    SELECT
+      COUNT(*) AS total,
+      COALESCE(MAX(id), 0) AS latestId,
+      COALESCE(MAX(updated_at), '1970-01-01') AS lastChange
+    FROM egg_inspections
+    WHERE final_disposition <> 'no_egg'
+  `)
+  return {
+    total: Number(rows[0].total),
+    latestId: Number(rows[0].latestId),
+    lastChange: String(rows[0].lastChange),
+  }
+}
+
 export async function listInspections() {
   const [rows] = await database.execute(`
     SELECT
