@@ -58,6 +58,43 @@ import numpy as np
 # framing problem. See --zoom below.
 from capture import crop_to_zoom, open_camera
 
+# THE BRIGHTNESS GATE (Session 12's close, written 2026-08-24).
+#
+# A candler that has failed does not produce a dim image, it produces a black
+# one -- and the model does not error on a black image. It picks one of its
+# three classes and reports it with a confidence score, because that is all a
+# classifier can do. The discipline has to live OUTSIDE the model, and it has
+# to run BEFORE it: check afterwards and you are arguing with a confident
+# number that should never have existed.
+#
+# This is not hypothetical. On the first end-to-end run of this file, on
+# 2026-08-24, the webcam was covered. The frame came out at mean brightness 0.9
+# and the system recorded "not_an_egg, confidence 0.385" without a murmur.
+#
+# THE THRESHOLD IS MEASURED, NOT GUESSED. Across J's 2026-08-23 set, 38 real
+# candling frames at the rig's own zoom:
+#
+#     darkest real candling frame    49.4   (a defective egg; an egg blocks light)
+#     empty lit platform            87-215  (nothing blocking the candler)
+#     covered lens                     0.9
+#
+# 15 sits about 3x below the darkest real frame and about 16x above a dark one.
+# No egg is opaque enough to reach down to it and no dead candler climbs up.
+#
+# ⚠️ RIG-DEPENDENT. Exposure, candler brightness and the zoom crop all move
+# these numbers. If the rig is rebuilt, re-measure rather than trusting 15:
+#     py -c "import cv2,glob,statistics; print(statistics.median([cv2.imread(p).mean() for p in glob.glob('ai/dataset/train/*/*.jpg')]))"
+BRIGHTNESS_MIN = 15.0
+
+# A knocked switch comes back. Retry briefly before declaring the candler dead,
+# so a two-second interruption recovers on its own and nobody ever notices.
+DARK_RETRIES = 5
+DARK_RETRY_SECONDS = 1.0
+
+# Once it HAS been declared dead, stop hammering the camera and the console.
+# The station is deliberately stuck at this point -- see the loop below.
+DARK_HOLD_SECONDS = 5.0
+
 MODEL_DIR = Path("ai/models")
 CAPTURE_DIR = Path("ai/captures")
 
@@ -141,6 +178,33 @@ def grab_current_frame(camera):
     return frame
 
 
+def frame_brightness(frame):
+    """Mean pixel value, 0-255. Deliberately the cheapest possible check.
+
+    Nothing clever is needed. The failure being caught is not "slightly dim",
+    it is "the light is off", and that is a difference of fifty times.
+    """
+    return float(frame.mean())
+
+
+def grab_lit_frame(camera, zoom):
+    """Return (frame, brightness) once the candler is clearly on, or (None, b).
+
+    Retries rather than failing on the first dark frame: an operator who
+    brushed the switch has a few seconds to put it back, and a recovery nobody
+    notices is worth more than a correct error message.
+    """
+    brightness = 0.0
+    for attempt in range(DARK_RETRIES):
+        frame = crop_to_zoom(grab_current_frame(camera), zoom)
+        brightness = frame_brightness(frame)
+        if brightness >= BRIGHTNESS_MIN:
+            return frame, brightness
+        if attempt < DARK_RETRIES - 1:
+            time.sleep(DARK_RETRY_SECONDS)
+    return None, brightness
+
+
 def save_frame(frame, inspection_id):
     """Write the image to disk and return the path recorded against the inspection.
 
@@ -211,6 +275,9 @@ else is holding it, and that Windows allows desktop apps to use the camera."""
     print(f"Zoom {arguments.zoom:.1f}x. This must match the dataset, or the model sees a framing it was never trained on.")
     print(f"Listening at {arguments.api}. Place an egg on the platform. Ctrl+C to stop.")
     handled = 0
+    # Which inspection the gate is currently stuck on, so the warning prints
+    # once per egg rather than once per poll.
+    dark_inspection = None
 
     try:
         while True:
@@ -228,9 +295,34 @@ else is holding it, and that Windows allows desktop apps to use the camera."""
                 continue
 
             inspection_id = inspection["id"]
+
+            # THE GATE. Before the model, never after.
+            #
+            # Nothing is POSTed when it trips, which means this inspection stays
+            # unassessed and /pending hands back the SAME id next time round.
+            # The station stops. That is the intended behaviour, not an
+            # oversight: a candler that has failed should halt the line rather
+            # than let it keep producing confident verdicts in the dark. The
+            # database has no fourth result_label for "could not assess"
+            # (result_label is ENUM('good','defective','not_an_egg')), and
+            # writing 'not_an_egg' instead would be the exact lie that a dark
+            # frame is an absent egg.
+            frame, brightness = grab_lit_frame(camera, arguments.zoom)
+            if frame is None:
+                if dark_inspection != inspection_id:
+                    print(f"  inspection {inspection_id}: CANDLER DARK "
+                          f"(brightness {brightness:.1f}, needs {BRIGHTNESS_MIN:.0f}).")
+                    print("  Nothing will be classified until the light is back. Check that the")
+                    print("  candler is switched on, powered, and that the chamber is closed.")
+                    dark_inspection = inspection_id
+                time.sleep(DARK_HOLD_SECONDS)
+                continue
+            if dark_inspection is not None:
+                print(f"  candler is back (brightness {brightness:.1f}). Resuming.")
+                dark_inspection = None
+
             # Crop first, then save and classify the SAME pixels, so the stored
             # image is exactly what the model saw.
-            frame = crop_to_zoom(grab_current_frame(camera), arguments.zoom)
             image_path = save_frame(frame, inspection_id)
             assessment = classify(model, classes, version, frame, image_path)
 
