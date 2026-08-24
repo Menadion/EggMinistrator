@@ -58,7 +58,7 @@ There is no automated test suite — verification is manual, per subsystem:
 
 - **dashboard:** `npm run build` must succeed, then `npm run dev` and **load the page in the
   browser** and confirm the flow actually works. A clean build only proves it compiles.
-- **ai:** re-run `python ai/training/train.py` then `python ai/inference/classify.py <image>`
+- **ai:** re-run `python ai/scripts/train.py` then `python ai/inference/classify.py <image>`
   end-to-end (**from the repo root**) and confirm it classifies without erroring. Do not record the
   training run's printed score as the model's accuracy — see `ai/README.md`.
 - **firmware:** compile/verify the sketch in the Arduino IDE before pushing.

@@ -105,7 +105,13 @@ what it is, and press one key:**
 | **N** | `not_an_egg/` |
 | **+** or **=** | zoom in |
 | **-** or **_** | zoom out |
-| **0** | reset zoom to 1.0x |
+| **0** | reset zoom and pan back to the middle |
+| **arrow keys** | shift the crop off-centre (only once zoomed past 1.0x) |
+| **C** | switch to the next camera that opens |
+| **F** | autofocus on / off |
+| **[** and **]** | focus by hand, once autofocus is off |
+| **L** | rule-of-thirds grid over the preview (never saved into the photo) |
+| **M** | fullscreen on / off |
 | **Q** | quit |
 
 That is the whole interface. The photo is saved instantly into the right folder, and the running
@@ -134,15 +140,38 @@ framed the same way, because the station will be framed that way when it is actu
 Changing it mid-batch teaches the model that the size of an egg means nothing.
 
 The way to do it: shoot the first few, find the number where the egg comfortably fills the frame,
-then start every session there.
-
-```
-py ai/capture.py --tag yourname --zoom 1.8
-```
+and then leave it alone. **You do not have to write the number down.** The script saves it, along
+with the pan, the focus and which camera you were on, and opens on the same framing next time.
 
 The zoom is stamped into every filename as `z18`, so if a batch does come out at the wrong setting
 it can be found and pulled instead of quietly poisoning a training run. The window prints the number
-in the corner the whole time, and reminds you what to pass next session when you quit.
+in the corner the whole time.
+
+### The framing is saved for you
+
+Every setting you touch is written to `ai/capture_settings.json` the moment you change it, and read
+back the next time the script runs. Frame the shot once and every later session opens exactly there.
+
+**The camera itself does not remember any of this, and nothing here needs it to.** Quitting hands
+the USB device back to the driver, which resets focus to its own default — that is normal and
+unavoidable. The file is what remembers; on the next run the script opens the camera and tells it
+the same numbers again.
+
+It is written on every change rather than when you quit, so a crash, a Ctrl+C, or closing the window
+with the X still leaves your setup saved.
+
+The file is yours alone — it is gitignored, because your camera index and your focus value are not
+anyone else's.
+
+| If you want to | Do this |
+|---|---|
+| Use the saved setup | Nothing. Just run the script. |
+| Override one thing for one run | Pass the flag: `--zoom 1.8` beats the saved zoom, and does not overwrite it until you press a zoom key. |
+| Start clean, e.g. after the rig moved | `py ai/capture.py --tag yourname --forget` |
+| Run once without touching the file | `py ai/capture.py --tag yourname --no-remember` |
+
+🔴 **`--forget` is the one to reach for when the framing looks wrong and you cannot see why.** A
+saved pan from a previous rig position will quietly sit there offsetting every shot.
 
 ⚠️ **If the overlay says `TOO FAR IN`, back off.** Training feeds the network 224x224 pixels. Zoom
 past about 2.5x on a 640x480 webcam and the crop is smaller than that, so the training stack has to
@@ -170,7 +199,7 @@ Blood spots and meat spots cannot be bought on demand. **Start collecting those 
 Run this **from the top folder of the repo**, not from inside `ai/`:
 
 ```
-python ai/training/train.py
+python ai/scripts/train.py
 ```
 
 It prints its progress and finishes by saving the model. If it errors immediately saying it found no images, you are either in the wrong folder or a folder is empty.

@@ -45,10 +45,12 @@ The frame yields **one verdict per egg**, and the model does not report which de
 
 ## Structure
 
-- `training/train.py` — trains the classifier and writes both output files below. **Runs locally,
+- `scripts/train.py` — trains the classifier and writes both output files below. **Runs locally,
   not in Colab** — there is no notebook in this project.
-- `training/check_order.py` — prints the class list Keras derives from the dataset folders, and
-  nothing else. Run it after adding or renaming a folder (see the warning below).
+- `scripts/check_order.py` — prints the class list Keras derives from **each of the three
+  splits**, then says whether they agree. Since the split went three ways on disk there are three
+  folders producing a class list and they must be identical; `classes.json` is written from
+  `train/` alone. Run it after adding or renaming a folder (see the warning below).
 - `inference/classify.py` — the script that runs at the station: loads the model, classifies one
   captured egg, prints one JSON line.
 - `models/` — written by `train.py`, **all three files gitignored**: `egg.keras` (the weights),
@@ -66,7 +68,7 @@ The frame yields **one verdict per egg**, and the model does not report which de
 
 ```
 pip install -r ai/requirements.txt
-python ai/training/train.py
+python ai/scripts/train.py
 python ai/inference/classify.py some_photo.jpg
 ```
 
@@ -128,7 +130,7 @@ change now reports the wrong label with full confidence — no error, no warning
 - **`classes.json`, `version.json` and `egg.keras` travel together — all three or none.** Sending
   one without the others produces confident nonsense, or a database row stamped with a version that
   describes different weights.
-- After touching the dataset folders, run `python ai/training/check_order.py` and retrain.
+- After touching the dataset folders, run `python ai/scripts/check_order.py` and retrain.
 
 - **Location:** the three folders in `ai/dataset/`, on each person's own machine. The folders are
   tracked (via `.gitkeep`) so the class names cannot be typoed; the photos are not. Transfer is by
@@ -153,7 +155,7 @@ removed once committed). See the repo `CONTRIBUTING.md`.
   retrained, only the final layer is. 3 epochs, `adam`, `sparse_categorical_crossentropy`.
 - **Input:** 224 × 224 RGB. `classify.py` converts OpenCV's BGR to RGB before predicting — see
   `CONTRACT.md` §4.2 for why that line matters and why removing it fails silently.
-- **How to retrain:** `python ai/training/train.py`, **from the repo root**. There is no notebook
+- **How to retrain:** `python ai/scripts/train.py`, **from the repo root**. There is no notebook
   and no Colab step.
 
 ### The three splits, and the one you are not allowed to look at

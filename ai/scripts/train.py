@@ -8,18 +8,16 @@ MODEL_NAME = "candling-classifier"
 MODEL_VERSION = "0.3.0"
 
 train_ds = tf.keras.utils.image_dataset_from_directory(
-    "ai/dataset", image_size=(224, 224),
-    validation_split=0.2, subset="training", seed=123,
+    "ai/dataset/train", image_size=(224, 224)
 )
 
 val_ds = tf.keras.utils.image_dataset_from_directory(
-    "ai/dataset", image_size=(224, 224),
-    validation_split=0.2, subset="validation", seed=123,
+    "ai/dataset/val", image_size=(224, 224)
 )
 
-half = len(val_ds) // 2
-test_ds = val_ds.take(half)
-val_ds = val_ds.skip(half)
+test_ds = tf.keras.utils.image_dataset_from_directory(
+    "ai/dataset/test", image_size=(224, 224)
+)
 
 with open("ai/models/classes.json", "w") as file:
     file.write(json.dumps(train_ds.class_names))

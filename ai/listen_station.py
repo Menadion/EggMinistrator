@@ -61,7 +61,7 @@ from capture import crop_to_zoom, open_camera
 MODEL_DIR = Path("ai/models")
 CAPTURE_DIR = Path("ai/captures")
 
-# The model was trained at this size -- see ai/training/train.py. If one changes
+# The model was trained at this size -- see ai/scripts/train.py. If one changes
 # the other has to change with it, or every prediction is made on a differently
 # shaped image than the network was fitted to.
 INPUT_SIZE = (224, 224)
@@ -91,7 +91,7 @@ def load_model_and_labels():
     model_path = MODEL_DIR / "egg.keras"
     if not model_path.exists():
         raise SystemExit(
-            f"No model at {model_path}. Train one first with ai/training/train.py.\n"
+            f"No model at {model_path}. Train one first with ai/scripts/train.py.\n"
             "There is nothing to classify with until the dataset exists."
         )
 

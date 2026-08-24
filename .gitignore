@@ -7,13 +7,19 @@ config.php
 *.pem
 
 # === Dataset — too large for GitHub; link it in ai/README.md instead ===
-# Ignore what is INSIDE a dataset folder, but not the folder itself, so that the three
-# class folders can be committed via .gitkeep. Anyone who clones then gets the correct
-# folder names and cannot typo a class name (the folder name IS the class string).
+# Ignore what is INSIDE a dataset folder, but not the folders themselves, so that the
+# split + class folders can be committed via .gitkeep. Anyone who clones then gets the
+# correct folder names and cannot typo a class name (the folder name IS the class string).
 # Order matters here: the last matching rule wins, so the negations must come last.
+#
+# TWO levels of directory negation since 2026-08-23: the layout is now
+# ai/dataset/<split>/<class>/, so git must be allowed to descend through the split folder
+# before it can see the class folder underneath. Negating only one level leaves all twelve
+# .gitkeep files invisible and a fresh clone gets no dataset tree at all.
 dataset/**
 !ai/dataset/*/
-!ai/dataset/*/.gitkeep
+!ai/dataset/*/*/
+!ai/dataset/*/*/.gitkeep
 *.jpg
 *.jpeg
 *.png
@@ -23,6 +29,12 @@ dataset/**
 !assets/**/*.png
 !hardware/**/*.png
 !dashboard/**/*.png
+
+# === Per-machine capture rig state ===
+# capture.py writes the camera index, framing, pan and focus it was left on so the next
+# session opens the same way. It describes ONE physical rig -- committing it would push
+# J's camera index and focus value onto M's laptop and silently re-frame the dataset.
+ai/capture_settings.json
 
 # === Trained models — large binaries; link them if over ~100MB ===
 # classes.json is written by the same training run as the weights and describes only that

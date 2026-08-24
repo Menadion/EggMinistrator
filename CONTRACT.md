@@ -77,6 +77,10 @@ work crosses a boundary, that is a conversation, not a commit.
    egg. It does not report which defect it found. (This is "Decision G".)
 3. **Weight is not vision.** Size grading comes from the load cell, not the camera. Accuracy target
    is ±2 g. *(Briefly voided 2026-08-19, restored 2026-08-20 — see section 1.)*
+   🔴 **DISPUTED 2026-08-23 — this document and the paper disagree.** PROJMAN Ver9.1 Table 9 reads
+   *"Weight measurement error — Within 1 grams of a reference scale."* This line says ±2 g. Only
+   the paper is submitted, so the 1 g figure is the one being graded, and every repo document has
+   been quoting the looser number. Not resolved unilaterally — M's call which one moves.
 4. **Size grades follow PNS/BAFS 321:2021 weight bands**, stored in the `size_grades` table.
    *(Briefly voided 2026-08-19, restored 2026-08-20 — see section 1.)*
 5. **Embryo development and balut are out of scope, by input.** The reference operation receives
