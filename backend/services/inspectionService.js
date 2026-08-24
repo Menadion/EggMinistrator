@@ -207,6 +207,29 @@ export async function getInspectionResult(inspectionId) {
   return { label: rows[0].label, confidence: Number(rows[0].confidence) }
 }
 
+// Section 4.1 step 2: the classifier asks whether an egg is waiting for a verdict.
+//
+// The waiting state was never missing -- an egg_inspections row with no matching
+// ai_assessments row IS an egg waiting. What was missing is a way to ask about it
+// from outside this process. ai/listen_station.py is a CLIENT: it holds no port
+// and nothing can call it, so it can only poll a URL the server recognises.
+//
+// Oldest first, so a backlog drains in the order the eggs were weighed rather
+// than newest-first, which would strand the earliest egg forever.
+export async function findPendingInspection() {
+  const [rows] = await database.execute(`
+    SELECT inspections.id, inspections.inspection_code, inspections.weight_g
+    FROM egg_inspections AS inspections
+    LEFT JOIN ai_assessments AS assessments ON assessments.inspection_id = inspections.id
+    WHERE assessments.id IS NULL
+    ORDER BY inspections.id ASC
+    LIMIT 1
+  `)
+
+  if (!rows[0]) return null
+  return { id: rows[0].id, inspection_code: rows[0].inspection_code, weight_g: rows[0].weight_g }
+}
+
 function formatEggId(inspectionCode, batchId, sequenceNumber) {
   const hasBatchId = batchId !== null && batchId !== undefined && String(batchId).trim() !== ''
   const hasSequenceNumber = sequenceNumber !== null && sequenceNumber !== undefined && String(sequenceNumber).trim() !== ''

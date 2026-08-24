@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 import { createAnalyticsInsights } from './routes/analyticsRoutes.js'
 import { handleAuthRoute } from './routes/authRoutes.js'
 import { AuthError, getSessionUser } from './services/authService.js'
-import { createInspection, getInspectionResult, InspectionError, listInspections, overrideInspection, requireDeviceKey, saveAssessment } from './services/inspectionService.js'
+import { createInspection, findPendingInspection, getInspectionResult, InspectionError, listInspections, overrideInspection, requireDeviceKey, saveAssessment } from './services/inspectionService.js'
 
 const backendDirectory = fileURLToPath(new URL('.', import.meta.url))
 const envPath = resolve(backendDirectory, '.env')
@@ -81,6 +81,20 @@ const server = createServer(async (request, response) => {
     if (request.method === 'POST' && path === '/api/inspections') {
       requireDeviceKey(request.headers)
       return sendJson(response, 201, await createInspection(requestBody || {}), origin)
+    }
+
+    // Section 4.1 step 2: ai/listen_station.py polls this to find work. It MUST
+    // answer 404 when nothing is waiting -- the listener reads 404 as "no egg
+    // right now" and sleeps. Answering 200 with a null id would sail past its
+    // emptiness check and crash it on the next line.
+    //
+    // Declared before the /(\d+)/result route below only for readability; the
+    // two cannot collide, since 'pending' is not digits.
+    if (request.method === 'GET' && path === '/api/inspections/pending') {
+      requireDeviceKey(request.headers)
+      const waiting = await findPendingInspection()
+      if (!waiting) return sendJson(response, 404, { error: 'No inspection is waiting.', code: 'NO_PENDING_INSPECTION' }, origin)
+      return sendJson(response, 200, waiting, origin)
     }
 
     const assessmentMatch = path.match(/^\/api\/inspections\/(\d+)\/assessment$/)

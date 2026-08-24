@@ -40,6 +40,7 @@ HOW THE VERDICT APPEARS
 """
 
 import json
+import os
 import re
 import threading
 import time
@@ -49,7 +50,17 @@ PORT = 3001                        # same port the Node backend uses, so the boa
                                    # can swap between stub and real without reflashing
                                    # (run one or the other, not both)
 DEVICE_KEY = "replace-me"          # must match secrets.h
-AUTO_VERDICT_AFTER_S = 1.5         # set to None to disable invented verdicts
+# 🔴 TURN THIS OFF BEFORE RUNNING ai/listen_station.py AGAINST THIS STUB:
+#
+#     set STUB_AUTO_VERDICT=off  &&  py firmware/stub_server.py
+#
+# Left on, it races the real classifier and usually wins, so the board shows a
+# verdict, everything looks like it worked, and the model was never consulted.
+# That is exactly how the 2026-08-23 "end to end" run passed without the AI.
+#
+# Read from the environment rather than edited in place, because a hand-edited
+# constant is a constant somebody forgets to change back.
+AUTO_VERDICT_AFTER_S = None if os.environ.get("STUB_AUTO_VERDICT", "").lower() in {"off", "0", "false", "none"} else 1.5
 
 _LABELS = ["good", "defective", "not_an_egg"]
 
@@ -147,6 +158,23 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if not self._authorised():
             return
+
+        # Step 2 -- the laptop's listener asks whether an egg is waiting for a
+        # verdict. Mirrors the real backend's GET /api/inspections/pending so the
+        # whole board -> listener -> model -> board loop can be exercised without
+        # MySQL or R's backend running.
+        #
+        # 404 when nothing waits, deliberately: listen_station.py reads 404 as
+        # "no egg right now" and sleeps.
+        if self.path == "/api/inspections/pending":
+            with _lock:
+                waiting = [(key, row) for key, row in sorted(_inspections.items())
+                           if row["label"] is None]
+            if not waiting:
+                return self._send(404, {"error": "nothing waiting"})
+            inspection_id, row = waiting[0]
+            print(f"GET /api/inspections/pending -> id={inspection_id}")
+            return self._send(200, {"id": inspection_id, "weight_g": row["weight_g"]})
 
         # Step 3 -- the board polls until a verdict exists.
         match = _RESULT_RE.match(self.path)
