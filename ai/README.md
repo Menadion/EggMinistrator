@@ -132,9 +132,14 @@ change now reports the wrong label with full confidence — no error, no warning
   describes different weights.
 - After touching the dataset folders, run `python ai/scripts/check_order.py` and retrain.
 
-- **Location:** the three folders in `ai/dataset/`, on each person's own machine. The folders are
-  tracked (via `.gitkeep`) so the class names cannot be typoed; the photos are not. Transfer is by
-  zip — see [`how-to-add-images.md`](how-to-add-images.md) §8.
+- **Location:** `ai/dataset/`, on each person's own machine. Every folder is tracked (via
+  `.gitkeep`) so the class names cannot be typoed; the photos are not. Transfer is by zip — see
+  [`how-to-add-images.md`](how-to-add-images.md) §8.
+- **Two levels, and they are not interchangeable.** `capture.py` writes only to
+  `ai/dataset/_incoming/<class>/`; `train.py` reads only `ai/dataset/{train,val,test}/<class>/`.
+  A shooter cannot know which split an egg belongs to — the unit of the split is the **egg**, and
+  that is decided across a whole batch. Sorting `_incoming/` into the three splits is a separate,
+  deliberate step, and the `e01`/`e02` egg number in each filename is what makes it possible.
 - **Image counts per class:** <!-- fill: state them — imbalance matters -->
 
 Defective eggs are rarer than good ones, so the set will be imbalanced on exactly the class that

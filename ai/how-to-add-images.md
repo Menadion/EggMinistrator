@@ -103,6 +103,7 @@ what it is, and press one key:**
 | **G** | `good/` |
 | **D** | `defective/` |
 | **N** | `not_an_egg/` |
+| **E** | **next egg** — press it every time a new egg goes on the candler |
 | **+** or **=** | zoom in |
 | **-** or **_** | zoom out |
 | **0** | reset zoom and pan back to the middle |
@@ -119,6 +120,24 @@ counts are drawn on the window so you can see whether the three are staying even
 
 **If the window shows your own face**, it grabbed the laptop's built-in camera instead of the USB
 one. Quit and add `--camera 1` (then `2`, if 1 is not it either).
+
+### The egg number — the one thing not to forget
+
+Press **E** every time a **new egg** goes on the candler. The current number is on the top line of
+the preview and lands in every filename as `e01`, `e02`, `e03`.
+
+Photos of the same egg all have to end up in the **same** pile when the dataset is split into
+train / val / test. Scatter four photos of one egg across the piles and the model gets tested on an
+egg it already trained on — the score comes back high whether it learned anything or not. **The
+filename is the only place that can be recorded.** A timestamp cannot tell you whether two photos
+ninety seconds apart are one slow egg or two quick ones.
+
+Forgetting to press E is survivable: two eggs share a number, get sorted into the same pile, and
+you lose a little data. Nothing breaks silently.
+
+🔴 **You do not sort the photos.** Everything lands in `ai/dataset/_incoming/`, never in `train/`,
+`val/` or `test/`. Which egg goes in which split is decided across the whole batch afterwards, not
+by whoever is holding the egg over the lamp.
 
 **Why you label as you shoot.** You are already looking at the egg through the candler, so that is
 the moment you know what it is. Taking 200 unlabelled photos and sorting them afterwards means

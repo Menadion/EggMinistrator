@@ -24,6 +24,7 @@ RUNNING IT
         G  good
         D  defective
         N  not an egg   (empty platform, a hand, anything that is not one egg)
+        E  NEXT EGG    press it every time a new egg goes on the candler
         + or =  zoom in       (also -- or _ to zoom out, 0 to reset)
         C  switch camera (cycles through 0, 1, 2 and whatever --camera you started on)
         F  toggle autofocus on/off
@@ -32,6 +33,25 @@ RUNNING IT
         M  toggle fullscreen (also --fullscreen to start that way)
         arrow keys  pan the crop up/down/left/right (once zoomed in past 1.0x)
         Q  quit
+
+    THE EGG NUMBER, and it is the one thing you must not forget. Press E every
+    time you put a NEW egg on the candler. The number shows on the top line of
+    the preview and goes into every filename as e01, e02, e03.
+
+    WHY IT MATTERS MORE THAN IT LOOKS. Photos of the same egg have to end up in
+    the SAME pile when the dataset is split into train / val / test. If four
+    pictures of one egg get scattered across the piles, the model is tested on
+    an egg it already trained on, and the score comes back high whether it
+    learned anything or not. The filename is the only place that fact can live
+    -- a timestamp cannot tell you whether two photos ninety seconds apart are
+    one slow egg or two quick ones.
+
+    Forgetting to press E is survivable: two eggs share a number, get sorted
+    together, and you lose a little data. Nothing silently breaks.
+
+    YOU DO NOT SORT THE PHOTOS. Everything lands in ai/dataset/_incoming/, never
+    in train/ val/ test/. Which egg belongs in which split is decided across the
+    whole batch afterwards, not by whoever is holding the egg.
 
     ZOOM. The webcam sees more of the chamber than the egg. Zooming crops in on
     the middle of the frame so the egg fills more of the picture, and the crop
@@ -101,9 +121,11 @@ RUNNING IT
     always beats the saved file, so --zoom 1.8 still wins for that one run.
 
 SENDING THEM BACK
-    ai/dataset/ is gitignored on purpose -- photos do not belong in git. Zip the
-    three class folders and send the archive. The --tag is stamped into every
-    filename so two people's batches merge without overwriting each other.
+    ai/dataset/ is gitignored on purpose -- photos do not belong in git. Zip
+    ai/dataset/_incoming/ whole and send the archive. The --tag is stamped into
+    every filename so two people's batches merge without overwriting each other,
+    and the egg number is only unique per shooter -- jasfer's e03 and m's e03 are
+    different eggs, which is why the tag has to stay in the name.
 
     Send a SMALL first batch (10-15) and have it checked before shooting
     hundreds. Focus, framing and candler position are much cheaper to fix after
@@ -117,7 +139,12 @@ from pathlib import Path
 
 import cv2
 
-DATASET_ROOT = Path("ai/dataset")
+# Photos land in a STAGING folder, never straight into train/val/test. The
+# shooter cannot know which split an egg belongs to -- the unit of the split is
+# the egg, and that decision spans the whole batch, not the one egg currently
+# sitting on the candler. Sorting happens once, afterwards, from the egg number
+# stamped into each filename.
+DATASET_ROOT = Path("ai/dataset/_incoming")
 
 # Where the "keep the camera how I left it" state lives. Gitignored and
 # per-machine on purpose: it records one physical rig's camera index, focus
@@ -133,6 +160,24 @@ CLASS_KEYS = {
 }
 
 QUIT_KEYS = {ord("q"), 27}   # q or Esc
+
+# THE EGG NUMBER. Press E when a NEW egg goes on the candler. Every photo is
+# stamped with the current number, so afterwards you can tell which files came
+# off the same physical egg -- which is the only way to honour "the unit of the
+# split is the egg" when sorting into train/val/test.
+#
+# Nothing in a timestamp can tell you this. Four photos four seconds apart are
+# obviously one egg; four photos ninety seconds apart could be one slow egg or
+# four quick ones, and guessing wrong puts the same egg on both sides of the
+# split, where the test score stops being able to catch it.
+#
+# Advancing is MANUAL on purpose. Forget to press E and two eggs share a number:
+# they get sorted into the same split together, which wastes a little data and
+# leaks nothing. Auto-advancing per photo would do the opposite -- one egg
+# spread across four numbers, landing in train AND test. The failure that costs
+# you nothing is the one worth choosing.
+EGG_ADVANCE_KEYS = {ord("e")}
+EGG_MIN = 1
 
 # Zoom is a centre crop, not an optical change -- the webcam has no zoom motor.
 # Cropping throws pixels away, so there is a floor on how far in it can go
@@ -246,6 +291,11 @@ def zoom_tag(zoom):
     return f"z{int(round(zoom * 10)):02d}"
 
 
+def egg_tag(egg):
+    """3 -> 'e03'. Zero-padded so a plain sort keeps the eggs in order."""
+    return f"e{int(egg):02d}"
+
+
 def resize_window_to_frame(frame):
     """Make the window match the frame's own resolution.
 
@@ -345,7 +395,7 @@ def count_images(class_name):
     return sum(1 for path in folder.iterdir() if path.suffix.lower() in {".jpg", ".jpeg", ".png"})
 
 
-def save_frame(frame, class_name, tag, zoom):
+def save_frame(frame, class_name, tag, zoom, egg):
     folder = DATASET_ROOT / class_name
     folder.mkdir(parents=True, exist_ok=True)
 
@@ -354,12 +404,13 @@ def save_frame(frame, class_name, tag, zoom):
     # filename says who took it when a photo turns out to be bad.
     stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     zoom_part = zoom_tag(zoom)
-    path = folder / f"{class_name}_{tag}_{stamp}_{zoom_part}.jpg"
+    egg_part = egg_tag(egg)
+    path = folder / f"{class_name}_{tag}_{stamp}_{zoom_part}_{egg_part}.jpg"
 
     # If you fire twice inside one second, don't overwrite the first shot.
     suffix = 1
     while path.exists():
-        path = folder / f"{class_name}_{tag}_{stamp}_{zoom_part}_{suffix}.jpg"
+        path = folder / f"{class_name}_{tag}_{stamp}_{zoom_part}_{egg_part}_{suffix}.jpg"
         suffix += 1
 
     # Saved at the crop's native resolution, NOT 224x224 and NOT scaled back up
@@ -372,7 +423,7 @@ def save_frame(frame, class_name, tag, zoom):
     return path
 
 
-def draw_overlay(frame, counts, tag, zoom, crop_shape, camera_index, autofocus, focus_value, grid_on, fullscreen, pan_x, pan_y):
+def draw_overlay(frame, counts, tag, zoom, crop_shape, camera_index, autofocus, focus_value, grid_on, fullscreen, pan_x, pan_y, egg):
     height, width = frame.shape[:2]
     pan_text = f"   [arrows] pan ({pan_x:+d},{pan_y:+d})" if zoom > ZOOM_MIN else "   [arrows] pan (zoom in first)"
     zoom_line = f"[+/-] zoom {zoom:.1f}x ({zoom_tag(zoom)})   [0] reset{pan_text}"
@@ -380,6 +431,9 @@ def draw_overlay(frame, counts, tag, zoom, crop_shape, camera_index, autofocus, 
     camera_line = f"[C] camera {camera_index}   [F] autofocus {'ON' if autofocus else 'OFF'}   [[/]] focus {focus_text}"
     display_line = f"[L] grid {'ON' if grid_on else 'OFF'}   [M] fullscreen {'ON' if fullscreen else 'OFF'}"
     lines = [
+        # First, and on its own line, because it is the one thing the shooter has
+        # to keep in step with the physical world in front of them.
+        f"EGG {egg}  ({egg_tag(egg)})   [E] next egg",
         f"[G] good {counts['good']}   [D] defective {counts['defective']}   [N] not_an_egg {counts['not_an_egg']}",
         zoom_line,
         camera_line,
@@ -471,6 +525,13 @@ def main():
         help="Start with the preview filling the screen. Press M any time to toggle it instead.",
     )
     parser.add_argument(
+        "--egg",
+        type=int,
+        default=None,
+        help="Egg number to start on. Defaults to carrying on from the last session, so "
+        "tomorrow's first egg does not reuse today's number. Press E during the shoot to advance.",
+    )
+    parser.add_argument(
         "--forget",
         action="store_true",
         help=f"Delete {SETTINGS_PATH} and start from the built-in defaults. Use it when the rig moved.",
@@ -519,6 +580,10 @@ def main():
         focus_value = clamp_focus(setting("focus", None, FOCUS_DEFAULT))
         grid_on = bool(setting("grid", None, False))
         fullscreen = bool(setting("fullscreen", args.fullscreen, False))
+        # Carried across sessions on purpose: if tomorrow restarted at 1, tomorrow's
+        # egg 1 and today's egg 1 would sit in the same class folder looking like
+        # one egg, and the split would put half of each in train and half in test.
+        egg = max(EGG_MIN, int(setting("egg", args.egg, EGG_MIN)))
     except (TypeError, ValueError) as error:
         print(f"{SETTINGS_PATH} has a bad value ({error}); starting from the defaults.")
         saved = {}
@@ -529,6 +594,7 @@ def main():
         pan_x, pan_y = 0, 0
         autofocus, focus_value = True, FOCUS_DEFAULT
         grid_on, fullscreen = False, bool(args.fullscreen)
+        egg = args.egg if args.egg is not None else EGG_MIN
 
     zoom = clamp_zoom(requested_zoom)
     if zoom != requested_zoom:
@@ -580,9 +646,11 @@ def main():
             "focus": focus_value,
             "grid": grid_on,
             "fullscreen": fullscreen,
+            "egg": egg,
         }
 
     last_saved = snapshot()
+    first_egg = egg   # so the closing line reports THIS session's range, not 1..n
 
     # WINDOW_NORMAL (not the imshow default) so setWindowProperty can flip it
     # in and out of fullscreen later -- an autosize window can't be resized.
@@ -596,6 +664,7 @@ def main():
     print("Zoom with + and -, 0 resets. Set it before the batch and leave it alone.")
     print("Press C to switch camera, F to toggle autofocus, [ and ] for manual focus.")
     print("Press L for a framing grid, M for fullscreen, arrow keys to pan once zoomed in.")
+    print(f"*** PRESS E EVERY TIME A NEW EGG GOES ON THE CANDLER. Starting at egg {egg}. ***")
     print(f"Starting counts: {counts}")
 
     try:
@@ -625,7 +694,7 @@ def main():
                 draw_grid(preview)
             draw_overlay(
                 preview, counts, tag, zoom, shot.shape, camera_index, autofocus, focus_value,
-                grid_on, fullscreen, pan_x, pan_y,
+                grid_on, fullscreen, pan_x, pan_y, egg,
             )
             cv2.imshow(WINDOW_NAME, preview)
 
@@ -680,6 +749,9 @@ def main():
                 focus_value = clamp_focus(focus_value + step)
                 applied = camera.set(cv2.CAP_PROP_FOCUS, focus_value)
                 print(f"Focus {focus_value}." + ("" if applied else " (this camera may not support manual focus.)"))
+            elif key in EGG_ADVANCE_KEYS:
+                egg += 1
+                print(f"--- EGG {egg} --- put the next egg on the candler.")
             elif key in GRID_TOGGLE_KEYS:
                 grid_on = not grid_on
             elif key in FULLSCREEN_TOGGLE_KEYS:
@@ -694,7 +766,7 @@ def main():
                 window_sized = fullscreen
             elif key in CLASS_KEYS:
                 class_name = CLASS_KEYS[key]
-                path = save_frame(shot, class_name, tag, zoom)
+                path = save_frame(shot, class_name, tag, zoom, egg)
                 counts[class_name] += 1
                 print(f"saved {path}  ({class_name}: {counts[class_name]})")
 
@@ -713,7 +785,10 @@ def main():
 
     print(f"Final counts: {counts}")
     total = sum(counts.values())
-    print(f"{total} image(s) in ai/dataset/. Zip that folder and send it on.")
+    egg_range = f"egg {first_egg}" if first_egg == egg else f"eggs {first_egg} to {egg}"
+    print(f"{total} image(s) in {DATASET_ROOT}; this session covered {egg_range}.")
+    print("Zip that folder and send it on. Do NOT sort it into train/val/test yourself --")
+    print("the split is decided across the whole batch, not one egg at a time.")
     if total:
         if remember:
             print(f"Shot at zoom {zoom:.1f}x. Saved to {SETTINGS_PATH}, so the next run opens framed the same way.")
