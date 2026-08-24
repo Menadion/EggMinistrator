@@ -90,7 +90,14 @@ repo stays code and documentation is handled at the defense. See the `docs/` blo
 
 ## Running it
 
-Each subsystem sets up independently — start with the README in the folder you're working on.
+**On a machine that has never run this, start with [`SETUP.md`](SETUP.md).** It covers the
+whole chain from an empty laptop to a running station, in the order that works, and flags the
+two steps that destroy data or take an evening if you get them wrong.
+
+Once set up, `run-eggministrator.bat` brings the whole stack up in one command and
+`stop-eggministrator.bat` takes it down.
+
+Each subsystem also sets up independently — start with the README in the folder you're working on.
 
 The dashboard runs on Node (`npm install && npm run dev` in `dashboard/`) and reads **live records
 from the database**, through the API in `backend/` — so it needs `backend/` running and the schema in
