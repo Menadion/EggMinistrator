@@ -9,7 +9,13 @@
 // RGB MODULE
 #define RED_LED    25
 #define GREEN_LED  26
-#define ORANGE_LED 27
+#define ORANGE_LED 27   // ⚠️ MISLEADING NAME. This pin is the module's BLUE
+                        // channel and is never driven HIGH in this sketch or
+                        // in the station firmware. The orange you see is RED
+                        // full + analogWrite(GREEN, 80) below, not this pin.
+                        // The station sketch calls the same pin LED_BLUE_PIN,
+                        // which is what made the 2026-08-23 LED debugging so
+                        // confusing. Rename is J's call; it is his sketch.
 
 // HX711 LOAD CELL
 #define HX711_DT  32

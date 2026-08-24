@@ -76,11 +76,19 @@ work crosses a boundary, that is a conversation, not a commit.
 2. **The model emits exactly three classes: `good`, `defective`, `not_an_egg`.** One verdict per
    egg. It does not report which defect it found. (This is "Decision G".)
 3. **Weight is not vision.** Size grading comes from the load cell, not the camera. Accuracy target
-   is ±2 g. *(Briefly voided 2026-08-19, restored 2026-08-20 — see section 1.)*
-   🔴 **DISPUTED 2026-08-23 — this document and the paper disagree.** PROJMAN Ver9.1 Table 9 reads
-   *"Weight measurement error — Within 1 grams of a reference scale."* This line says ±2 g. Only
-   the paper is submitted, so the 1 g figure is the one being graded, and every repo document has
-   been quoting the looser number. Not resolved unilaterally — M's call which one moves.
+   is **1 g**. *(Briefly voided 2026-08-19, restored 2026-08-20 — see section 1.)*
+   ✅ **RESOLVED 2026-08-24 — the repo moved to the paper's figure, not the other way round.**
+   This line said ±2 g until today, and every repo document inherited it. PROJMAN Ver9.1 Table 9
+   reads *"Weight measurement error — Within 1 grams of a reference scale."* Only the paper is
+   graded, so the project was committed to 1 g regardless of what this file said; the looser
+   number just meant the build was being calibrated toward a target nobody is marked against.
+   The paper was **not** edited — nothing about the submitted document changes.
+
+   The hardware supports the tighter figure: the **1 kg** cell puts a 60 g egg at roughly 6% of
+   range. A 5 kg cell would put it near 1%, where noise and drift dominate — which is why the
+   BOM warns against oversizing. Ver9.1's budget table reads *"1 kg Single Point Load Cell"*, so
+   the paper and the build agree on the component; the older note claiming the paper still
+   specified 5 kg was stale and is corrected in `hardware/bill-of-materials.md`.
 4. **Size grades follow PNS/BAFS 321:2021 weight bands**, stored in the `size_grades` table.
    *(Briefly voided 2026-08-19, restored 2026-08-20 — see section 1.)*
 5. **Embryo development and balut are out of scope, by input.** The reference operation receives
@@ -139,7 +147,7 @@ rather than hanging off a USB port.
 3. BOARD  →  GET /api/inspections/41/result   (polled, ~500 ms)
    SERVER →  { "status": "pending" } until step 2 lands,
              then { "label": "good", "confidence": 0.83 }
-   BOARD  →  drives the LCD, LEDs and buzzer (FR-15). Gives up after 5 s.
+   BOARD  →  drives the LCD and the RGB LED (FR-15). Gives up after 5 s.
 ```
 
 **Why the board polls instead of being pushed to.** Pushing means the laptop has to know the board's
@@ -347,8 +355,9 @@ These are unresolved. If your task touches one, ask before assuming.
 
    **Changed 2026-08-23 to `LOADCELL_CALIBRATION_FACTOR = 698.0`**, adopted from J's bench sketch
    (`firmware/tester/tester.ino`) on M's ruling that the station follows the board J is physically
-   running. The two figures differ by 5.3% — roughly 3 g on a 60 g egg, and therefore wider than
-   this document's own ±2 g tolerance. 698.0 is adopted on recency, not on re-measurement.
+   running. The two figures differ by 5.3% — roughly 3 g on a 60 g egg, which is **three times**
+   this document's 1 g tolerance (it was 1.5× while this file still said ±2 g). 698.0 is adopted
+   on recency, not on re-measurement.
    🔴 **Owed: re-run the calibration once the egg holder is final and delete whichever loses.** The
    factor describes the whole mechanical assembly, so fitting the holder invalidates both anyway.
 
@@ -410,17 +419,18 @@ These are unresolved. If your task touches one, ask before assuming.
 5. 🟡 **Paper revisions owed. None applied yet. Owner: M.** Parked here so they are not quietly
    buried — the paper is not in this repo, so this list is the only record that they are outstanding.
 
-   - **Parts list.** The station gets a **16x2 I²C LCD and three indicator LEDs**, both pre-owned,
-     so they go in the *already owned* table at ₱0. ⚠️ **State explicitly that the total is
-     unchanged** — a reader who sees new components will assume the money moved. Tables 2, 6 and 15
-     keep **₱3,432.00**.
-   - 🔴 **FR-15 is half met and there is no buzzer.** The requirement asks for a visual indicator
-     **and an audible signal**; the LCD and LEDs cover the first, nothing covers the second. The
-     firmware is already written for it — `BUZZER_PIN` on GPIO10, `beep()` sounding 1/2/3 tones for
-     good/defective/not_an_egg — so **the code exists and the part does not.** A passive piezo
-     buzzer is ₱20–50 and two wires. If it is bought it joins the parts-to-buy table and the totals
-     *do* move; if the audible signal is instead played through the laptop speaker, say so in the
-     paper, because the laptop is at the station but it is not the station.
+   - **Parts list.** ✅ Done in Ver9.1 — Table 2 already carries the **16x2 I²C LCD** and the
+     status indicator, both pre-owned at ₱0, and the total is unchanged at **₱3,432.00**. One
+     wording fix is still owed: the row reads *"Status Indicator LEDs, 3 piece"* when the hardware
+     is **one RGB module driven on three channels**. Replace with *"RGB Status Indicator Module,
+     1 piece"*. It is ₱0 either way, so no total moves.
+   - ✅ **FR-15 IS MET, and this entry was wrong for weeks.** Ver9.1 reads: *"Indicate the
+     classification result at the inspection station through a visual indicator and an on-station
+     display."* **A display, not an audible signal.** An earlier version of the paper said audible
+     and this repo tracked that wording long after it changed, which is where "half met", the
+     buzzer shopping and the laptop-speaker workaround all came from. The RGB LED is the visual
+     indicator and the 16x2 LCD is the on-station display. Both exist, both work, nothing is
+     owed.
    - **Defect scope.** Blood and meat spots are **under-sampled, not removed.** Write them as a
      stated limitation with the sampling constraint named (one candler, ~1% natural occurrence) and
      list them as future work. ⚠️ **Do not delete the capability.** FR-12 claims *internal* quality;
@@ -488,19 +498,16 @@ These are unresolved. If your task touches one, ask before assuming.
    that the defense requires physical hardware is what turned this from a non-issue into a demo
    problem.
 
-   **b. No audible cue.** FR-15 wants visual *and* audible. ✅ The adviser ruled 2026-08-20 that **the
-   laptop speaker is acceptable**, so no buzzer is bought and no cost table moves. But there is no
-   audio anywhere in `dashboard/` or `backend/` — no `new Audio`, no `.play()`. The firmware's
-   `beep()` at lines 524-534 drives `BUZZER_PIN` with **no buzzer wired to it**, so the ESP32 cannot
-   close this either. It has no speaker of its own and no way to reach the laptop's.
+   **b. No audible cue. ✅ MOOT as of 2026-08-24 — checked against Ver9.1 itself.** FR-15 asks for
+   *"a visual indicator and an on-station display"*, not an audible signal. The repo had been
+   working from an older wording. So: no buzzer is needed, the 2026-08-20 laptop-speaker ruling is
+   no longer load-bearing, and the browser-autoplay trap that came with it does not apply. The
+   buzzer was descoped by the team the same day to get the hardware finished, and it costs nothing
+   in requirements terms.
 
-   **The fix is one change:** poll for new inspections, and play a sound when one arrives. The poll
-   is what the demo actually depends on; the sound rides along on the same event.
-
-   🔴 **The trap, and it will bite on the day.** Browsers block audio until the user has interacted
-   with the page. If nobody clicks before the first egg, the first cue is silently swallowed. Either
-   the operator logs in on that same page load, or the dashboard gets a deliberate "Start session"
-   button that unlocks audio. The second is more reliable.
+   ⚠️ **The polling half of the old fix still stands, and it belongs to (a).** The dashboard shows
+   nothing until somebody refreshes. That was going to be solved by the same poll that would have
+   triggered the sound; with the sound gone, the poll is still owed on its own merits.
 
    *Rejected alternatives: having Node shell out to a system sound player per egg, and having
    `classify.py` beep — both add moving parts for the same chirp, and the classifier is invoked by a
@@ -627,9 +634,9 @@ defense aid.
 | 10 | Allow administrators to access inspection history | ✅ | **verified 2026-08-15** against a live stack. `HistoryPage.jsx:50` fetches `/api/inspections` through `authenticatedFetch`; unauthenticated calls get `AUTH_REQUIRED`. ⚠️ **There is no role check on that route** — `server.js:55-59` calls only `getSessionUser`, and signing in as `inspector` returned all 5,234 rows. Role gating exists only on `/api/admin/*`. The requirement says administrators *can* reach the history, not that only they can, so it is met as written — same reading R applied to FR-03. **Say this deliberately if asked** |
 | 11 | Capture a candling image under transillumination | 🔴 | **same missing capture code as FR-01** |
 | 12 | Classify internal egg quality from the candling image | 🔴 | `classify.py` is written but no trained model exists — `ai/models/` is absent |
-| 13 | Measure the weight of each inspected egg | 🟡 | firmware written (535 lines), **factor 698.0 as of 2026-08-23** (adopted from J's bench sketch; supersedes the 735.25 calibrated 2026-08-16, and the two disagree by more than the ±2 g tolerance). Amber because the board has never been compiled or flashed, and because the factor is owed a re-measurement once the holder is final. *(Descoped 2026-08-19, restored 2026-08-20.)* |
+| 13 | Measure the weight of each inspected egg | 🟡 | firmware written (535 lines), **factor 698.0 as of 2026-08-23** (adopted from J's bench sketch; supersedes the 735.25 calibrated 2026-08-16, and the two disagree by three times the 1 g tolerance). Amber because the board has never been compiled or flashed, and because the factor is owed a re-measurement once the holder is final. *(Descoped 2026-08-19, restored 2026-08-20.)* |
 | 14 | Detect large cracks and gross shell damage | 🔴 | **same missing model as FR-12** |
-| 15 | Indicate the result at the station, visual + audible | 🟡 | **visual half only.** LCD + 3 LEDs exist and the firmware drives them. ✅ **The adviser ruled 2026-08-20 that the laptop speaker is an acceptable audible cue**, so no buzzer needs buying and the cost tables do not move. ⚠️ **But nothing plays it yet** — there is no audio anywhere in `dashboard/` or `backend/`. The firmware's `beep()` drives a pin with no buzzer attached, so it does not close this either. Small React job: sound on verdict, ideally distinct for `defective` |
+| 15 | Indicate the result at the station, visual indicator + on-station display | ✅ | **Met.** Ver9.1 asks for *"a visual indicator and an on-station display"* — **not an audible signal**, which is what this row claimed for weeks off an older wording of the paper. The RGB module is the indicator (green good, red defective, orange not-an-egg) and the 16x2 LCD is the display. Both were driven end to end on J's board on 2026-08-23. The buzzer was descoped 2026-08-24 and takes nothing with it |
 
 ### They move in clusters, not one at a time
 
@@ -639,7 +646,10 @@ defense aid.
   > ✅ **8 of 15 = 53% stands.** A 2026-08-19 recount here read 7 of 13 after FR-04 and FR-13 were
   > descoped. **The descope was reversed on 2026-08-20**, both requirements are back, and the count
   > returns to the printed figure. Nothing about the denominator needs explaining to anyone.
-- **Hardware cluster (J) — `FR-02`, `FR-13`, `FR-15` all flip on the first successful flash.** → 11/15.
+- **Hardware cluster (J) — `FR-02` and `FR-13` flip on the first successful flash.** → 11/15.
+  *(`FR-15` was in this cluster until 2026-08-24, when re-reading Ver9.1 showed it asks for a
+  display rather than an audible cue and was therefore already met. The 11/15 endpoint is
+  unchanged; it is reached from a higher starting point.)*
 - **AI cluster (M) — `FR-01`+`FR-11` are one capture script, `FR-12`+`FR-14` are one training run.**
   Two jobs, four requirements, blocked on nobody.
 

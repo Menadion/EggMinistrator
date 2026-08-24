@@ -156,23 +156,46 @@
 #define LCD_SDA_PIN   21   // the classic ESP32 I2C default pair, so stock
 #define LCD_SCL_PIN   22   // wiring guides for this board apply as written
 #define BUZZER_PIN     4
+
+// 🔴 DESCOPED 2026-08-24, on the team's call, to get the hardware finished in
+// time. No buzzer is fitted. Ver9.1's FR-15 asks for "a visual indicator and an
+// on-station display", NOT an audible signal, so nothing in the paper is left
+// unmet by this.
+//
+// The calls stay in place rather than being deleted, so wiring one later is a
+// single edit here. But beep() BLOCKS: left running with no buzzer it spent
+// 120-400 ms per egg waiting on a pin nothing is connected to, out of a 3 s
+// per egg budget. Set true only when a buzzer is actually fitted.
+#define HAS_BUZZER false
 #define LED_RED_PIN   25
 #define LED_GREEN_PIN 26
-#define LED_BLUE_PIN  27   // only used for the "not an egg" indicator -- see indicateResult()
+#define LED_BLUE_PIN  27   // WIRED BUT UNUSED since 2026-08-24 -- see indicateResult().
+                           // Kept defined so it is still forced LOW at reset;
+                           // otherwise a blue left lit by older firmware stays on.
 
-// ✅ Three colour channels still exist, so each of the three verdicts keeps its
-// own colour and FR-15's visual half is satisfied.
+// ✅ Each of the three verdicts keeps its own colour, so FR-15 is satisfied.
 //
-// ⚠️ CHANGED 2026-08-23: this is now ONE RGB LED module on 25/26/27, not three
-// discrete LEDs. The 2026-08-16 note said "J found a third LED beyond the red
-// and green" and set the BOM to 3 pieces -- that is now wrong on both counts.
-// The module is newly bought, is NOT in the pre-owned list, and appears in no
-// document yet. The BOM, Table 2 and the paper all still need this change.
+// FR-15 as Ver9.1 states it: "Indicate the classification result at the
+// inspection station through a visual indicator and an on-station display."
+// A visual indicator and a display. NOT an audible signal -- an older wording
+// of FR-15 said that, and this repo tracked the old one for weeks. The LED and
+// the 16x2 LCD satisfy it between them, which is why no buzzer is needed.
 //
-// Set this false if the module is ever lost or reassigned: indicateResult()
-// then signals "not an egg" by blinking red and green together, which is still
-// visibly distinct from either verdict.
-#define HAS_BLUE_LED true
+// ⚠️ CHANGED 2026-08-23: this is ONE RGB LED module on 25/26/27, not three
+// discrete LEDs.
+//
+// ⚠️ CHANGED 2026-08-24: "not an egg" is ORANGE, not blue, on J's
+// recommendation. The module has no orange pin -- pin 27 is never driven HIGH
+// in either sketch -- so orange is RED full plus GREEN at partial brightness.
+// The recipe is copied exactly from J's bench sketch (tester.ino:538-541,
+// analogWrite(GREEN_LED, 80)), which is the version proven on the actual board.
+// Full green instead of 80 gives yellow, not orange.
+//
+// GREEN is driven through analogWrite EVERYWHERE below, never digitalWrite.
+// Mixing the two on one pin means analogWrite attaches an LEDC channel and a
+// later digitalWrite may or may not detach it, depending on core version. One
+// mode for that pin removes the question entirely. RED is never PWM'd, so it
+// stays digitalWrite.
 
 // The GPIO12/13 warning that stood here is retired: J's LEDs are no longer on
 // those pins. Keeping the reason on record because it still constrains any
@@ -197,11 +220,17 @@
 // (firmware/tester/tester.ino), on M's ruling that the station follows the
 // number on the board J is actually running.
 //
-// The two numbers disagree by 5.3%, which is ~3 g on a 60 g egg and therefore
-// wider than the paper's own +/-2 g KPI. Only one of them can describe this
-// assembly. 698.0 is adopted because it is the more recent of the two and the
-// bench rig is the one physically wired, NOT because it was re-derived --
-// nobody has re-run the four steps above since the 16th.
+// The two numbers disagree by 5.3%, which is ~3 g on a 60 g egg -- THREE TIMES
+// the 1 g tolerance (CONTRACT.md section 4, settled 2026-08-24 to match the
+// paper's Table 9; the repo previously said +/-2 g, which made the same gap
+// look like 1.5x). Only one of them can describe this assembly. 698.0 is
+// adopted because it is the more recent of the two and the bench rig is the
+// one physically wired, NOT because it was re-derived -- nobody has re-run the
+// four steps above since the 16th.
+//
+// Tare matters as much as the factor at 1 g: tare(20) runs once in setup() and
+// never again, so anything on the plate at power-up becomes zero for the whole
+// session. Power up with the holder fitted and the plate empty.
 //
 // 🔴 OWED: re-run the calibration once the egg holder is final and delete the
 // loser. The factor describes the whole mechanical assembly, not just the
@@ -273,7 +302,7 @@ void setup() {
   pinMode(LED_BLUE_PIN, OUTPUT);
   digitalWrite(BUZZER_PIN, LOW);
   digitalWrite(LED_RED_PIN, LOW);
-  digitalWrite(LED_GREEN_PIN, LOW);
+  analogWrite(LED_GREEN_PIN, 0);   // one mode for this pin, everywhere
   digitalWrite(LED_BLUE_PIN, LOW);
 
   Wire.begin(LCD_SDA_PIN, LCD_SCL_PIN);
@@ -450,7 +479,7 @@ void waitForEggRemoval() {
     delay(200);
   }
   digitalWrite(LED_RED_PIN, LOW);
-  digitalWrite(LED_GREEN_PIN, LOW);
+  analogWrite(LED_GREEN_PIN, 0);   // NOT digitalWrite -- see indicateResult()
   digitalWrite(LED_BLUE_PIN, LOW);
   showMessage("Ready.\nPlace an egg.");
 }
@@ -562,40 +591,31 @@ void showResult(const InspectionResultLocal &result) {
 
 // ---------------------------------------------------------------------------
 // FR-15: "Indicate the classification result at the inspection station
-// through a visual indicator and an audible signal."
+// through a visual indicator and an on-station display." (Ver9.1 wording. An
+// earlier version said "an audible signal", which is why beep() exists below.)
 void indicateResult(const InspectionResultLocal &result) {
   digitalWrite(LED_RED_PIN, LOW);
-  digitalWrite(LED_GREEN_PIN, LOW);
+  analogWrite(LED_GREEN_PIN, 0);
   digitalWrite(LED_BLUE_PIN, LOW);
 
   if (result.label == "good") {
-    digitalWrite(LED_GREEN_PIN, HIGH);
+    analogWrite(LED_GREEN_PIN, 255);
     beep(1, 120);
   } else if (result.label == "defective") {
     digitalWrite(LED_RED_PIN, HIGH);
     beep(2, 120);
   } else {
-    // "not an egg". With three LEDs this gets its own colour. With two, blue
-    // does not exist, so fall back to blinking red and green together -- still
-    // visibly different from either verdict, which is the whole requirement,
-    // rather than silently doing nothing and looking like a crash.
-    if (HAS_BLUE_LED) {
-      digitalWrite(LED_BLUE_PIN, HIGH);
-    } else {
-      for (int i = 0; i < 3; i++) {
-        digitalWrite(LED_RED_PIN, HIGH);
-        digitalWrite(LED_GREEN_PIN, HIGH);
-        delay(150);
-        digitalWrite(LED_RED_PIN, LOW);
-        digitalWrite(LED_GREEN_PIN, LOW);
-        delay(150);
-      }
-    }
+    // "not an egg" -- ORANGE: red full, green partial. Same values as J's
+    // bench sketch. Steady rather than blinking, so it reads as a verdict
+    // rather than as an error state.
+    digitalWrite(LED_RED_PIN, HIGH);
+    analogWrite(LED_GREEN_PIN, 80);
     beep(3, 80);
   }
 }
 
 void beep(int times, int durationMs) {
+  if (!HAS_BUZZER) return;   // no buzzer fitted: do not burn the delay
   for (int i = 0; i < times; i++) {
     digitalWrite(BUZZER_PIN, HIGH);
     delay(durationMs);
@@ -605,6 +625,7 @@ void beep(int times, int durationMs) {
 }
 
 void beepError() {
+  if (!HAS_BUZZER) return;
   digitalWrite(BUZZER_PIN, HIGH);
   delay(500);
   digitalWrite(BUZZER_PIN, LOW);

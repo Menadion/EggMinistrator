@@ -43,11 +43,18 @@ Wi-Fi is met **in code**. It is not yet met on a board.
   on recency, not on re-measurement; nobody has re-run the procedure since the 16th.
   **Owed: re-calibrate once the egg holder is final, then delete the loser.**
 
-  🔴 **The tolerance this is measured against is itself disputed (found 2026-08-23).** `CONTRACT.md`
-  l.79 says **±2 g**; the paper's Table 9 says **"Weight measurement error — Within 1 grams of a
-  reference scale."** Against the paper's figure the 3 g gap is **three times over**, not 1.5×.
-  The repo has only ever cited CONTRACT, so the looser number has gone unchallenged. Resolve
-  which is authoritative before the defense.
+  ✅ **The tolerance is 1 g, settled 2026-08-24.** It was disputed from 2026-08-23: `CONTRACT.md`
+  l.79 said **±2 g** while the paper's Table 9 says **"Weight measurement error — Within 1 grams of
+  a reference scale."** The paper is what gets graded, so the repo moved to match it and the paper
+  was left untouched. **Against 1 g the 3 g calibration gap is three times over, not 1.5×** — so
+  the station is currently outside tolerance, and re-calibrating with the final holder fitted is
+  the thing that fixes it.
+
+  ⚠️ **Tare is the other half of holding 1 g, and it is not addressed in code.** `tare(20)` runs
+  once in `setup()` and there is no re-tare anywhere. So whatever sits on the plate at power-up
+  becomes zero for the entire session, and the HX711's zero drifts with temperature over a long
+  one. The operational fix, not a firmware change: **power the station up with the holder already
+  fitted and the plate empty, and reset it if the session runs long.**
 
 ## What it does
 
@@ -115,7 +122,7 @@ pulled to GND — no longer applies to anything in this project.)*
 ## Notes
 
 - The load cell **is calibrated** (698.0 as of 2026-08-23, superseding 735.25 — see the status
-  section above; the two disagree by more than the ±2 g KPI). Size class is assigned by comparing
+  section above; the two disagree by three times the 1 g KPI). Size class is assigned by comparing
   weight to the PNS bands in the paper's Table 11, so a calibration error becomes a grading error
   directly — re-calibrate if the load cell, the HX711 or the egg holder ever changes.
 - Weight and image are joined **on the server**, against the same inspection record. The node does not
