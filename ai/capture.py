@@ -469,7 +469,10 @@ def load_settings():
     if not SETTINGS_PATH.exists():
         return {}
     try:
-        with open(SETTINGS_PATH, encoding="utf-8") as file:
+        # utf-8-sig, not utf-8: if anyone opens this file in Notepad and saves
+        # it, Windows prepends a BOM and a plain utf-8 read then fails on the
+        # very first character. Writing stays plain utf-8; we never add one.
+        with open(SETTINGS_PATH, encoding="utf-8-sig") as file:
             saved = json.load(file)
     except (json.JSONDecodeError, OSError) as error:
         print(f"Could not read {SETTINGS_PATH} ({error}); starting from the defaults.")
@@ -610,6 +613,9 @@ def main():
             f"""Could not open camera {camera_index}.
   - The built-in camera is usually 0, so a USB webcam is 1 or 2. Try --camera 1.
   - Close anything else using it: Teams, Zoom, Discord, a browser tab.
+  - ai/listen_station.py holds the webcam the whole time it runs, and
+    run-eggministrator.bat starts it by default. Free it with:
+        stop-eggministrator.bat listener
   - Windows Settings > Privacy & security > Camera > allow desktop apps.
   - If the saved camera index is simply gone, --forget clears it."""
         )
