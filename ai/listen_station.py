@@ -257,7 +257,13 @@ def classify(model, classes, version, frame, image_path):
         # Every class score, not just the winner. A verdict of "defective" at 0.51
         # and one at 0.99 look identical on the dashboard; this is what tells them
         # apart when someone questions a call after the fact.
-        "raw_result": {name: float(score) for name, score in zip(classes, probabilities)},
+        #
+        # Serialised HERE rather than sent as an object. raw_result is LONGTEXT and
+        # the API stores the line verbatim, so it validates with hasText() before
+        # JSON.parse(): an object arrives as a JSON object, fails the string check,
+        # and every inspection comes back 400 RAW_RESULT_REQUIRED with the image
+        # already written to disk. Found the night before the demo, 2026-08-25.
+        "raw_result": json.dumps({name: float(score) for name, score in zip(classes, probabilities)}),
     }
 
 
