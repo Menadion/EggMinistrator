@@ -262,7 +262,12 @@ struct InspectionResultLocal {
 unsigned long lastWeightSend = 0;
 bool waitingForResult = false;
 unsigned long resultRequestedAt = 0;
-const unsigned long RESULT_TIMEOUT_MS = 5000;   // give up waiting and go back to idle
+// RAISED 5000 -> 15000 on 2026-08-25. The old budget was shorter than the
+// pipeline it was waiting on, so the board declared "No response" while the
+// verdict was still in flight. It then landed in the database anyway, leaving
+// the LCD and the dashboard disagreeing about the same egg. The board polls
+// every 500 ms, so a longer ceiling costs nothing when the verdict is quick.
+const unsigned long RESULT_TIMEOUT_MS = 15000;  // give up waiting and go back to idle
 
 long currentInspectionId = -1;                  // handed back by step 1
 unsigned long lastPoll = 0;

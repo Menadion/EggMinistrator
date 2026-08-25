@@ -135,6 +135,20 @@ def load_model_and_labels():
     model = tf.keras.models.load_model(str(model_path))
     classes = json.loads((MODEL_DIR / "classes.json").read_text())
     version = json.loads((MODEL_DIR / "version.json").read_text())
+
+    # WARM THE MODEL BEFORE THE FIRST EGG, not during it.
+    #
+    # TensorFlow traces the graph on the first predict() call, not at load time.
+    # Measured on this machine: first call 1.59 s, every call after it 0.12 s.
+    #
+    # The board gives the whole pipeline RESULT_TIMEOUT_MS to produce a verdict.
+    # Spending 1.5 s of that budget on a one-off warmup made the FIRST egg of
+    # every session time out on the LCD ("No response. Try again.") while the
+    # verdict still landed in the database a moment later, so the dashboard
+    # disagreed with the station. Paying it here costs a second of startup and
+    # nothing at all per egg.
+    model.predict(np.zeros((1, *INPUT_SIZE, 3), dtype=np.float32), verbose=0)
+
     return model, classes, version
 
 
