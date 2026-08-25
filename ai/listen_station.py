@@ -120,6 +120,51 @@ STALE_FRAMES_TO_DISCARD = 4
 # in a way that looks like a bad model rather than a bad setting.
 DEFAULT_ZOOM = 1.0
 
+# The load cell settles for 800 ms before the board sends a weight, but that is
+# the EGG holding still, not the scene. The operator's hand is often still in
+# shot when the inspection opens. Pausing here costs a fraction of a second per
+# egg and buys a frame of the platform rather than of somebody reaching away
+# from it. Tunable per rig with --settle, since it depends on how the operator
+# actually works rather than on anything about the hardware.
+CAPTURE_SETTLE_SECONDS = 0.5
+
+# capture.py writes this when the dataset is shot, and the station has to read
+# back MORE than the zoom out of it.
+#
+# ⚠️ pan_x/pan_y are the reason this exists. crop_to_zoom() takes an OFF-centre
+# crop, and the listener used to call it with the pan defaulted to 0,0 while the
+# dataset was shot with whatever the arrow keys left behind. On the rig this was
+# found on, pan_y was -160 against a 360 px crop: the training images came from
+# the top of the frame and the station was looking at the middle. That is not a
+# subtle drift, it is close to a different picture, and it presents as "the
+# camera looks tilted" rather than as a settings bug.
+SETTINGS_PATH = Path(__file__).resolve().parent / "capture_settings.json"
+
+
+def load_capture_settings():
+    """Return capture.py's saved setup, or an empty dict if there is not one.
+
+    Never raises. A missing or corrupt file means the CLI defaults apply, which
+    is the same position the station was in before it read this at all.
+    """
+    try:
+        saved = json.loads(SETTINGS_PATH.read_text(encoding="utf-8-sig"))
+    except (OSError, ValueError):
+        return {}
+    return saved if isinstance(saved, dict) else {}
+
+
+def setting(saved, name, kind, fallback):
+    """One value out of the saved settings, coerced, with a fallback.
+
+    bool is a subclass of int, so it is excluded explicitly: True would sail
+    through an int() cast and become a zoom of 1 or a camera index of 1.
+    """
+    value = saved.get(name)
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return fallback
+    return kind(value)
+
 
 def load_model_and_labels():
     """Import TensorFlow late, so --help and argument errors do not wait on it."""
@@ -201,7 +246,7 @@ def frame_brightness(frame):
     return float(frame.mean())
 
 
-def grab_lit_frame(camera, zoom):
+def grab_lit_frame(camera, zoom, pan_x=0, pan_y=0):
     """Return (frame, brightness) once the candler is clearly on, or (None, b).
 
     Retries rather than failing on the first dark frame: an operator who
@@ -210,7 +255,7 @@ def grab_lit_frame(camera, zoom):
     """
     brightness = 0.0
     for attempt in range(DARK_RETRIES):
-        frame = crop_to_zoom(grab_current_frame(camera), zoom)
+        frame = crop_to_zoom(grab_current_frame(camera), zoom, pan_x, pan_y)
         brightness = frame_brightness(frame)
         if brightness >= BRIGHTNESS_MIN:
             return frame, brightness
@@ -268,9 +313,18 @@ def classify(model, classes, version, frame, image_path):
 
 
 def main():
+    # capture.py's own record of how the dataset was shot. Every framing default
+    # below comes from here, so the station reproduces the dataset's framing
+    # without anyone having to retype it, and gets it wrong in one place instead
+    # of four if the file is missing.
+    saved = load_capture_settings()
+
     parser = argparse.ArgumentParser(description="Classify eggs as the board opens inspections.")
-    parser.add_argument("--camera", type=int, default=0, help="Camera index. 0 is usually the built-in; try 1 for the USB webcam.")
-    parser.add_argument("--zoom", type=float, default=DEFAULT_ZOOM, help="MUST match the zoom the dataset was shot at, e.g. --zoom 1.8. Check a filename in ai/dataset/ for the z-number.")
+    parser.add_argument("--camera", type=int, default=setting(saved, "camera", int, 0), help="Camera index. Defaults to the one capture.py last used. Indices move between reboots and USB ports, so override with 1 or 2 if the wrong camera opens.")
+    parser.add_argument("--zoom", type=float, default=setting(saved, "zoom", float, DEFAULT_ZOOM), help="MUST match the zoom the dataset was shot at, e.g. --zoom 1.8. Defaults to the saved one.")
+    parser.add_argument("--pan-x", type=int, dest="pan_x", default=setting(saved, "pan_x", int, 0), help="Horizontal crop offset in pixels. MUST match the dataset, same as zoom.")
+    parser.add_argument("--pan-y", type=int, dest="pan_y", default=setting(saved, "pan_y", int, 0), help="Vertical crop offset in pixels. MUST match the dataset, same as zoom.")
+    parser.add_argument("--settle", type=float, default=CAPTURE_SETTLE_SECONDS, help="Seconds to wait after an inspection opens before photographing, so the operator's hand is out of shot. Raise it if captures look rushed.")
     parser.add_argument("--api", default=os.environ.get("STATION_API", "http://127.0.0.1:3001"), help="Backend base URL.")
     parser.add_argument("--key", default=os.environ.get("DEVICE_API_KEY", ""), help="Device key. Must match backend/.env.")
     arguments = parser.parse_args()
@@ -292,7 +346,13 @@ The built-in is usually 0, so a USB webcam is 1 or 2. Also check that nothing
 else is holding it, and that Windows allows desktop apps to use the camera."""
         )
 
-    print(f"Zoom {arguments.zoom:.1f}x. This must match the dataset, or the model sees a framing it was never trained on.")
+    # Printed together, and printed loudly, because these three are the ones
+    # that fail silently. A wrong zoom or pan does not crash and does not look
+    # like a settings problem; it looks like a bad model.
+    source = "capture_settings.json" if saved else "defaults (no capture_settings.json found)"
+    print(f"Framing: zoom {arguments.zoom:.1f}x, pan ({arguments.pan_x:+d},{arguments.pan_y:+d}), from {source}.")
+    print("This must match the dataset, or the model sees a framing it was never trained on.")
+    print(f"Camera {arguments.camera}, settling {arguments.settle:.2f}s before each capture.")
     print(f"Listening at {arguments.api}. Place an egg on the platform. Ctrl+C to stop.")
     handled = 0
     # Which inspection the gate is currently stuck on, so the warning prints
@@ -327,7 +387,12 @@ else is holding it, and that Windows allows desktop apps to use the camera."""
             # (result_label is ENUM('good','defective','not_an_egg')), and
             # writing 'not_an_egg' instead would be the exact lie that a dark
             # frame is an absent egg.
-            frame, brightness = grab_lit_frame(camera, arguments.zoom)
+            # Let the scene stop moving before looking at it. The board already
+            # waited for the egg to stop rocking; this waits for the hand that
+            # put it there to get out of shot.
+            time.sleep(arguments.settle)
+
+            frame, brightness = grab_lit_frame(camera, arguments.zoom, arguments.pan_x, arguments.pan_y)
             if frame is None:
                 if dark_inspection != inspection_id:
                     print(f"  inspection {inspection_id}: CANDLER DARK "
