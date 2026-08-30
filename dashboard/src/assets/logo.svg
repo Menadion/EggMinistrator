@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img">
+  <title>EggMinistrator</title>
+
+  <!-- Shell. Narrow at the crown, widest below centre, like an egg sits. -->
+  <path
+    d="M32 5.5 C41.5 5.5 51.5 21 51.5 35.5 C51.5 47.5 42.8 58.5 32 58.5
+       C21.2 58.5 12.5 47.5 12.5 35.5 C12.5 21 22.5 5.5 32 5.5 Z"
+    fill="#FFFDF8"
+    stroke="#0B5D3B"
+    stroke-width="3.4"
+  />
+
+  <!-- Upper half: the measurement. Three ascending bars on a shared baseline. -->
+  <g fill="#0B5D3B">
+    <rect x="21" y="25" width="5.2" height="6" rx="1.5" />
+    <rect x="28.4" y="20.8" width="5.2" height="10.2" rx="1.5" />
+    <rect x="35.8" y="16.5" width="5.2" height="14.5" rx="1.5" />
+  </g>
+
+  <!-- Lower half: the verdict. One row graded, one row still open. -->
+  <path
+    d="M20.3 39.4 L23.7 42.8 L29.4 36.1"
+    fill="none"
+    stroke="#0B5D3B"
+    stroke-width="3.4"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <rect x="33" y="37.6" width="12.5" height="3.2" rx="1.6" fill="#0B5D3B" />
+
+  <rect
+    x="20"
+    y="45.4"
+    width="6.6"
+    height="6.6"
+    rx="1.9"
+    fill="none"
+    stroke="#0B5D3B"
+    stroke-width="2.4"
+  />
+  <rect x="33" y="47.1" width="9" height="3.2" rx="1.6" fill="#0B5D3B" opacity="0.55" />
+</svg>

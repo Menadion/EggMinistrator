@@ -14,7 +14,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { reportingPeriod } from '../data/mockData'
 import { PageHeader, downloadCsv } from '../components/Ui'
 import { useDatabaseInspections } from '../hooks/useDatabaseInspections'
-import eggministratorLogo from '../assets/eggministrator logo.png'
+import eggministratorLogo from '../assets/logo.svg'
 
 const sizes = ['All Sizes', 'Peewee', 'Small', 'Medium', 'Large', 'Extra Large', 'Jumbo']
 const qualities = ['All Quality', 'good', 'defective']
@@ -480,7 +480,7 @@ export default function ReportsPage() {
                 <img
                   src={eggministratorLogo}
                   alt="Eggministrator logo"
-                  className="h-full w-full translate-y-2 scale-[2.5] object-cover"
+                  className="h-full w-full object-contain"
                 />
               </div>
               <div className="text-right text-sm">

@@ -12,7 +12,7 @@ import {
 } from 'lucide-react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
-import eggministratorLogo from '../assets/eggministrator logo.png'
+import eggministratorLogo from '../assets/logo.svg'
 const navigation = [
   { label: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
   { label: 'History', to: '/history', icon: History },
@@ -25,7 +25,10 @@ export default function AppLayout({ children }) {
   const [desktopExpanded, setDesktopExpanded] = useState(false)
   const navigate = useNavigate()
   const { user, logout } = useAuth()
-  const width = desktopExpanded ? 'lg:w-64' : 'lg:w-20'
+  // The rail overlays the content instead of pushing it, so expanding never
+  // resizes <main> and the 23 recharts ResponsiveContainers never re-measure.
+  // The shadow is what tells the eye it is floating above rather than inline.
+  const width = desktopExpanded ? 'lg:w-64 lg:shadow-2xl' : 'lg:w-20'
   const close = () => setMobileOpen(false)
   const signOut = async () => {
     await logout()
@@ -59,19 +62,23 @@ export default function AppLayout({ children }) {
         />
       )}
       <aside
-        onMouseEnter={() => setDesktopExpanded(true)}
-        onMouseLeave={() => setDesktopExpanded(false)}
         onFocusCapture={() => setDesktopExpanded(true)}
         className={`fixed inset-y-0 left-0 z-40 flex w-64 -translate-x-full flex-col bg-gradient-to-b from-forest-900 to-forest-950 p-3 text-white transition-[transform,width] duration-200 lg:translate-x-0 ${width} ${mobileOpen ? 'translate-x-0' : ''}`}
       >
         <div className="flex h-14 items-center gap-2 px-2">
-          <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-lg">
+          <button
+            type="button"
+            onClick={() => setDesktopExpanded((open) => !open)}
+            aria-expanded={desktopExpanded}
+            aria-label={desktopExpanded ? 'Collapse navigation' : 'Expand navigation'}
+            className="grid h-11 w-11 shrink-0 cursor-default place-items-center overflow-hidden rounded-lg lg:cursor-pointer lg:hover:ring-2 lg:hover:ring-green-500"
+          >
             <img
               src={eggministratorLogo}
               alt="Eggministrator logo"
-              className="h-full w-full translate-y-2 scale-[2.5] object-cover"
+              className="h-full w-full object-contain"
             />
-          </div>
+          </button>
           <span
             className={`text-lg font-bold tracking-tight ${desktopExpanded ? '' : 'lg:hidden'}`}
           >
@@ -143,9 +150,7 @@ export default function AppLayout({ children }) {
           </div>
         </div>
       </aside>
-      <div
-        className={`min-h-screen transition-all duration-200 ${desktopExpanded ? 'lg:ml-64' : 'lg:ml-20'}`}
-      >
+      <div className="min-h-screen lg:ml-20">
         <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-slate-200 bg-cream-50/95 px-4 backdrop-blur lg:hidden">
           <button
             onClick={() => setMobileOpen(true)}
@@ -159,7 +164,7 @@ export default function AppLayout({ children }) {
               <img
                 src={eggministratorLogo}
                 alt="Eggministrator logo"
-                className="h-full w-full translate-y-1.5 scale-[2.5] object-cover"
+                className="h-full w-full object-contain"
               />
             </span>
             <span className="truncate">EggMinistrator</span>

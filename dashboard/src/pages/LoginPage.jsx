@@ -2,8 +2,8 @@ import { Eye, EyeOff, LockKeyhole, Mail, ShieldCheck } from 'lucide-react'
 import { useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
-import eggministratorLogo from '../assets/eggministrator logo.png'
-import loginHero from '../assets/login page .png'
+import eggministratorLogo from '../assets/logo.svg'
+import loginHero from '../assets/login-hero.jpg'
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -80,7 +80,7 @@ export default function LoginPage() {
             <img
               src={eggministratorLogo}
               alt="Eggministrator logo"
-              className="h-full w-full translate-y-2 scale-[2.5] object-cover"
+              className="h-full w-full object-contain"
             />
           </span>
           EggMinistrator
