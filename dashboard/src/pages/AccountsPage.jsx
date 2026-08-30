@@ -19,8 +19,11 @@ const formatDate = (value) =>
       }).format(new Date(value))
     : 'Never'
 const statusClass = (isActive) =>
-  isActive ? 'bg-green-100 text-green-800' : 'bg-slate-200 text-slate-700'
-const roleClass = { admin: 'bg-violet-100 text-violet-800', inspector: 'bg-sky-100 text-sky-800' }
+  isActive ? 'bg-forest-100 text-forest-800' : 'bg-slate-200 text-slate-700'
+// Role reads as hierarchy, not as two unrelated hues. Violet was also the
+// single most recognisable generated-UI tell in the palette, and green is
+// already spoken for by status, so admin is weight and inspector is quiet.
+const roleClass = { admin: 'bg-forest-800 text-white', inspector: 'bg-slate-200 text-slate-700' }
 const roleLabel = (role) => (role === 'admin' ? 'Admin' : 'Inspector')
 
 function Modal({ title, children, onClose }) {
@@ -267,7 +270,7 @@ export default function AccountsPage() {
         }
       />
       {notice && (
-        <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+        <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-forest-200 bg-forest-50 px-4 py-3 text-sm text-forest-800">
           <span>{notice}</span>
           <button onClick={() => setNotice('')} aria-label="Dismiss success message">
             <X size={16} />
@@ -430,7 +433,7 @@ export default function AccountsPage() {
                             account,
                           })
                         }
-                        className={`rounded border px-2 py-1 text-xs font-semibold ${account.isActive ? 'border-red-200 bg-red-50 text-red-700 hover:bg-red-100' : 'border-green-200 bg-green-50 text-green-800 hover:bg-green-100'}`}
+                        className={`rounded border px-2 py-1 text-xs font-semibold ${account.isActive ? 'border-red-200 bg-red-50 text-red-700 hover:bg-red-100' : 'border-forest-200 bg-forest-50 text-forest-800 hover:bg-forest-100'}`}
                       >
                         {account.isActive ? 'Deactivate' : 'Reactivate'}
                       </button>
@@ -505,7 +508,7 @@ export default function AccountsPage() {
               </select>
             </label>
             {modal.type === 'add' && (
-              <p className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">
+              <p className="rounded-lg border border-forest-200 bg-forest-50 px-3 py-2 text-sm text-forest-800">
                 New accounts are created as Active and must change their temporary password on first
                 sign-in.
               </p>
@@ -655,7 +658,7 @@ export default function AccountsPage() {
 }
 
 function AccountCount({ label, value, icon: Icon, tone }) {
-  const toneClass = tone === 'red' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-700'
+  const toneClass = tone === 'red' ? 'bg-red-100 text-red-600' : 'bg-forest-100 text-forest-700'
   return (
     <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
       <div>

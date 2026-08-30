@@ -31,7 +31,7 @@ export function QualityBadge({ quality }) {
   const notAnEgg = quality === 'not_an_egg'
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${good ? 'bg-green-100 text-green-800' : notAnEgg ? 'bg-slate-200 text-slate-700' : 'bg-red-100 text-red-700'}`}
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${good ? 'bg-forest-100 text-forest-800' : notAnEgg ? 'bg-slate-200 text-slate-700' : 'bg-red-100 text-red-700'}`}
     >
       {good ? <CheckCircle2 size={11} /> : <XCircle size={11} />}
       {labels[quality] || quality}
@@ -69,7 +69,7 @@ export function ChartCard({ title, children, action, className = '' }) {
 
 export function StatCard({ label, value, detail, icon: Icon, tone = 'green' }) {
   const tones = {
-    green: 'bg-green-100 text-green-700',
+    green: 'bg-forest-100 text-forest-700',
     red: 'bg-red-100 text-red-600',
     yellow: 'bg-amber-100 text-amber-600',
     orange: 'bg-orange-100 text-orange-600',
@@ -79,7 +79,7 @@ export function StatCard({ label, value, detail, icon: Icon, tone = 'green' }) {
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-xs font-medium text-slate-500">{label}</p>
-          <p className="mt-2 text-2xl font-bold text-slate-900">{value}</p>
+          <p className="mt-2 text-2xl font-bold tabular-nums text-slate-900">{value}</p>
         </div>
         <div className={`grid h-11 w-11 place-items-center rounded-full ${tones[tone]}`}>
           <Icon size={22} strokeWidth={2.5} />
@@ -92,7 +92,7 @@ export function StatCard({ label, value, detail, icon: Icon, tone = 'green' }) {
 
 export function SearchInput({ value, onChange, placeholder = 'Search' }) {
   return (
-    <label className="flex min-h-11 min-w-0 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-400 focus-within:border-green-600 focus-within:ring-2 focus-within:ring-green-100">
+    <label className="flex min-h-11 min-w-0 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-400 focus-within:border-forest-600 focus-within:ring-2 focus-within:ring-forest-100">
       <Search size={16} />
       <input
         value={value}
@@ -109,7 +109,7 @@ export function ExportButtons({ onCsv, onPdf }) {
     <div className="flex flex-wrap gap-2">
       <button
         onClick={onCsv}
-        className="inline-flex items-center gap-2 rounded-lg border border-green-700 bg-white px-3 py-2 text-sm font-semibold text-green-800 hover:bg-green-50"
+        className="inline-flex items-center gap-2 rounded-lg border border-forest-700 bg-white px-3 py-2 text-sm font-semibold text-forest-800 hover:bg-forest-50"
       >
         <Download size={16} />
         Export CSV

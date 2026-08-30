@@ -16,7 +16,7 @@ import { ChartCard, PageHeader, QualityBadge, SizeBadge, StatCard } from '../com
 import { useDatabaseInspections } from '../hooks/useDatabaseInspections'
 
 const sizeColors = {
-  Peewee: '#5cae5e',
+  Peewee: '#31A072',
   Small: '#4da6df',
   Medium: '#f7b73b',
   Large: '#f07855',
@@ -42,8 +42,8 @@ function ScanTable({ rows }) {
           {rows.map((scan) => (
             <tr key={scan.eggId} className="border-b border-slate-100 text-slate-600">
               <td className="px-3 py-3">{scan.time}</td>
-              <td className="px-3 py-3 font-semibold text-slate-800">{scan.eggId}</td>
-              <td className="px-3 py-3">{scan.weight ?? '—'}</td>
+              <td className="px-3 py-3 font-mono font-semibold text-slate-800">{scan.eggId}</td>
+              <td className="px-3 py-3 tabular-nums">{scan.weight ?? '—'}</td>
               <td className="px-3 py-3">
                 <SizeBadge size={scan.size} />
               </td>
@@ -75,7 +75,7 @@ export default function DashboardPage() {
       color: sizeColors[name],
     }))
     const quality = [
-      { name: 'Good', value: good, color: '#58ad5c' },
+      { name: 'Good', value: good, color: '#1C8258' },
       { name: 'Defective', value: defective, color: '#ef5350' },
     ]
     const dailyCounts = new Map()
@@ -195,7 +195,7 @@ export default function DashboardPage() {
               <XAxis dataKey="day" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
               <Tooltip />
-              <Bar dataKey="count" fill="#5bae60" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="count" fill="#1C8258" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>

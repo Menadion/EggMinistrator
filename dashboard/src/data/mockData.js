@@ -8,7 +8,7 @@ const CURRENT_NOT_AN_EGG_TOTAL = 16
 const PREVIOUS_NOT_AN_EGG_TOTAL = 12
 
 const sizeDefinitions = [
-  { name: 'Pewee', count: 102, color: '#5cae5e', minimumWeight: 0, maximumWeight: 45 },
+  { name: 'Pewee', count: 102, color: '#31A072', minimumWeight: 0, maximumWeight: 45 },
   { name: 'Small', count: 191, color: '#4da6df', minimumWeight: 45, maximumWeight: 55 },
   { name: 'Medium', count: 276, color: '#f7b73b', minimumWeight: 55, maximumWeight: 60 },
   { name: 'Large', count: 304, color: '#f07855', minimumWeight: 60, maximumWeight: 65 },
@@ -166,7 +166,7 @@ export const sizeDistribution = sizeDefinitions.map((size) => ({
   color: size.color,
 }))
 export const qualityDistribution = [
-  { name: 'Good', value: dashboardStats.good, color: '#58ad5c' },
+  { name: 'Good', value: dashboardStats.good, color: '#1C8258' },
   { name: 'Defective', value: dashboardStats.defective, color: '#ef5350' },
   { name: 'Not an Egg', value: dashboardStats.notAnEgg, color: '#64748b' },
 ]

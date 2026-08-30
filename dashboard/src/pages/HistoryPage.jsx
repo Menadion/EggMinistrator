@@ -188,8 +188,10 @@ export default function HistoryPage() {
                   <tr key={scan.eggId} className="border-b border-slate-100 text-slate-600">
                     <td className="px-3 py-3">{scan.displayDate}</td>
                     <td className="px-3 py-3">{scan.time}</td>
-                    <td className="px-3 py-3 font-semibold text-slate-800">{scan.eggId}</td>
-                    <td className="px-3 py-3">{scan.weight ?? '—'}</td>
+                    <td className="px-3 py-3 font-mono font-semibold text-slate-800">
+                      {scan.eggId}
+                    </td>
+                    <td className="px-3 py-3 tabular-nums">{scan.weight ?? '—'}</td>
                     <td className="px-3 py-3">
                       <SizeBadge size={scan.size} />
                     </td>

@@ -447,7 +447,7 @@ export default function ReportsPage() {
           <div className="report-actions mb-6 flex flex-wrap gap-2 border-b border-slate-100 pb-5">
             <button
               onClick={exportCsv}
-              className="inline-flex items-center gap-2 rounded-lg border border-green-700 px-3 py-2 text-sm font-semibold text-green-800"
+              className="inline-flex items-center gap-2 rounded-lg border border-forest-700 px-3 py-2 text-sm font-semibold text-forest-800"
             >
               <Download size={16} />
               Export CSV
@@ -522,7 +522,7 @@ export default function ReportsPage() {
               </div>
               <div className="rounded-lg bg-slate-50 p-3">
                 <dt>Good Eggs</dt>
-                <dd className="mt-1 text-lg font-bold text-green-700">{summary.good}</dd>
+                <dd className="mt-1 text-lg font-bold text-forest-700">{summary.good}</dd>
               </div>
               <div className="rounded-lg bg-slate-50 p-3">
                 <dt>Defective Eggs</dt>
@@ -572,7 +572,7 @@ export default function ReportsPage() {
                       payload?.[0]?.payload?.label || 'Inspection period'
                     }
                   />
-                  <Bar dataKey="inspections" fill="#227849" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="inspections" fill="#116E48" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </section>
@@ -596,7 +596,7 @@ export default function ReportsPage() {
                   <tbody>
                     {visibleDetails.map((scan) => (
                       <tr key={scan.eggId} className="border-b">
-                        <td className="px-3 py-2.5 font-medium">{scan.eggId}</td>
+                        <td className="px-3 py-2.5 font-mono font-medium">{scan.eggId}</td>
                         <td className="px-3 py-2.5">{scan.displayDate || '—'}</td>
                         <td className="px-3 py-2.5">{scan.time || '—'}</td>
                         <td className="px-3 py-2.5">{weightLabel(scan.weight)}</td>

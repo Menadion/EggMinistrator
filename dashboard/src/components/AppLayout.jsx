@@ -71,7 +71,7 @@ export default function AppLayout({ children }) {
             onClick={() => setDesktopExpanded((open) => !open)}
             aria-expanded={desktopExpanded}
             aria-label={desktopExpanded ? 'Collapse navigation' : 'Expand navigation'}
-            className="grid h-11 w-11 shrink-0 cursor-default place-items-center overflow-hidden rounded-lg lg:cursor-pointer lg:hover:ring-2 lg:hover:ring-green-500"
+            className="grid h-11 w-11 shrink-0 cursor-default place-items-center overflow-hidden rounded-lg lg:cursor-pointer lg:hover:ring-2 lg:hover:ring-forest-500"
           >
             <img
               src={eggministratorLogo}
@@ -87,7 +87,7 @@ export default function AppLayout({ children }) {
           <button
             onClick={close}
             aria-label="Close navigation"
-            className="ml-auto grid min-h-11 min-w-11 place-items-center rounded-lg text-green-100 hover:bg-green-800 lg:hidden"
+            className="ml-auto grid min-h-11 min-w-11 place-items-center rounded-lg text-forest-100 hover:bg-forest-800 lg:hidden"
           >
             <X size={20} />
           </button>
@@ -99,7 +99,7 @@ export default function AppLayout({ children }) {
               to={to}
               onClick={close}
               className={({ isActive }) =>
-                `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${desktopExpanded ? '' : 'lg:justify-center lg:px-0'} ${isActive ? 'bg-green-700 text-white shadow-sm' : 'text-green-100 hover:bg-green-800'}`
+                `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${desktopExpanded ? '' : 'lg:justify-center lg:px-0'} ${isActive ? 'bg-forest-700 text-white shadow-sm' : 'text-forest-100 hover:bg-forest-800'}`
               }
             >
               <Icon size={18} className="shrink-0" />
@@ -110,7 +110,7 @@ export default function AppLayout({ children }) {
         {user?.role === 'admin' && (
           <nav className="mt-6 space-y-1">
             <p
-              className={`px-3 pb-1 text-[11px] font-bold uppercase tracking-wider text-green-300 ${desktopExpanded ? '' : 'lg:sr-only'}`}
+              className={`px-3 pb-1 text-[11px] font-bold uppercase tracking-wider text-forest-300 ${desktopExpanded ? '' : 'lg:sr-only'}`}
             >
               Administration
             </p>
@@ -118,7 +118,7 @@ export default function AppLayout({ children }) {
               to="/accounts"
               onClick={close}
               className={({ isActive }) =>
-                `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${desktopExpanded ? '' : 'lg:justify-center lg:px-0'} ${isActive ? 'bg-green-700 text-white shadow-sm' : 'text-green-100 hover:bg-green-800'}`
+                `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${desktopExpanded ? '' : 'lg:justify-center lg:px-0'} ${isActive ? 'bg-forest-700 text-white shadow-sm' : 'text-forest-100 hover:bg-forest-800'}`
               }
             >
               <UsersRound size={18} className="shrink-0" />
@@ -128,7 +128,7 @@ export default function AppLayout({ children }) {
         )}
         <div className="mt-auto space-y-3">
           <div
-            className={`rounded-lg border border-green-700 bg-green-900/60 p-2 ${desktopExpanded ? '' : 'lg:grid lg:place-items-center'}`}
+            className={`rounded-lg border border-forest-700 bg-forest-900/60 p-2 ${desktopExpanded ? '' : 'lg:grid lg:place-items-center'}`}
           >
             <div className="flex items-center gap-2">
               <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-cream-50 text-forest-900">
@@ -136,12 +136,12 @@ export default function AppLayout({ children }) {
               </div>
               <div className={`min-w-0 text-left ${desktopExpanded ? '' : 'lg:hidden'}`}>
                 <p className="truncate text-xs font-semibold">{user?.fullName}</p>
-                <p className="text-[11px] capitalize text-green-200">{user?.role}</p>
+                <p className="text-[11px] capitalize text-forest-200">{user?.role}</p>
               </div>
               <button
                 onClick={signOut}
                 aria-label="Log out"
-                className={`ml-auto grid min-h-11 min-w-11 place-items-center rounded-lg text-green-200 hover:bg-green-800 hover:text-white ${desktopExpanded ? '' : 'lg:hidden'}`}
+                className={`ml-auto grid min-h-11 min-w-11 place-items-center rounded-lg text-forest-200 hover:bg-forest-800 hover:text-white ${desktopExpanded ? '' : 'lg:hidden'}`}
                 title="Log out"
               >
                 <LogOut size={16} />
@@ -155,7 +155,7 @@ export default function AppLayout({ children }) {
           <button
             onClick={() => setMobileOpen(true)}
             aria-label="Open navigation"
-            className="grid min-h-11 min-w-11 place-items-center rounded-lg text-forest-900 hover:bg-green-50"
+            className="grid min-h-11 min-w-11 place-items-center rounded-lg text-forest-900 hover:bg-forest-50"
           >
             <Menu size={23} />
           </button>

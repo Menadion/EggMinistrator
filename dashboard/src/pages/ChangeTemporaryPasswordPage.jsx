@@ -60,15 +60,15 @@ export default function ChangeTemporaryPasswordPage() {
   }
 
   const fieldClass =
-    'w-full rounded-lg border border-slate-200 py-3 pl-10 pr-11 text-slate-800 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100'
+    'w-full rounded-lg border border-slate-200 py-3 pl-10 pr-11 text-slate-800 outline-none focus:border-forest-600 focus:ring-2 focus:ring-forest-100'
 
   return (
     <main className="grid min-h-screen place-items-center bg-cream-100 p-5">
       <form
         onSubmit={submit}
-        className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-green-950/8 sm:p-8"
+        className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-forest-950/8 sm:p-8"
       >
-        <div className="grid h-11 w-11 place-items-center rounded-xl bg-green-100 text-green-800">
+        <div className="grid h-11 w-11 place-items-center rounded-xl bg-forest-100 text-forest-800">
           <LockKeyhole size={22} />
         </div>
         <h1 className="mt-5 text-2xl font-bold text-slate-900">Set a new password</h1>
@@ -141,7 +141,7 @@ export default function ChangeTemporaryPasswordPage() {
             {checks.map((check) => (
               <span
                 key={check.label}
-                className={`h-1.5 flex-1 rounded-full ${check.passed ? 'bg-green-600' : 'bg-slate-200'}`}
+                className={`h-1.5 flex-1 rounded-full ${check.passed ? 'bg-forest-600' : 'bg-slate-200'}`}
               />
             ))}
           </div>
@@ -150,7 +150,7 @@ export default function ChangeTemporaryPasswordPage() {
               <li key={check.label} className="flex items-center gap-2">
                 <CheckCircle2
                   size={14}
-                  className={check.passed ? 'text-green-600' : 'text-slate-300'}
+                  className={check.passed ? 'text-forest-600' : 'text-slate-300'}
                 />
                 {check.label}
               </li>

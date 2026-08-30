@@ -33,14 +33,14 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#0B5D3B]">
+    <main className="relative min-h-screen overflow-hidden bg-forest-800">
       <div
         className="absolute inset-x-0 top-0 h-[58%] bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: `linear-gradient(90deg, rgba(3, 48, 24, 0.78) 0%, rgba(8, 63, 42, 0.48) 44%, rgba(8, 63, 42, 0.02) 100%), url("${loginHero}")`,
+          backgroundImage: `linear-gradient(90deg, rgba(3, 43, 26, 0.78) 0%, rgba(7, 70, 43, 0.48) 44%, rgba(7, 70, 43, 0.02) 100%), url("${loginHero}")`,
         }}
       />
-      <div className="absolute inset-x-0 bottom-0 top-[58%] bg-[#0B5D3B]" />
+      <div className="absolute inset-x-0 bottom-0 top-[58%] bg-forest-800" />
       <div
         aria-hidden="true"
         className="pointer-events-none absolute bottom-0 left-0 h-56 w-56 opacity-25"
@@ -68,7 +68,7 @@ export default function LoginPage() {
           <br />
           for every egg.
         </h1>
-        <p className="mt-5 border-l-2 border-green-300 pl-4 text-base leading-6 text-green-50">
+        <p className="mt-5 max-w-[38ch] text-base leading-6 text-forest-50/85">
           Monitor egg inspections, quality results, reports, and analytics in one centralized
           system.
         </p>
@@ -89,17 +89,17 @@ export default function LoginPage() {
         <div className="flex flex-1 items-center justify-center py-10 lg:py-14">
           <form
             onSubmit={submit}
-            className="w-full max-w-sm rounded-2xl border border-white/80 bg-white p-6 shadow-2xl shadow-[#083F2A]/30 sm:p-7 lg:translate-y-8"
+            className="w-full max-w-sm rounded-2xl border border-white/80 bg-white p-6 shadow-2xl shadow-forest-900/30 sm:p-7 lg:translate-y-8"
           >
             <div className="text-center">
-              <p className="inline-flex items-center gap-2 rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-semibold text-[#0B5D3B]">
+              <p className="inline-flex items-center gap-2 rounded-full border border-forest-200 bg-forest-50 px-3 py-1 text-xs font-semibold text-forest-800">
                 <ShieldCheck size={15} />
                 Smart egg inspection management
               </p>
               <h1 className="mt-4 text-2xl font-bold text-[#172033]">Welcome back</h1>
             </div>
             {location.state?.passwordChangeSuccess && (
-              <p className="mt-5 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">
+              <p className="mt-5 rounded-lg border border-forest-200 bg-forest-50 px-3 py-2 text-sm text-forest-800">
                 Password updated. Sign in with your new password.
               </p>
             )}
@@ -114,7 +114,7 @@ export default function LoginPage() {
             <div className="mt-5 space-y-4 border-t border-slate-100 pt-5">
               <label className="block">
                 <span className="mb-1.5 block text-sm font-semibold text-[#172033]">Username</span>
-                <span className="flex items-center gap-2 rounded-lg border border-[#D9E0E7] px-3 py-3 focus-within:border-[#0B5D3B] focus-within:ring-2 focus-within:ring-[#0B5D3B]/15">
+                <span className="flex items-center gap-2 rounded-lg border border-[#D9E0E7] px-3 py-3 focus-within:border-forest-800 focus-within:ring-2 focus-within:ring-forest-800/15">
                   <Mail size={18} className="text-[#64748B]" />
                   <input
                     required
@@ -128,7 +128,7 @@ export default function LoginPage() {
               </label>
               <label className="block">
                 <span className="mb-1.5 block text-sm font-semibold text-[#172033]">Password</span>
-                <span className="flex items-center gap-2 rounded-lg border border-[#D9E0E7] px-3 py-3 focus-within:border-[#0B5D3B] focus-within:ring-2 focus-within:ring-[#0B5D3B]/15">
+                <span className="flex items-center gap-2 rounded-lg border border-[#D9E0E7] px-3 py-3 focus-within:border-forest-800 focus-within:ring-2 focus-within:ring-forest-800/15">
                   <LockKeyhole size={18} className="text-[#64748B]" />
                   <input
                     required
@@ -142,7 +142,7 @@ export default function LoginPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword((current) => !current)}
-                    className="text-[#64748B] hover:text-[#0B5D3B]"
+                    className="text-[#64748B] hover:text-forest-800"
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -152,7 +152,7 @@ export default function LoginPage() {
             </div>
             <button
               disabled={isSubmitting || isLoading}
-              className="mt-6 w-full rounded-lg bg-[#0B5D3B] px-4 py-3 font-semibold text-white shadow-sm transition hover:bg-[#083F2A] disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-6 w-full rounded-lg bg-forest-800 px-4 py-3 font-semibold text-white shadow-sm transition hover:bg-forest-900 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSubmitting ? 'Signing in...' : 'Sign in'}
             </button>
