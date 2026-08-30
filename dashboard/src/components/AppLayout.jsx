@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   BarChart3,
   History,
@@ -29,11 +29,39 @@ export default function AppLayout({ children }) {
   // resizes <main> and the 23 recharts ResponsiveContainers never re-measure.
   // The shadow is what tells the eye it is floating above rather than inline.
   const width = desktopExpanded ? 'lg:w-64 lg:shadow-2xl' : 'lg:w-20'
+  const asideRef = useRef(null)
   const close = () => setMobileOpen(false)
+  // Opening on click meant the only way back was clicking the logo again.
+  // Navigating away, Escape, or a click anywhere else should all settle it.
+  const closeAll = () => {
+    setMobileOpen(false)
+    setDesktopExpanded(false)
+  }
   const signOut = async () => {
     await logout()
     navigate('/')
   }
+
+  useEffect(() => {
+    if (!desktopExpanded) return undefined
+
+    const collapseOnOutsideClick = (event) => {
+      if (!asideRef.current?.contains(event.target)) setDesktopExpanded(false)
+    }
+    const collapseOnEscape = (event) => {
+      if (event.key === 'Escape') setDesktopExpanded(false)
+    }
+
+    // mousedown rather than an overlay element, so the click still lands on
+    // whatever is underneath instead of being swallowed to close the rail.
+    document.addEventListener('mousedown', collapseOnOutsideClick)
+    document.addEventListener('keydown', collapseOnEscape)
+
+    return () => {
+      document.removeEventListener('mousedown', collapseOnOutsideClick)
+      document.removeEventListener('keydown', collapseOnEscape)
+    }
+  }, [desktopExpanded])
 
   useEffect(() => {
     if (!mobileOpen) return undefined
@@ -58,11 +86,11 @@ export default function AppLayout({ children }) {
         <button
           aria-label="Close navigation"
           className="fixed inset-0 z-30 bg-slate-950/40 lg:hidden"
-          onClick={close}
+          onClick={closeAll}
         />
       )}
       <aside
-        onFocusCapture={() => setDesktopExpanded(true)}
+        ref={asideRef}
         className={`fixed inset-y-0 left-0 z-40 flex w-64 -translate-x-full flex-col bg-gradient-to-b from-forest-900 to-forest-950 p-3 text-white transition-[transform,width] duration-200 lg:translate-x-0 ${width} ${mobileOpen ? 'translate-x-0' : ''}`}
       >
         <div className="flex h-14 items-center gap-2 px-2">
@@ -85,7 +113,7 @@ export default function AppLayout({ children }) {
             EggMinistrator
           </span>
           <button
-            onClick={close}
+            onClick={closeAll}
             aria-label="Close navigation"
             className="ml-auto grid min-h-11 min-w-11 place-items-center rounded-lg text-forest-100 hover:bg-forest-800 lg:hidden"
           >
@@ -97,7 +125,10 @@ export default function AppLayout({ children }) {
             <NavLink
               key={to}
               to={to}
-              onClick={close}
+              onClick={closeAll}
+              // the visible label is display:none while collapsed, which takes
+              // it out of the accessibility tree along with the link's name
+              aria-label={label}
               className={({ isActive }) =>
                 `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${desktopExpanded ? '' : 'lg:justify-center lg:px-0'} ${isActive ? 'bg-forest-700 text-white shadow-sm' : 'text-forest-100 hover:bg-forest-800'}`
               }
@@ -116,7 +147,8 @@ export default function AppLayout({ children }) {
             </p>
             <NavLink
               to="/accounts"
-              onClick={close}
+              onClick={closeAll}
+              aria-label="Accounts"
               className={({ isActive }) =>
                 `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${desktopExpanded ? '' : 'lg:justify-center lg:px-0'} ${isActive ? 'bg-forest-700 text-white shadow-sm' : 'text-forest-100 hover:bg-forest-800'}`
               }
