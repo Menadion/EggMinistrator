@@ -96,3 +96,6 @@ docs/
 # 2026-08-20 and secrets.h moved with it, so a path-specific rule would have gone stale.
 firmware/**/secrets.h
 firmware/secrets.h
+
+# Local agent tooling (impeccable skills) - not part of the project
+.claude/
