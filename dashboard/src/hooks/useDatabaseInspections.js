@@ -23,26 +23,30 @@ export function useDatabaseInspections() {
   const lastRevision = useRef('')
   const inFlight = useRef(false)
 
-  const loadList = useCallback(async (quiet) => {
-    // A slow response must not stack up behind the interval.
-    if (inFlight.current) return
-    inFlight.current = true
-    if (!quiet) setIsLoading(true)
-    try {
-      const response = await authenticatedFetch('/api/inspections')
-      const result = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(result.error || 'Unable to load inspection records from MariaDB.')
-      setInspections(result.inspections || [])
-      setError('')
-    } catch (requestError) {
-      // The rows already on screen are kept deliberately. A dropped poll should
-      // not blank a dashboard somebody is watching.
-      setError(requestError.message || 'Unable to load inspection records from MariaDB.')
-    } finally {
-      inFlight.current = false
-      if (!quiet) setIsLoading(false)
-    }
-  }, [authenticatedFetch])
+  const loadList = useCallback(
+    async (quiet) => {
+      // A slow response must not stack up behind the interval.
+      if (inFlight.current) return
+      inFlight.current = true
+      if (!quiet) setIsLoading(true)
+      try {
+        const response = await authenticatedFetch('/api/inspections')
+        const result = await response.json().catch(() => ({}))
+        if (!response.ok)
+          throw new Error(result.error || 'Unable to load inspection records from MariaDB.')
+        setInspections(result.inspections || [])
+        setError('')
+      } catch (requestError) {
+        // The rows already on screen are kept deliberately. A dropped poll should
+        // not blank a dashboard somebody is watching.
+        setError(requestError.message || 'Unable to load inspection records from MariaDB.')
+      } finally {
+        inFlight.current = false
+        if (!quiet) setIsLoading(false)
+      }
+    },
+    [authenticatedFetch]
+  )
 
   const refresh = useCallback(() => loadList(false), [loadList])
 

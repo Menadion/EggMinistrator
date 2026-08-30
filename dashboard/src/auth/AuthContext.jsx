@@ -31,7 +31,9 @@ export function AuthProvider({ children }) {
       return
     }
     try {
-      const response = await fetch(`${apiBaseUrl}/api/auth/session`, { headers: { Authorization: `Bearer ${token}` } })
+      const response = await fetch(`${apiBaseUrl}/api/auth/session`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
       const result = await readResponse(response)
       setUser(result.user)
     } catch {
@@ -41,7 +43,9 @@ export function AuthProvider({ children }) {
     }
   }
 
-  useEffect(() => { restoreSession() }, [])
+  useEffect(() => {
+    restoreSession()
+  }, [])
 
   const login = async (credentials) => {
     const response = await fetch(`${apiBaseUrl}/api/auth/login`, {
@@ -62,7 +66,11 @@ export function AuthProvider({ children }) {
   const logout = async () => {
     const token = sessionStorage.getItem(sessionTokenKey)
     try {
-      if (token) await fetch(`${apiBaseUrl}/api/auth/session`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
+      if (token)
+        await fetch(`${apiBaseUrl}/api/auth/session`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        })
     } finally {
       clearSession()
     }
@@ -78,7 +86,13 @@ export function AuthProvider({ children }) {
     return response
   }
 
-  return <AuthContext.Provider value={{ user, isLoading, login, logout, authenticatedFetch, passwordChangeTokenKey }}>{children}</AuthContext.Provider>
+  return (
+    <AuthContext.Provider
+      value={{ user, isLoading, login, logout, authenticatedFetch, passwordChangeTokenKey }}
+    >
+      {children}
+    </AuthContext.Provider>
+  )
 }
 
 export const useAuth = () => {
