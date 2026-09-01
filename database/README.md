@@ -3,13 +3,12 @@
 The canonical MySQL database for EggMinistrator. It stores individual egg inspections,
 candling AI assessments, weight grades, and the captured candling image path per inspection.
 
-> ⚠️ **The `staff_overrides` table is provisioned, not written.** This file used to promise "an
-> auditable staff-override history" without qualification, and the paper's §5.2 says overrides are
-> "recorded separately, preserving both the original and the corrected classification." The schema
-> supports exactly that. **The running backend does not use it** — `overrideInspection()` appends a
-> free-text line to `egg_inspections.notes` instead, and `is_overridden` / `ai_disposition` /
-> `final_disposition` carry the before-and-after. Know this before a panelist opens the table. Do
-> **not** drop it: it is provisioned deliberately and was widened on 2026-08-18. See `CONTRACT.md` §7.
+⚠️ **The `staff_overrides` table is provisioned, not written.** The paper's §5.2 says overrides are
+*"recorded separately, preserving both the original and the corrected classification,"* and the
+schema supports exactly that — but **the running backend does not use it.** `overrideInspection()`
+appends a free-text line to `egg_inspections.notes` instead, and `is_overridden` / `ai_disposition` /
+`final_disposition` carry the before-and-after. Know this before a panelist opens the table. Do
+**not** drop it; it is provisioned deliberately. See `CONTRACT.md` §7.
 
 ## Importing locally
 

@@ -4,7 +4,7 @@
 
 ## Subsystem
 
-- [ ] firmware (ESP32-S3 weight node)
+- [ ] firmware (ESP32 weight node)
 - [ ] ai (Python / TensorFlow)
 - [ ] dashboard (React + Vite / MySQL)
 - [ ] database (schema)

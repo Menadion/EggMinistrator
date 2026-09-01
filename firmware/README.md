@@ -1,20 +1,22 @@
 # firmware/
 
-The ESP32-S3 weight node.
+The ESP32 weight node. It senses and reports; image capture happens on a USB webcam attached to the
+laptop, and inference runs there too.
 
-> **Rewritten 2026-08-07 after the hardware descope.** This directory used to document ESP32-CAM
-> *capture* firmware. The ESP32-CAM is out of the build. Image capture now happens on a **USB webcam
-> attached to the laptop**, and the ESP32-S3 is repurposed from "the programmer" to **the networked
-> sensor**.
+## Status — flashed and demonstrated
 
-## Status — written, never run (2026-08-18)
+**The firmware exists and it runs.** `EggMinistrator_ESP32.ino`, 535 lines. The paper's claim
+(§2.2 and Ch4 sensing layer) that the ESP32 *"executes its own firmware"* and transmits weight over
+Wi-Fi is met on a board, not just in code.
 
-**The firmware exists.** `EggMinistrator_ESP32.ino`, 535 lines. The paper's claim (Ver6.1.4, §2.2
-and Ch4 sensing layer) that the ESP32-S3 *"executes its own firmware"* and transmits weight over
-Wi-Fi is met **in code**. It is not yet met on a board.
-
-- 🔴 **Never compiled, never flashed.** The sketch says so itself at line 20: *"NOT COMPILE-TESTED."*
-  Nothing in this directory has run on hardware.
+- ✅ **Flashed, and run end to end at the 2026-08-26 defense**, brought up with
+  `run-eggministrator.bat` from the repo root. That launcher starts MySQL, the backend, the
+  classifier listener and the dashboard in dependency order; see the header comment in the file for
+  why the order is not cosmetic.
+- ⚠️ **A working pipeline is not a working classifier.** The station senses, posts, classifies and
+  reports, but the model it calls is still the placeholder artifact in `ai/models/`. What was
+  demonstrated is the path, not the accuracy — the 85% KPI is still unmeasurable until a dataset
+  exists.
 - ✅ **The chip is identified, and the pin map is already correct for it.** `board-id/` was run over
   USB on COM3 and the board answered:
 
@@ -31,9 +33,8 @@ Wi-Fi is met **in code**. It is not yet met on a board.
   and GPIO34-39 (input only) are all avoided, and GPIO16/17 are skipped so the same map works on a
   WROVER. See the commentary at lines 76-101 of the sketch.
 
-  ⚠️ **The file is still named `EggMinistrator_ESP32.ino`, and several repo docs still say
-  "ESP32-S3".** Cosmetic and deliberately not renamed this close to the defense. **The paper says
-  only "ESP32" throughout and is correct as printed.**
+  The repo calls it a plain "ESP32" throughout, and so does the paper. Do not reintroduce "S3" —
+  it was never this board.
 - ⚠️ **`LCD_I2C_ADDRESS` is a guess.** Set to `0x27`, the usual PCF8574 backpack address, but a good
   number of these modules are `0x3F` instead. First thing to change if the screen stays blank.
 - 🟡 **The load cell is calibrated, but two factors disagree.** `LOADCELL_CALIBRATION_FACTOR = 698.0`
@@ -70,12 +71,14 @@ Wi-Fi is met **in code**. It is not yet met on a board.
 **Inference stays on the computer** (see [`../ai/`](../ai/)) — the node senses and reports, nothing
 else. It never sees the image.
 
-> 🔴 **The step between 4 and 5 is not written.** Something on the laptop has to notice the new
-> inspection, shoot the webcam, run `ai/inference/classify.py`, and POST the result back against that
-> id. No such code exists. `ai/capture.py` is not it — that is the dataset collection tool, where a
-> human presses G/D/N and the images go to folders, not to the API. This is the same hole the
-> contract records as **FR-01 and FR-11 red, "missing capture code."** The board will post a weight
-> and then poll forever.
+**The step between 4 and 5 is `ai/listen_station.py`.** It notices the new inspection, shoots the
+webcam, runs the classifier and POSTs the verdict back against that id. `run-eggministrator.bat`
+starts it as step 4, passing the device key out of `backend/.env` and the zoom out of
+`ai/capture_settings.json` so the listener crops the way the dataset was shot.
+
+Do not confuse it with `ai/capture.py`, which is the dataset collection tool — a human presses G/D/N
+and the images go to folders, not to the API. Run the launcher with `--no-listener` to free the
+webcam for it.
 
 ## What is in here
 
@@ -96,12 +99,6 @@ to the laptop, this node posting over Wi-Fi is the only remaining thing that mak
 true. Over USB it becomes a peripheral and the cover page stops being defensible.
 
 ## Flashing
-
-> ⚠️ **Corrected 2026-08-22.** This section still described an ESP32-S3 and told you to **stop if
-> the chip was not an S3**. That is backwards now. `board-id/` was already run on 2026-08-18 and the
-> board answered **`ESP32-D0WD-V3`, a classic ESP32**, and the sketch's pin map was then rewritten
-> **for that silicon**. Following the old step 1 would have stopped the person who was holding the
-> right board.
 
 The board is a **classic ESP32**, so it reaches the host through an **onboard USB-to-serial bridge**
 (CP2102 or CH340 on most dev boards), not native USB. Install that bridge's driver if the port does

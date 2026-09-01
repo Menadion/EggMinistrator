@@ -1,7 +1,7 @@
 """Throwaway stand-in for the three calls in CONTRACT.md section 4.1.
 
 WHAT THIS IS FOR
-    It lets the ESP32-S3 be tested end to end -- load cell, LCD, LEDs,
+    It lets the ESP32 be tested end to end -- load cell, LCD, LEDs,
     buzzer -- before the real backend has any of these routes. Flash the
     sketch, run this, put something on the platform, and watch the station
     react.

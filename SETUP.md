@@ -7,9 +7,9 @@ Four processes have to come up in order — MySQL, the backend, the classifier l
 dashboard — and each depends on the one before it. `run-eggministrator.bat` does that for you
 once the pieces below exist. This file is about getting the pieces to exist.
 
-> 🔴 **Start step 5 first and let it run while you do everything else.**
-> TensorFlow is several hundred megabytes. Every other step here takes minutes; that one can
-> take an evening on a slow connection, and the classifier cannot run without it.
+🔴 **Start step 5 first and let it run while you do everything else.** TensorFlow is several hundred
+megabytes. Every other step here takes minutes; that one can take an evening on a slow connection,
+and the classifier cannot run without it.
 
 ## 1. Install what is not in the repo
 

@@ -1,7 +1,7 @@
 # Contributing to EggMinistrator
 
 Five-person capstone, one working prototype. The repo has four code subsystems that move in
-parallel — **firmware** (ESP32-S3 weight node), **ai** (Python/OpenCV/TensorFlow), **dashboard**
+parallel — **firmware** (ESP32 weight node), **ai** (Python/OpenCV/TensorFlow), **dashboard**
 (React + Vite over MySQL), and **database** (the schema) — plus **hardware** and **docs** for build
 reference. The best changes are focused, land in the right folder, and are tested before they're
 committed.
@@ -20,7 +20,7 @@ what is tracked by commit history, not a table here.
 
 | Folder | Stack |
 |---|---|
-| `firmware/` | ESP32-S3 weight node (HX711 → Wi-Fi). Not written yet |
+| `firmware/` | ESP32 weight node (HX711 → Wi-Fi). Written, flashed, demonstrated |
 | `ai/` | Python, OpenCV, TensorFlow (trained locally, no notebook) |
 | `dashboard/` | React, Vite, Tailwind, Recharts |
 | `database/` | `schema.sql`, seed data, the size-grade spec |

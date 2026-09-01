@@ -11,21 +11,8 @@ Built with **Python + OpenCV + TensorFlow** (AI), a **React + Vite** dashboard o
 **USB webcam** for capture, and an **ESP32** weight node reading a load cell over Wi-Fi.
 Inference runs on the computer, not the microcontroller.
 
-> **Hardware descoped 2026-08-07.** The build was previously an **ESP32-CAM** capture rig. For time
-> constraints it is now webcam + laptop + HX711 + load cell, with the already-owned ESP32
-> repurposed from programmer to networked weight node. See `hardware/bill-of-materials.md`.
->
-> ⚠️ **The board is a classic ESP32, not an S3.** `firmware/board-id/` was run over USB and the
-> chip answered `ESP32-D0WD-V3`; the can's "ESP32-32X" marking is a reseller label, not an Espressif
-> part number. The sketch's pin map was rewritten for this silicon. **The paper says only "ESP32" and
-> is correct as printed.** Some repo filenames and docs still say S3 — cosmetic, see
-> `firmware/README.md`.
-
-> **Settled 2026-07-28, and now done.** The paper previously described a **PHP** dashboard on
-> XAMPP. The code is React + Vite, so the paper was updated to match the code rather than the
-> reverse — Ver9 §5.2 describes the presentation layer as React with Vite and names no PHP anywhere.
-> MySQL and XAMPP stay. The "software cost is effectively zero" argument is unaffected, since Node,
-> React and Vite are free too.
+Parts list in `hardware/bill-of-materials.md`. Board details, including which ESP32 this actually
+is, in `firmware/README.md`.
 
 ## How it works — one capture, one verdict
 
@@ -39,12 +26,9 @@ egg** and does not name which defect it saw.
 | `defective` | Cracks revealed by light leakage, or gross shell damage | rejected |
 | `not_an_egg` | Empty platform, a hand, a misload | recorded, not counted as an egg |
 
-> ⚠️ **Narrowed 2026-08-20 — do not re-add spots.** This table used to promise **blood and meat
-> spots** and **air cell size** under an "internal quality" heading. The client confirmed on
-> 2026-08-20 that they **do not grade for spots at all**, and air cell went with it, so "internal
-> quality" now means cracks revealed by transillumination and nothing else. See `CONTRACT.md` §7.
-> Ver9 agrees: FR-14 reads *"Detect large cracks and gross shell damage,"* and the paper claims no
-> spot or air-cell capability anywhere.
+"Internal quality" here means cracks revealed by transillumination and nothing else — **not** blood
+or meat spots, and not air cell size. The scope and the reasons are in `ai/README.md`; the paper
+agrees, FR-14 reads *"Detect large cracks and gross shell damage."*
 
 **What the system does not detect:**
 

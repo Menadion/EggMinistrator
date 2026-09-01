@@ -9,20 +9,38 @@ anyone's work.
 **Owner: M.** One editor, so it cannot drift. If something here is wrong or out of date, message M
 rather than editing it, and it gets fixed in one place.
 
-*Last updated: 2026-08-13*
+*Last updated: 2026-09-01*
 
 ---
 
 ## 1. What the system is, in one paragraph
 
-A single, stationary inspection station for eggs. An egg is placed on the station by hand. A load cell under the
-platform weighs it; the weight both triggers the capture and determines the size grade. One
-**candling** photo is taken (light
-shone through the shell, so the camera sees the inside), an AI model classifies it, and the result is
-written to a local MySQL database and shown on a web dashboard. It replaces manual inspection and
-handwritten tally sheets at a commercial egg operation.
+A single, stationary inspection station for eggs. Eggs are placed by hand onto a tray that sits on
+the platform. A load cell under it weighs them; weight both triggers the capture and determines the
+size grade. A **candling** photo is taken (light shone through the shell, so the camera sees the
+inside), an AI model classifies it, and the result is written to a local MySQL database and shown on
+a web dashboard. It replaces manual inspection and handwritten tally sheets at a commercial egg
+operation.
 
 The client runs **white and tinted** (partially pigmented) shells. Not brown.
+
+> 🔴 **HARDWARE VERSION 2 IS IN PROGRESS, and the version 1 rig is being scrapped rather than
+> modified.** The 2026-08-26 panel forced a binary — per-batch candling or a conveyor — and the team
+> chose **per-batch**. A chamber built to hold one egg cannot be widened into one that lights and
+> weighs a whole tray, so R is drawing a new enclosure from scratch, in **woodwork** rather than a
+> 3D print (team ruling 2026-08-28).
+>
+> **What this changes for anyone writing code or text against this file:** the unit of work is the
+> **batch**, not the egg. Weighing is **by difference** — one load cell under the tray, eggs added
+> one at a time, and the number kept is the **step** between readings rather than the running total,
+> because a total divided by the batch size is a mean and a light egg hides inside one. The tray
+> therefore has to load in place rather than arrive full, which also hands egg identity over for
+> free: placement order is position.
+>
+> **Anything in this file or the paper that implies a one-egg-at-a-time flow, or calls a manual step
+> "automated", is a defect rather than a nuance.** The enclosure cost line in
+> `hardware/bill-of-materials.md` is stale for the same reason and moves Tables 2, 6 and 15 when it
+> is re-costed.
 
 > ✅ **DESCOPE REVERSED, 2026-08-20.** Weight was descoped on 2026-08-19 and restored the next
 > morning. **The load cell and HX711 are in the build**, the station weighs the egg, and weight
@@ -383,12 +401,12 @@ These are unresolved. If your task touches one, ask before assuming.
    🟡 **One cosmetic gap left.** `createInspection` sets no `batch_id` or `sequence_number`, so
    `formatEggId` falls back to a truncated UUID: new rows read `78919cdf…` in the dashboard while
    the seeded ones read `B001-EGG-001`. Harmless, and it will look like a bug on a projector.
-4. 🟡 **The ESP32-S3 firmware exists but has never been compiled or flashed.**
+4. ✅ **The ESP32 firmware is flashed and has run.**
    `firmware/EggMinistrator_ESP32/EggMinistrator_ESP32.ino`, written by J, cherry-picked from `origin/Jasfer` on
-   2026-08-13 and reworked the same day: it now posts over Wi-Fi per 4.1, drives the **16x2 I²C
-   LCD** the station actually has, and bounds every wait that used to block forever. **Never
-   compiled and never run on hardware** — the banner at the top of the file says so and stays until
-   someone flashes it. The rest of J's branch was **not** taken; see the resolved notes below.
+   2026-08-13 and reworked the same day: it posts over Wi-Fi per 4.1, drives the **16x2 I²C
+   LCD** the station actually has, and bounds every wait that used to block forever. **Flashed and
+   demonstrated end to end at the 2026-08-26 defense**, brought up with `run-eggministrator.bat`.
+   The rest of J's branch was **not** taken; see the resolved notes below.
 
    Two things to know before flashing. **Credentials live in `firmware/EggMinistrator_ESP32/secrets.h`**, which is
    gitignored — copy `secrets.h.example` and fill it in; if `secrets.h` ever appears in
@@ -437,7 +455,7 @@ These are unresolved. If your task touches one, ask before assuming.
      if `defective` collapses to cracks alone, the system is transilluminating in order to find a
      shell defect, and the candler and the light-sealed chamber lose their justification. The
      internal claim is carried by **air-cell / ageing** defects, which are free.
-   - **Transport wording.** Confirm §2.2 and the Ch4 sensing layer match section 4.1: the ESP32-S3
+   - **Transport wording.** Confirm §2.2 and the Ch4 sensing layer match section 4.1: the ESP32
      posts weight over **HTTP on Wi-Fi**, and its USB cable carries power only. The design did not
      change, but the prose should be checked against it.
    - **FR-14 phrasing.** It says *detect* cracks, and the model outputs `defective` without naming
@@ -579,10 +597,10 @@ These are unresolved. If your task touches one, ask before assuming.
 
 - ~~Which ESP32 board the team owns.~~ **An ESP32-D0WD-V3, a classic ESP32** — confirmed 2026-08-20
   by running `firmware/board-id/`, not read off the can, which says only "ESP32-32X". *(Earlier notes
-  here and elsewhere in the repo call it an ESP32-S3. They are wrong; the paper says only "ESP32" and
+  here and elsewhere in the repo call it an ESP32. They are wrong; the paper says only "ESP32" and
   is correct.)* The ESP32-CAM is out of the build
   entirely. The camera is deliberately **not** on the ESP32 — capture is a USB webcam on the laptop.
-  The ESP32-S3 posts **over Wi-Fi**, which is what keeps the IoT claim in the title true. ⚠️ **Wiring
+  The ESP32 posts **over Wi-Fi**, which is what keeps the IoT claim in the title true. ⚠️ **Wiring
   it over USB serial instead would break the cover page** — see `firmware/README.md`.
   > ✅ **Unchanged.** A 2026-08-19 note here said the board reads a presence sensor rather than the
   > HX711. That descope was reversed on 2026-08-20; it reads the HX711 and posts a weight.
@@ -622,8 +640,8 @@ defense aid.
 
 | FR | Requirement | | Where it stands |
 |---|---|---|---|
-| 01 | Capture egg images using a stationary camera | 🔴 | no capture code exists. `classify.py` reads a file off disk (`cv2.imread(sys.argv[1])`); nothing opens a webcam. ⚠️ **The load cell does NOT close this.** It supplies the *trigger*; something on the laptop must still receive that event, open the webcam, classify, and POST back against the inspection ID. **That listener is still unwritten**, and with the simulator ruled out of the defense it is now required to exist by 2026-08-26 |
-| 02 | Automatically detect eggs on the platform | 🟡 | firmware triggers at a 20 g threshold on the load cell. *(A 2026-08-19 note replaced this with a presence sensor; the descope was reversed 2026-08-20 and the weight threshold stands.)* Still amber: board never flashed. A pre-owned presence sensor sits in the drawer as a fallback if the threshold proves jumpy in testing |
+| 01 | Capture egg images using a stationary camera | ✅ | **closed by `ai/listen_station.py`.** It receives the load cell's trigger, opens the webcam, runs `classify.py` and POSTs the verdict back against the inspection id. `run-eggministrator.bat` starts it as step 4, passing the device key from `backend/.env` and the zoom from `ai/capture_settings.json` so the framing matches how the dataset was shot. Demonstrated at the 2026-08-26 defense. ⚠️ *Stationary* is now a hardware property, not a software one — see the version 2 enclosure note under FR-11 |
+| 02 | Automatically detect eggs on the platform | 🟡 | firmware triggers at a 20 g threshold on the load cell. *(A 2026-08-19 note replaced this with a presence sensor; the descope was reversed 2026-08-20 and the weight threshold stands.)* Flashed and demonstrated 2026-08-26; the threshold triggered on real placements. Still amber only because the **version 2 tray loads eggs one at a time onto a shared platform**, so a single 20 g step is no longer the whole story — the trigger has to be re-thought against a tray that is already carrying weight. A pre-owned presence sensor sits in the drawer as a fallback |
 | 03 | Allow authorized personnel to override an AI result | ✅ | **built and verified 2026-08-13** against MariaDB — `PATCH /api/inspections/:code/override`, any signed-in account, per-row control on History. Writes `final_disposition` + `is_overridden`, appends who and when to `notes`, and never touches `ai_disposition`. `400` on an invalid label, `401` without a token. ⚠️ The History control was deleted in `f6fa589` and restored in `5b104fd` — do not remove it again, see section 7 item 7. The override is logged to `egg_inspections.notes`, **not** to `staff_overrides` |
 | 04 | Assign a size class from weight (PNS, Table 11) | ✅ | R's `findSizeGrade()` verified 2026-08-14, tested 58.20 g → `Medium`. *(Descoped 2026-08-19, restored 2026-08-20. R was never told, and no code was deleted, so this row never actually moved.)* |
 | 05 | Automatically count inspected eggs | ✅ | **verified 2026-08-15** against a live stack. `DashboardPage.jsx:31` renders `inspections.length` straight off `GET /api/inspections`; the endpoint returned 5,234 rows over a database holding 5,337, the difference being the 103 `no_egg` rows decision 8 filters out. A real count over real rows, not a stored total |
@@ -632,10 +650,10 @@ defense aid.
 | 08 | Generate inspection reports | ✅ | verified 2026-08-13: report builder + filters + paginated preview over real DB rows, and `downloadCsv()` genuinely produces a file. ⚠️ the **"Export PDF" button just calls `window.print()`** — same handler as Print, nothing generates a PDF. Relabel or remove before a demo |
 | 09 | Display daily production statistics | ✅ | **verified 2026-08-15** against a live stack. Analytics computes volume, defect rate, size mix, weight bands and hour-of-day from live rows, and widens its own date range to span the data on load (`AnalyticsPage.jsx:74-82`), so the 7-day default never hides anything. ⚠️ It was demonstrating over 2 days and 13 eggs until the `database/` demo seeds were applied on 2026-08-15; it now covers 2026-03-01 onward and aggregates monthly. **The requirement was met either way, the demo was not** |
 | 10 | Allow administrators to access inspection history | ✅ | **verified 2026-08-15** against a live stack. `HistoryPage.jsx:50` fetches `/api/inspections` through `authenticatedFetch`; unauthenticated calls get `AUTH_REQUIRED`. ⚠️ **There is no role check on that route** — `server.js:55-59` calls only `getSessionUser`, and signing in as `inspector` returned all 5,234 rows. Role gating exists only on `/api/admin/*`. The requirement says administrators *can* reach the history, not that only they can, so it is met as written — same reading R applied to FR-03. **Say this deliberately if asked** |
-| 11 | Capture a candling image under transillumination | 🔴 | **same missing capture code as FR-01** |
-| 12 | Classify internal egg quality from the candling image | 🔴 | `classify.py` is written but no trained model exists — `ai/models/` is absent |
-| 13 | Measure the weight of each inspected egg | 🟡 | firmware written (535 lines), **factor 698.0 as of 2026-08-23** (adopted from J's bench sketch; supersedes the 735.25 calibrated 2026-08-16, and the two disagree by three times the 1 g tolerance). Amber because the board has never been compiled or flashed, and because the factor is owed a re-measurement once the holder is final. *(Descoped 2026-08-19, restored 2026-08-20.)* |
-| 14 | Detect large cracks and gross shell damage | 🔴 | **same missing model as FR-12** |
+| 11 | Capture a candling image under transillumination | 🟡 | the capture half is closed with FR-01. **The transillumination half is hardware, and that hardware is being rebuilt** — the version 1 enclosure is scrapped, not modified, because the panel forced per-batch candling and a one-egg chamber cannot be widened into a tray. R's version 2 blueprint is a **woodwork** build (team ruling 2026-08-28). Nothing about this row closes until a rig exists that lights a whole tray evenly |
+| 12 | Classify internal egg quality from the candling image | 🟡 | **the path runs; the model is a placeholder.** `ai/models/` holds a three-class artifact (`defective`, `good`, `not_an_egg`, trained 2026-08-25) and `classify.py` calls it, so the pipeline produces a verdict end to end. But §7.1 has it trained on 2 eggs and 10 noise images at ~0.50 confidence, and `ai/dataset/` is empty. **A working pipeline is not a working classifier** — this stays amber until a real dataset exists |
+| 13 | Measure the weight of each inspected egg | 🟡 | firmware written (535 lines), **factor 698.0 as of 2026-08-23** (adopted from J's bench sketch; supersedes the 735.25 calibrated 2026-08-16, and the two disagree by three times the 1 g tolerance). Flashed and weighing as of 2026-08-26. Amber because the factor is owed a re-measurement once the holder is final — and the version 2 tray changes what "the holder" means, so that re-calibration now waits on R's blueprint. *(Descoped 2026-08-19, restored 2026-08-20.)* |
+| 14 | Detect large cracks and gross shell damage | 🟡 | **same placeholder model as FR-12** |
 | 15 | Indicate the result at the station, visual indicator + on-station display | ✅ | **Met.** Ver9.1 asks for *"a visual indicator and an on-station display"* — **not an audible signal**, which is what this row claimed for weeks off an older wording of the paper. The RGB module is the indicator (green good, red defective, orange not-an-egg) and the 16x2 LCD is the display. Both were driven end to end on J's board on 2026-08-23. The buzzer was descoped 2026-08-24 and takes nothing with it |
 
 ### They move in clusters, not one at a time

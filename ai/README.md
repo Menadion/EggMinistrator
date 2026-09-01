@@ -18,30 +18,17 @@ The frame yields **one verdict per egg**, and the model does not report which de
 | `defective` | large cracks (light leakage), gross shell damage | reject |
 | `not_an_egg` | empty platform, a hand, a misload | record, do not count as an egg |
 
-> ⚠️ **Narrowed 2026-08-20 — do not re-add spots or air cell.** This table used to carry an
-> "internal quality" row promising **blood/meat spots** and **air cell size**. The client confirmed on
-> 2026-08-20 that they **do not grade for spots at all**, so they are not a requirement rather than a
-> gap being covered for; air cell went with them. `CONTRACT.md` §7 records the ruling and its
-> consequence: *"internal quality" narrows to cracks revealed by transillumination.* Do not claim the
-> station reads the *contents* of an egg. Ver9 agrees — FR-14 reads *"Detect large cracks and gross
-> shell damage,"* and the paper claims no spot or air-cell capability anywhere.
+⚠️ **Do not re-add blood/meat spots or air cell.** The client does not grade for spots at all, so
+they are not a requirement being left uncovered — they are out of scope. *"Internal quality"* means
+cracks revealed by transillumination and nothing else, and the station must never be described as
+reading the *contents* of an egg. `CONTRACT.md` §7 records the ruling; the paper agrees, FR-14 reads
+*"Detect large cracks and gross shell damage."*
 
-> **Balut routing is out of scope by input, not by decision** (`CONTRACT.md` §3.5, confirmed
-> 2026-08-04). Earlier revisions of this file required a third, *routing* output that separated eggs
-> showing embryo development, and then explained its removal as a Ver4 descoping choice. The real
-> reason is stronger and does not depend on a revision: **the reference operation separates
-> fertilised eggs upstream into a different production line, so an embryo cannot arrive at the
-> station at all.** Nothing needs to detect one. The model has **no embryo class** and emits a
-> quality verdict only.
->
-> ✅ **Checked against Ver9.1 on 2026-08-22: the Ver4 leftovers did not survive.** This warning used
-> to say two balut-routing promises might still be in the paper (§3.4 Key Deliverables, and an
-> Expected Benefits row valuing it at ₱48,000/yr) and had never been re-checked. Both are gone. Every
-> mention of balut or embryo in Ver9.1 sits in an **Out of Scope** list, with the reason stated as
-> *"the facility receives only unfertilised eggs. Fertilised eggs are separated upstream into a
-> separate production line and never reach the inspection station."* The ₱48,000 benefit row is now
-> "Improved Inspection Accuracy" and has nothing to do with balut. **Nothing to fix; do not build to
-> a balut requirement.**
+**Balut routing is out of scope by input, not by decision** (`CONTRACT.md` §3.5). The facility
+receives only unfertilised eggs — fertilised ones are separated upstream into a different production
+line and never reach the station — so an embryo cannot arrive here at all. Nothing needs to detect
+one. The model has **no embryo class** and emits a quality verdict only. **Do not build to a balut
+requirement.**
 
 ## Structure
 
@@ -81,12 +68,6 @@ class folders.
 
 ⚠️ **There is no dataset to inherit.** **No operational data is supplied** — the team photographs and
 labels its own eggs, or sources a public set. That has not changed and is the part that matters here.
-
-> **Corrected 2026-08-07.** This line used to read *"LH Deli is a reference scenario, not a client."*
-> That is no longer accurate: the professor confirmed the client relationship and the paper now names
-> **Leong Hup Philippines Inc.** on its cover, with **LH Deli** as the business unit and deployment
-> site. What survives is the operative half — a named client still does not mean a supplied dataset.
-> **Building the dataset is the team's job.**
 
 - **Classes: `good` / `defective` / `not_an_egg`** — three, locked 2026-07-30 (Decision G; the
   decision log is a local working note, ask a teammate for it). These exact strings are what
@@ -186,30 +167,26 @@ reads the already-halved dataset, producing an **empty test set with no error**.
 nothing about what a half is *for*. The role lives in the variable name. `val_ds` is what training
 validates against; `test_ds` is the held-out set. Read the name, never the operation.
 
-> 🔴 **Accuracy (held-out test set): still cannot be filled, but the reason has narrowed.**
-> The split now exists, so the code can produce a held-out number. What is missing is the data —
-> per `CONTRACT.md` §7.1 the model has trained on 2 eggs and 10 noise images at ~0.50 confidence,
-> and `ai/dataset/` is currently empty. The paper claims **85%** (Ver6.1.4 Table 9).
->
-> ⚠️ **The split is correct by reading, not by running.** With an empty dataset `train.py` fails
-> before it reaches either line. Nobody has executed this path.
->
-> ⚠️ **`test_ds` is a one-shot, and no code can enforce that.** `evaluate()` will run a hundred
-> times without complaint. But the moment you use the test number to decide something — more
-> epochs, a different optimizer — you have started steering by it, and it stops being an estimate of
-> unseen performance for exactly the reason `val_accuracy` did. Look once. A fresh honest number
-> needs fresh images nobody has seen.
->
-> **Do not quote the training run's printed score as the system's accuracy** — see
-> [`how-to-add-images.md`](how-to-add-images.md) §7.
+🔴 **Accuracy (held-out test set) still cannot be filled, and the missing piece is data, not code.**
+The split exists, so the code can produce a held-out number. Per `CONTRACT.md` §7.1 the model has
+trained on 2 eggs and 10 noise images at ~0.50 confidence, and `ai/dataset/` is empty. The paper
+claims **85%**.
 
-> **Validate the capture before building anything around it.** The camera has exactly one optical job:
-> produce a usable candling image **through a white or tinted shell**, good enough to read internal
-> features and light-leakage cracks. Photograph real cracked eggs early.
->
-> *(Updated 2026-08-07. This used to warn about the ESP32-CAM resolving a **brown** shell at ~2MP —
-> the hardest version of this problem. Both halves are retired: capture moved to a **USB webcam** in
-> the descope, and the shells were corrected to white and tinted on 2026-08-03. Brown was never
-> sourced. What remains to check is the webcam's minimum focus distance, which sets the chamber depth.)*
->
-> Micro-cracks are out of reach for any optical method — don't treat them as a target.
+⚠️ **The split is correct by reading, not by running.** With an empty dataset `train.py` fails before
+it reaches either line. Nobody has executed this path.
+
+⚠️ **`test_ds` is a one-shot, and no code can enforce that.** `evaluate()` will run a hundred times
+without complaint. But the moment you use the test number to decide something — more epochs, a
+different optimizer — you have started steering by it, and it stops being an estimate of unseen
+performance for exactly the reason `val_accuracy` did. Look once. A fresh honest number needs fresh
+images nobody has seen.
+
+**Do not quote the training run's printed score as the system's accuracy** — see
+[`how-to-add-images.md`](how-to-add-images.md) §7.
+
+**Validate the capture before building anything around it.** The camera has exactly one optical job:
+produce a usable candling image **through a white or tinted shell**, good enough to read internal
+features and light-leakage cracks. Photograph real cracked eggs early. The open item is the webcam's
+minimum focus distance, which sets the chamber depth.
+
+Micro-cracks are out of reach for any optical method — don't treat them as a target.

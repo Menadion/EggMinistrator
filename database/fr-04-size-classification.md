@@ -10,10 +10,9 @@ both §Scope and §3.2.6 Preliminary Scope Statement.
 and Grading*, issued by the Bureau of Agriculture and Fisheries Standards.
 [Official PDF](http://www.bafs.da.gov.ph/bafs_admin/admin_page/pns_file/PNS%20Shell%20Eggs%20(Chicken%20and%20Duck)%20-%20Product%20Standard%20-%20Classification%20and%20Grading.pdf)
 
-> **Decision held, 2026-07-29.** A reference operation's grading list (8 tiers plus Dirty and
-> Condemn) was reviewed against this and **PNS/BAFS 321:2021 stays as the cited standard.** Reasoning
-> is in "The operator list, and why it did not win" below. This is settled; do not reopen it before
-> the defense.
+**PNS/BAFS 321:2021 is the cited standard**, reviewed against a reference operation's 8-tier grading
+list and kept. Reasoning is in "The operator list, and why it did not win" below. Settled — do not
+reopen it before the defense.
 
 ---
 
@@ -44,10 +43,12 @@ Two items, both cheap, both the kind of thing a panel can ask directly.
    and above), so a 69.4 g reading from the load cell falls in a gap between bands written that way.
    Implement continuous boundaries, as in the table above.
 
-**Resolved:** the spelling question. A commercial operator's own category list uses **PEEWEE**, and
-`dashboard/src/data/mockData.js` already had "Peewee." Both spellings appear in the field. Match the
-PNS document's spelling in the paper, and keep whichever the code already uses consistent across the
-schema and the dashboard.
+**Resolved: the spelling is `Pewee`, one E**, per PNS/BAFS 321:2021 and seeded that way at
+`sample-data.sql:14`. Two-E spellings do circulate in the trade — a commercial operator's category
+list uses PEEWEE, and the client writes "peewee" — but neither is authoritative and neither
+overrides the standard. **The schema is the only authority here.** Leaving this as "keep whichever
+the code already uses" is what let `Peewee` survive in five dashboard files until 2026-09-01, where
+it silently broke the badge lookup and the size filters against live rows.
 
 ---
 
@@ -87,33 +88,16 @@ reject handling confirms the split: some rejects are still sold, others are dest
 size *and* a condition, and mixing the two into one lookup makes them mutually exclusive when they
 are not. A dirty egg is still a Large egg.
 
-> [!warning] **SUPERSEDED 2026-07-30. Do not implement the table below.**
-> This proposal was written on the condition *"if a disposition field is not already in the
-> schema."* **One already exists** — `schema.sql` has `ai_disposition` and `final_disposition`, both
-> `ENUM('accepted','rejected','review')`. So the proposal was moot on arrival.
-> It is also **unimplementable as written**: `DIRTY` cannot be assigned by the model, because the
-> capture is transillumination and cannot show surface dirt (Decision G).
-> **The live question is different** — see the `not_an_egg` mapping problem in the brief for
-> Ricardo. Kept here only so the reasoning is not re-derived.
-
-| Value | Meaning | Sellable |
-|---|---|---|
-| `ACCEPTED` | Passed inspection | yes |
-| `DIRTY` | Soiled shell | yes, at a discount |
-| `CONDEMN` | Destroyed | no |
-
-This also gives **Gap 12** its missing vocabulary: the workflow can end at a recorded disposition
-rather than at "result corrected." Flag it to Ricardo alongside the findings in `schema-review.md`.
+Disposition already has a home in the schema: `ai_disposition` and `final_disposition`, both
+`ENUM('accepted','rejected','review')`. Nothing further is needed here.
 
 ---
 
-## Database change
+## The seeded grades
 
-`database/schema.sql` already has a `size_grades` table with the right shape. Only the seed data
-in `database/sample-data.sql` changes. It currently holds five grades with invented boundaries
-(Small starting at 0.00, Jumbo uncapped, no Pewee tier).
-
-Replace the existing `size_grades` insert with:
+`schema.sql` holds the `size_grades` table; `sample-data.sql` seeds it. This is what is in it, and
+it is the authority on both the boundaries and the spelling — **`Pewee` has one E**, per PNS. Any
+map hardcoded in application code is a copy, and copies drift.
 
 ```sql
 INSERT INTO `size_grades` (`code`, `label`, `minimum_weight_g`, `maximum_weight_g`, `display_order`)

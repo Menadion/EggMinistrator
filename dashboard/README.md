@@ -4,12 +4,6 @@ The responsive EggMinistrator monitoring dashboard, built with React, Vite, Tail
 and React Router. It reads **live inspection records from the database**, through the Node API in
 [`../backend/`](../backend/).
 
-> **Corrected 2026-08-22.** This file said the dashboard "currently uses sample data until the
-> ESP32-S3 and MariaDB connections are added," that `mockData.js` held "all current sample inspection
-> data," and that `config.example.php` would be used "when a PHP API is added." All three were stale.
-> The database wiring was verified end to end on 2026-08-14 (`CONTRACT.md`, FR-06), there is no PHP
-> in this project, and the paper's Ver9 §5.2 describes the presentation layer as React with Vite.
-
 ## Run locally
 
 The dashboard does not run usefully on its own — it needs the API and the database behind it.
