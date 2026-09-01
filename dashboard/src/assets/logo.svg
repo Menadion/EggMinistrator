@@ -1,42 +1,39 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img">
   <title>EggMinistrator</title>
 
-  <!-- Shell. Narrow at the crown, widest below centre, like an egg sits. -->
-  <path
-    d="M32 5.5 C41.5 5.5 51.5 21 51.5 35.5 C51.5 47.5 42.8 58.5 32 58.5
-       C21.2 58.5 12.5 47.5 12.5 35.5 C12.5 21 22.5 5.5 32 5.5 Z"
-    fill="#FFFDF8"
-    stroke="#0B5D3B"
-    stroke-width="3.4"
-  />
+  <!-- A cracked egg: the zigzag is the break line, everything below it is
+       shell, and the yolk shows above it.
 
-  <!-- Upper half: the measurement. Three ascending bars on a shared baseline. -->
-  <g fill="#0B5D3B">
-    <rect x="21" y="25" width="5.2" height="6" rx="1.5" />
-    <rect x="28.4" y="20.8" width="5.2" height="10.2" rx="1.5" />
-    <rect x="35.8" y="16.5" width="5.2" height="14.5" rx="1.5" />
+       The shell is a mid tan on purpose. This one file is used in three
+       places and two of them are dark - the sidebar gradient
+       (forest-900 to forest-950) and the login header over its hero photo -
+       while the third, the mobile top bar, is light. A shell in brand green
+       dissolves into the sidebar; an eggshell-white one dissolves into the
+       cream. A mid tone is lighter than one ground and darker than the other,
+       so neither can swallow it.
+
+       The tan is the dark end of the `grade` size ramp in tailwind.config.js,
+       so the mark and the size badges belong to the same family. The yolk is
+       warmer and brighter than anything in that ramp, because a ramp behind
+       small text should recede and a logo should not.
+
+       Do not use this on the enclosure. Wood is a warm mid tone and the shell
+       would disappear into it; the hardware mark is a separate single-colour
+       variant. -->
+  <defs>
+    <clipPath id="shell-break">
+      <path d="M8 29 L16 36 L24 28 L32 36 L40 28 L48 36 L56 29 L56 64 L8 64 Z" />
+    </clipPath>
+  </defs>
+
+  <g transform="translate(0,-4)">
+    <circle cx="32" cy="25" r="11.5" fill="#F0BA55" />
+    <g clip-path="url(#shell-break)">
+      <path
+        d="M32 5.5 C41.5 5.5 51.5 21 51.5 35.5 C51.5 47.5 42.8 58.5 32 58.5
+           C21.2 58.5 12.5 47.5 12.5 35.5 C12.5 21 22.5 5.5 32 5.5 Z"
+        fill="#A8834E"
+      />
+    </g>
   </g>
-
-  <!-- Lower half: the verdict. One row graded, one row still open. -->
-  <path
-    d="M20.3 39.4 L23.7 42.8 L29.4 36.1"
-    fill="none"
-    stroke="#0B5D3B"
-    stroke-width="3.4"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-  />
-  <rect x="33" y="37.6" width="12.5" height="3.2" rx="1.6" fill="#0B5D3B" />
-
-  <rect
-    x="20"
-    y="45.4"
-    width="6.6"
-    height="6.6"
-    rx="1.9"
-    fill="none"
-    stroke="#0B5D3B"
-    stroke-width="2.4"
-  />
-  <rect x="33" y="47.1" width="9" height="3.2" rx="1.6" fill="#0B5D3B" opacity="0.55" />
 </svg>
