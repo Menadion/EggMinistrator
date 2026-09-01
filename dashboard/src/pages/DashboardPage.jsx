@@ -12,17 +12,15 @@ import {
 } from 'recharts'
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChartCard, PageHeader, QualityBadge, SizeBadge, StatCard } from '../components/Ui'
+import {
+  ChartCard,
+  PageHeader,
+  QualityBadge,
+  SizeBadge,
+  StatCard,
+  sizeChartColors,
+} from '../components/Ui'
 import { useDatabaseInspections } from '../hooks/useDatabaseInspections'
-
-const sizeColors = {
-  Peewee: '#31A072',
-  Small: '#4da6df',
-  Medium: '#f7b73b',
-  Large: '#f07855',
-  'Extra Large': '#9c78d3',
-  Jumbo: '#ef7f95',
-}
 
 function ScanTable({ rows }) {
   return (
@@ -69,10 +67,10 @@ export default function DashboardPage() {
     const averageWeight = eggScans.length
       ? (eggScans.reduce((sum, scan) => sum + Number(scan.weight), 0) / eggScans.length).toFixed(1)
       : '—'
-    const sizes = Object.keys(sizeColors).map((name) => ({
+    const sizes = Object.keys(sizeChartColors).map((name) => ({
       name,
       value: inspections.filter((scan) => scan.size === name).length,
-      color: sizeColors[name],
+      color: sizeChartColors[name],
     }))
     const quality = [
       { name: 'Good', value: good, color: '#1C8258' },

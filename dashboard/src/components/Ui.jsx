@@ -1,12 +1,31 @@
 import { ArrowDownToLine, CheckCircle2, Download, FileText, Search, XCircle } from 'lucide-react'
 
+// Pewee -> Jumbo, light to dark, one hue. The same dark brown sits on all six
+// so the column reads as one ordered scale rather than six unrelated chips.
+// The scale itself is `grade` in tailwind.config.js, where the reasoning lives.
 const sizeStyles = {
-  Peewee: 'bg-teal-100 text-teal-800',
-  Small: 'bg-sky-100 text-sky-800',
-  Medium: 'bg-amber-100 text-amber-800',
-  Large: 'bg-orange-100 text-orange-800',
-  'Extra Large': 'bg-violet-100 text-violet-800',
-  Jumbo: 'bg-rose-100 text-rose-800',
+  Pewee: 'bg-grade-100 text-grade-ink',
+  Small: 'bg-grade-200 text-grade-ink',
+  Medium: 'bg-grade-300 text-grade-ink',
+  Large: 'bg-grade-400 text-grade-ink',
+  'Extra Large': 'bg-grade-500 text-grade-ink',
+  Jumbo: 'bg-grade-600 text-grade-ink',
+}
+
+// The same six steps at chart strength. A bar or a pie slice is a solid block
+// with no text on it, so the badge tints above would all read as white. Same
+// order, same hue, more chroma.
+//
+// This is the single source. DashboardPage and mockData both import it -- the
+// three separate copies of the size palette that used to exist are how the
+// badges and the size charts drifted apart in the first place.
+export const sizeChartColors = {
+  Pewee: '#E8D9BE',
+  Small: '#DCC59D',
+  Medium: '#CDAE7B',
+  Large: '#B8925A',
+  'Extra Large': '#9C7742',
+  Jumbo: '#7A5A2E',
 }
 
 export function SizeBadge({ size }) {

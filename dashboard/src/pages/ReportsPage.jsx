@@ -16,7 +16,7 @@ import { PageHeader, downloadCsv } from '../components/Ui'
 import { useDatabaseInspections } from '../hooks/useDatabaseInspections'
 import eggministratorLogo from '../assets/logo.svg'
 
-const sizes = ['All Sizes', 'Peewee', 'Small', 'Medium', 'Large', 'Extra Large', 'Jumbo']
+const sizes = ['All Sizes', 'Pewee', 'Small', 'Medium', 'Large', 'Extra Large', 'Jumbo']
 const qualities = ['All Quality', 'good', 'defective']
 const groupOptions = ['Day', 'Week', 'Month', 'Size', 'Quality']
 const defaultBuilder = {

@@ -1,3 +1,5 @@
+import { sizeChartColors } from '../components/Ui'
+
 const CURRENT_DAILY_TOTALS = [132, 190, 142, 188, 159, 190, 247]
 const PREVIOUS_DAILY_TOTALS = [140, 150, 145, 155, 160, 165, 177]
 const CURRENT_TOTAL = CURRENT_DAILY_TOTALS.reduce((sum, count) => sum + count, 0)
@@ -7,16 +9,44 @@ const PREVIOUS_DEFECTIVE_TOTAL = 144
 const CURRENT_NOT_AN_EGG_TOTAL = 16
 const PREVIOUS_NOT_AN_EGG_TOTAL = 12
 
+// Colours come from `sizeChartColors` in components/Ui.jsx, which is the single
+// source for the size ramp. They used to be six hardcoded hexes here, a second
+// copy in DashboardPage and a third set of Tailwind classes in Ui.jsx, which is
+// how the badges and the size charts ended up disagreeing.
+//
+// `Pewee` is the PNS/BAFS 321:2021 spelling and it is correct. The database is
+// authoritative: `database/sample-data.sql:14` seeds `('PEWEE', 'Pewee', ...)`.
+// The dashboard used to spell it `Peewee` in five places, so live rows from the
+// API missed the badge style lookup and the size filters could never match the
+// smallest grade. Standardised on the schema spelling 2026-09-01.
 const sizeDefinitions = [
-  { name: 'Pewee', count: 102, color: '#31A072', minimumWeight: 0, maximumWeight: 45 },
-  { name: 'Small', count: 191, color: '#4da6df', minimumWeight: 45, maximumWeight: 55 },
-  { name: 'Medium', count: 276, color: '#f7b73b', minimumWeight: 55, maximumWeight: 60 },
-  { name: 'Large', count: 304, color: '#f07855', minimumWeight: 60, maximumWeight: 65 },
-  { name: 'Extra Large', count: 233, color: '#9c78d3', minimumWeight: 65, maximumWeight: 70 },
+  {
+    name: 'Pewee',
+    count: 102,
+    color: sizeChartColors.Pewee,
+    minimumWeight: 0,
+    maximumWeight: 45,
+  },
+  { name: 'Small', count: 191, color: sizeChartColors.Small, minimumWeight: 45, maximumWeight: 55 },
+  {
+    name: 'Medium',
+    count: 276,
+    color: sizeChartColors.Medium,
+    minimumWeight: 55,
+    maximumWeight: 60,
+  },
+  { name: 'Large', count: 304, color: sizeChartColors.Large, minimumWeight: 60, maximumWeight: 65 },
+  {
+    name: 'Extra Large',
+    count: 233,
+    color: sizeChartColors['Extra Large'],
+    minimumWeight: 65,
+    maximumWeight: 70,
+  },
   {
     name: 'Jumbo',
     count: 142,
-    color: '#ef7f95',
+    color: sizeChartColors.Jumbo,
     minimumWeight: 70,
     maximumWeight: null,
     sampleMaximumWeight: 80,

@@ -147,7 +147,7 @@ export default function HistoryPage() {
             className="min-h-11 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600"
           >
             <option>All Sizes</option>
-            {['Peewee', 'Small', 'Medium', 'Large', 'Extra Large', 'Jumbo'].map((item) => (
+            {['Pewee', 'Small', 'Medium', 'Large', 'Extra Large', 'Jumbo'].map((item) => (
               <option key={item}>{item}</option>
             ))}
           </select>

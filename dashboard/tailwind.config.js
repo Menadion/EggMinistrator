@@ -30,6 +30,23 @@ export default {
           50: '#fffdf8',
           100: '#f8f4e9',
         },
+        // The size grade ramp. Peewee -> Jumbo runs light to dark, so the
+        // colour carries the order the six names already imply. Warm, to sit on
+        // the cream ground, and deliberately low chroma: these are backgrounds
+        // behind small text and must never read as a warning, because amber
+        // already means "look at this" and red already means defective. The
+        // previous palette was teal/sky/amber/orange/violet/rose -- six
+        // unrelated hues for ordered data, with Medium landing on a warning
+        // colour. Chart strength lives in `sizeChartColors` in components/Ui.jsx.
+        grade: {
+          100: '#FBF7F0',
+          200: '#F5EDE0',
+          300: '#EDE0CB',
+          400: '#E2CFAF',
+          500: '#D4BA8E',
+          600: '#C2A169',
+          ink: '#3D2F1A',
+        },
       },
     },
   },

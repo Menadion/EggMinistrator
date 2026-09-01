@@ -30,7 +30,7 @@ import { ChartCard, PageHeader, StatCard } from '../components/Ui'
 import { useAuth } from '../auth/AuthContext'
 import { useDatabaseInspections } from '../hooks/useDatabaseInspections'
 
-const sizes = ['All Sizes', 'Peewee', 'Small', 'Medium', 'Large', 'Extra Large', 'Jumbo']
+const sizes = ['All Sizes', 'Pewee', 'Small', 'Medium', 'Large', 'Extra Large', 'Jumbo']
 const qualities = ['All Quality', 'good', 'defective']
 const qualityLabel = (quality) =>
   ({ good: 'Good', defective: 'Defective', not_an_egg: 'Not an Egg' })[quality] || quality
