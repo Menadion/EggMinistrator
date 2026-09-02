@@ -149,7 +149,7 @@ def main():
     parser.add_argument("--map", default=str(TRAY_MAP_PATH), help="calibrated tray map (ai/scripts/calibrate_tray.py)")
     parser.add_argument("--default-map", dest="default_map", action="store_true", help="use the built-in synthetic geometry (tests only)")
     parser.add_argument("--frame", default=None, help="read this image instead of the camera (the test seam)")
-    parser.add_argument("--once", action="store_true", help="handle one cycle, then exit (exit code 2 if it had to hold on a dark frame)")
+    parser.add_argument("--once", action="store_true", help="handle one cycle, then exit (exit code 2 if it had to hold on a dark frame, 3 if the API could not be reached or refused the report)")
     parser.add_argument("--settle", type=float, default=LID_SETTLE_SECONDS)
     parser.add_argument("--camera", type=int, default=None, help="camera index; defaults to the tray map's")
     arguments = parser.parse_args()
@@ -192,8 +192,11 @@ def main():
         while True:
             try:
                 cycle = find_pending_cycle(arguments.api, arguments.key)
-            except RuntimeError as error:
+            except (RuntimeError, OSError) as error:
                 print(f"  api: {error}")
+                if arguments.once:
+                    exit_code = 3
+                    break
                 time.sleep(1.0)
                 continue
             if not cycle:
@@ -229,9 +232,12 @@ def main():
                     print(f"cycle {cycle['id']}  {len(payload['eggs'])} egg(s)  {payload['frame_path']}")
                     for egg in payload["eggs"]:
                         print(f"    {slot_label(egg['slot'])}  {egg['class']:<11} {egg['confidence']:.2f}  {egg['inference_time_ms']:>4} ms  {egg['image_path']}")
-            except RuntimeError as error:
+            except (RuntimeError, OSError) as error:
                 # Images are on disk; the cycle stays pending and comes back next poll.
                 print(f"  cycle {cycle['id']}: could not report -> {error}")
+                if arguments.once:
+                    exit_code = 3
+                    break
                 time.sleep(1.0)
                 continue
 
