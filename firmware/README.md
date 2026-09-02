@@ -116,6 +116,53 @@ answered for the board this project owns.)*
 *(The old ESP32-CAM flashing procedure — USB-to-serial adapter wired to U0T/U0R/GND/5V with GPIO0
 pulled to GND — no longer applies to anything in this project.)*
 
+## Owed for v2 — the tray loop (2026-09-02)
+
+The 2026-09-01 blueprint (`docs/pinned.md` §9) puts a 2×3 tray on the load cell and asks for six
+weights out of one cell by differential weighing. The fan-out spec
+(`docs/superpowers/specs/2026-09-02-software-fanout-design.md`, D2 and l.129) fixes the board's
+contract at **one POST at lid-close with the weights in slot order** and says "the board's prompt
+flow guarantees the order." Everything below is what that sentence assumes and the fan-out spec
+deliberately does not cover. It is firmware scope.
+
+**Capacity, for the record.** Six Jumbo eggs are ~480 g worst case. The 1 kg cell handles that with
+the tray on top as long as the tray stays **under ~300 g** (hard ceiling 400 g) — see
+`hardware/bill-of-materials.md`. Resolution is not the issue; the tare and the transients are.
+
+- 🔴 **Replace the fixed settle delay with a stability gate.** `settledWeightGrams()` waits 800 ms
+  and averages 20 readings. That smooths an egg's bounce but cannot tell whether the load is still
+  changing — a hand resting on the tray for the whole window is averaged in and sent. v2 must
+  **keep reading until the last ~10 samples agree within ~1 g for ~500 ms**, and only then take the
+  step. This is what every kitchen scale does; there is nothing exotic in it.
+- 🔴 **Bound every step.** An egg is 40–85 g. A step **over ~100 g** is a hand, two eggs or a
+  dropped egg; a **negative step** is an egg lifted off. Neither is a weight — prompt the operator
+  to re-seat and wait for the gate again. Do not record it, do not advance the slot.
+- 🔴 **Tare against the empty tray, not the bare plate.** `tare(20)` runs once in `setup()`. For v2
+  the zero is the empty tray in place, and the loop should re-tare at the start of every cycle
+  (tray empty, lid open) so HX711 zero drift over a long session does not walk into the first
+  step. This retires the "power up with the holder fitted" workaround in the status section.
+- 🔴 **`total_g` is a settled reading too.** At lid-close the board sends the total alongside the
+  six steps; the server checks `sum(weights)` against it (±3 g). Take the total through the same
+  gate after the lid closes — a hand cannot be inside a closed lid, so a mismatch there means a
+  step was wrong, which is exactly what the check is for.
+- ⚠️ **Overload is not a firmware problem.** A hard press past ~1.2 kg bends the cell and the
+  calibration is gone; no reading shows it. The fix is a mechanical overload stop under the tray
+  — logged as an enclosure question in `hardware/bill-of-materials.md`.
+- 🔴 **Unloading is a state, and weight is ignored in it.** v1 already does this for one egg:
+  after the result, `waitForEggRemoval()` ignores the cell until the reading drops under
+  `EGG_REMOVED_THRESHOLD_G` (or 60 s pass), then re-arms. v2 needs the same thing sized for a
+  tray. The loop is a state machine, and the cell is only *listened to* in one state:
+  **LOADING** (empty tray tared, lid open, count steps) → **LID CLOSED** (settle, take `total_g`,
+  POST, poll `/result`; weight ignored) → **SHOW RESULT** (TFT/RGB/buzzer) → **UNLOADING** (lid
+  open, weight ignored until the reading returns to the empty-tray zero within ~5 g, bounded by a
+  timeout as v1) → **re-tare** → LOADING. Make the exit from UNLOADING **weight-based, not a fixed
+  grace period** — inspectors unload at different speeds, and "back to zero" is the only signal
+  that means "tray empty". A lid-close during UNLOADING must not mint a cycle; only LOADING with
+  at least one step may. (M raised the unloading gap on 2026-09-02 while reviewing the fan-out
+  spec, which leaves the whole board loop to this track — §7.)
+- Re-calibrate with the final tray fitted (already owed above). The factor describes the whole
+  assembly, and the tray is a new assembly.
+
 ## Notes
 
 - The load cell **is calibrated** (698.0 as of 2026-08-23, superseding 735.25 — see the status

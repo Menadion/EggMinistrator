@@ -99,6 +99,17 @@ the set of questions the new design has to answer:
   and the number kept is the **step** between readings, not the running total — a total divided by
   the batch size is a mean and a light egg hides inside it. So the tray has to load in place rather
   than arrive full.
+- **Tray weight budget and an overload stop** (added 2026-09-02). Six Jumbo eggs are ~480 g; the
+  cell is rated 1 kg and a typical single-point cell survives ~120% and bends permanently at ~150%.
+  So the **tray must weigh under ~300 g** (hard ceiling 400 g) to leave room for an operator's hand
+  pressing down while seating an egg — that press, not the eggs, is the overload risk. 5 mm cintra
+  or 6 mm plywood at ~160×110 mm is 50–65 g, so the budget is easy; cintra is the lighter cut for
+  six holes. Add a **mechanical overload stop**: a block under the tray with a ~1 mm gap, so
+  anything past the rated load bottoms out on the block instead of the beam. **Only the tray
+  touches the cell** — chest, lid, LED strip and TFT all mount to the box; a lid that brushes the
+  tray on closing corrupts the reading, and lid-close is the capture trigger. Check the bought
+  cell's rated platform size: off-centre compensation only holds inside it. The software half
+  (stability gate, step bounds, re-tare) is in `firmware/README.md`, "Owed for v2".
 - How the chamber seals against ambient light while still letting an operator load and unload a tray
   quickly.
 - Webcam-to-tray distance, set by the webcam's minimum focus distance. **Check this before
