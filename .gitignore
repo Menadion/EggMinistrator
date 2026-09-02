@@ -35,6 +35,8 @@ dataset/**
 # session opens the same way. It describes ONE physical rig -- committing it would push
 # J's camera index and focus value onto M's laptop and silently re-frame the dataset.
 ai/capture_settings.json
+# Same reasoning for the tray: six rectangles and two brightness levels that describe ONE rig.
+ai/tray_map.json
 
 # === Trained models — large binaries; link them if over ~100MB ===
 # classes.json is written by the same training run as the weights and describes only that
