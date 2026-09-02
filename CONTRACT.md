@@ -279,6 +279,31 @@ One image row per inspection in `inspection_images` (`image_type` is `ENUM('cand
 
 ---
 
+### 4.5 Firmware → server, the tray cycle (v2)
+
+**One lid-close is one cycle.** The board weighs eggs one at a time as the TFT walks the operator
+slot by slot, keeps the **step** between readings for each slot, and at lid-close sends **one**
+POST carrying every step in slot order plus the settled total. The laptop listener then takes one
+frame of the whole tray, crops it at the fixed slot rectangles, classifies the crops, and posts one
+bundle. The server checks the arithmetic; the listener checks the optics; only the server's
+transaction creates egg rows. Design record: `docs/superpowers/specs/2026-09-02-software-fanout-design.md`
+(local-only).
+
+| Call | Who | Body → reply |
+|---|---|---|
+| `POST /api/cycles` | board | `{ "station_name": "Station 1", "weights": [58.2, 61.0, 55.4], "total_g": 174.6 }` → `201 { "id": 17, "status": "pending" \| "rejected" }`. 1–6 weights, slot order. If `sum(weights)` is outside `total_g ± CYCLE_SUM_TOLERANCE_G` (default 3 g) the cycle is born `rejected` with reason `weights_sum_mismatch`; the board finds out through the result poll. Malformed → 400. |
+| `GET /api/cycles/pending` | listener | → `200 { "id", "weights", "created_at" }` or `404 { "code": "NO_PENDING_CYCLE" }`. |
+| `POST /api/cycles/:id/assessment` | listener | `{ "frame_path", "eggs": [ { "slot", "image_path", "class", "confidence", "model_name", "model_version", "inference_time_ms", "raw_result" } ] }` → `201 { "id", "status": "done", "inspections": [ { "slot", "id" } ] }`. `eggs` count must equal the weight count and slots must be exactly `1..k`. One transaction: k `egg_inspections` (weight from the slot, size grade via `findSizeGrade`, disposition via Decision G), k `ai_assessments`, k `inspection_images` (the crops), cycle → `done`. 409 if the cycle is not `pending`. |
+| `POST /api/cycles/:id/reject` | listener | `{ "reason": "occupancy_mismatch" \| "not_prefix", "detail", "occupied_slots", "frame_path" }` → `200`. Cycle → `rejected`; no egg rows exist. |
+| `GET /api/cycles/:id/result` | board | `{ "status": "pending" }` · `{ "status": "done", "eggs": [ { "slot", "label", "disposition", "size" } ], "any_defective" }` · `{ "status": "rejected", "reason" }`. |
+
+All five require `X-Device-Key`. The v1 calls in 4.1 are unchanged and stay for J's dataset rig; the
+product flow is this one. Tray eggs are ordinary `egg_inspections` rows with `cycle_id` and
+`tray_slot` set; v1 rows keep both NULL. Slot labels (`A1`…`C2`) are derived from `tray_slot` by the
+tray map and never stored.
+
+---
+
 ## 5. AI components in this system
 
 There are currently **three**, and everyone should know all three exist:

@@ -6,6 +6,7 @@ import { createAnalyticsInsights } from './routes/analyticsRoutes.js'
 import { handleAuthRoute } from './routes/authRoutes.js'
 import { AuthError, getSessionUser } from './services/authService.js'
 import { createInspection, findPendingInspection, getInspectionResult, getInspectionsRevision, InspectionError, listInspections, overrideInspection, requireDeviceKey, saveAssessment } from './services/inspectionService.js'
+import { createCycle, findPendingCycle, getCycleResult, rejectCycle, saveCycleAssessment } from './services/cycleService.js'
 
 const backendDirectory = fileURLToPath(new URL('.', import.meta.url))
 const envPath = resolve(backendDirectory, '.env')
@@ -117,6 +118,47 @@ const server = createServer(async (request, response) => {
     if (request.method === 'GET' && resultMatch) {
       requireDeviceKey(request.headers)
       return sendJson(response, 200, await getInspectionResult(Number(resultMatch[1])), origin)
+    }
+
+    // ---- The tray cycle, CONTRACT.md section 4.5 (spec: software fan-out). ----
+    // Five routes, all device-key. Declared AFTER the v1 inspection routes so
+    // those stay byte-for-byte where they were (D1). 'pending' is not digits,
+    // so the exact-match and the /(\d+)/ routes cannot collide.
+
+    // Lid-close. Mints a cycle -- pending, or rejected at birth by the sum check.
+    if (request.method === 'POST' && path === '/api/cycles') {
+      requireDeviceKey(request.headers)
+      return sendJson(response, 201, await createCycle(requestBody || {}), origin)
+    }
+
+    // ai/listen_tray.py polls this. 404 means "no tray right now" -- the
+    // listener sleeps on it, same convention as /api/inspections/pending.
+    if (request.method === 'GET' && path === '/api/cycles/pending') {
+      requireDeviceKey(request.headers)
+      const waiting = await findPendingCycle()
+      if (!waiting) return sendJson(response, 404, { error: 'No cycle is waiting.', code: 'NO_PENDING_CYCLE' }, origin)
+      return sendJson(response, 200, waiting, origin)
+    }
+
+    // The fan-out bundle. One transaction, k eggs.
+    const cycleAssessmentMatch = path.match(/^\/api\/cycles\/(\d+)\/assessment$/)
+    if (request.method === 'POST' && cycleAssessmentMatch) {
+      requireDeviceKey(request.headers)
+      return sendJson(response, 201, await saveCycleAssessment(Number(cycleAssessmentMatch[1]), requestBody || {}), origin)
+    }
+
+    // The listener's refusal: occupancy or prefix. No eggs are ever minted.
+    const cycleRejectMatch = path.match(/^\/api\/cycles\/(\d+)\/reject$/)
+    if (request.method === 'POST' && cycleRejectMatch) {
+      requireDeviceKey(request.headers)
+      return sendJson(response, 200, await rejectCycle(Number(cycleRejectMatch[1]), requestBody || {}), origin)
+    }
+
+    // The board polls this until it is terminal, then drives the TFT/RGB/buzzer.
+    const cycleResultMatch = path.match(/^\/api\/cycles\/(\d+)\/result$/)
+    if (request.method === 'GET' && cycleResultMatch) {
+      requireDeviceKey(request.headers)
+      return sendJson(response, 200, await getCycleResult(Number(cycleResultMatch[1])), origin)
     }
 
     if (request.method === 'POST' && path === '/api/analytics/insights') {
