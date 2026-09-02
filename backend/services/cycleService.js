@@ -66,3 +66,90 @@ export async function getCycleResult(cycleId) {
   const eggs = rows.map((row) => ({ slot: Number(row.slot), label: row.label, disposition: row.disposition, size: row.size ?? null }))
   return { status: 'done', eggs, any_defective: eggs.some((egg) => egg.label === 'defective') }
 }
+
+// THE FAN-OUT. One cycle in, k eggs out, in one transaction. Everything here
+// reuses v1's own service functions so an egg born from a tray is
+// indistinguishable from an egg born from the single-egg station: same daily
+// batch, same sequence numbers, same size-grade lookup, same disposition map,
+// same not_an_egg handling (no size). The only new facts are cycle_id and
+// tray_slot.
+//
+// Gated on status = 'pending' under FOR UPDATE: a listener that crashed after
+// saving crops and re-picked the cycle cannot mint twice, and two listeners
+// cannot race.
+export async function saveCycleAssessment(cycleId, body) {
+  requireCycleId(cycleId)
+  const connection = await database.getConnection()
+  try {
+    await connection.beginTransaction()
+    const [cycles] = await connection.execute('SELECT id, station_name, status, raw_weights FROM tray_cycles WHERE id = ? FOR UPDATE', [cycleId])
+    const cycle = cycles[0]
+    if (!cycle) throw new InspectionError('Cycle not found.', 404, 'CYCLE_NOT_FOUND')
+    if (cycle.status !== 'pending') throw new InspectionError(`Cycle is already ${cycle.status}.`, 409, 'CYCLE_NOT_PENDING')
+
+    const weights = weightsOf(cycle.raw_weights)
+    const { framePath, eggs } = parseCycleAssessment(body, weights.length)
+    const batchId = await findOrCreateDailyBatch(connection, cycle.station_name)
+    const inspections = []
+
+    for (const egg of eggs) {
+      const weight = weights[egg.slot - 1]
+      const disposition = classificationDispositions[egg.class]
+      const sizeGrade = egg.class === 'not_an_egg' ? null : await findSizeGrade(connection, weight)
+      const sequenceNumber = await nextSequenceNumber(connection, batchId)
+
+      const [inserted] = await connection.execute(`
+        INSERT INTO egg_inspections (
+          inspection_code, batch_id, sequence_number, station_name, weight_g, size_grade_id,
+          ai_disposition, final_disposition, final_grade, cycle_id, tray_slot
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `, [randomUUID(), batchId, sequenceNumber, cycle.station_name, weight, sizeGrade ? sizeGrade.id : null, disposition, disposition, sizeGrade ? sizeGrade.label : null, cycleId, egg.slot])
+      const inspectionId = inserted.insertId
+
+      await connection.execute(`
+        INSERT INTO ai_assessments (
+          inspection_id, assessment_type, result_label, confidence_score, is_defect_detected,
+          model_name, model_version, inference_time_ms, raw_result
+        ) VALUES (?, 'candling', ?, ?, ?, ?, ?, ?, ?)
+      `, [inspectionId, egg.class, egg.confidence, egg.class === 'defective' ? 1 : 0, egg.modelName, egg.modelVersion, egg.inferenceTimeMs, egg.rawResult])
+
+      await connection.execute(
+        "INSERT INTO inspection_images (inspection_id, image_type, file_path) VALUES (?, 'candling', ?)",
+        [inspectionId, egg.imagePath],
+      )
+      inspections.push({ slot: egg.slot, id: inspectionId })
+    }
+
+    await connection.execute(
+      "UPDATE tray_cycles SET status = 'done', frame_path = ?, completed_at = CURRENT_TIMESTAMP WHERE id = ?",
+      [framePath, cycleId],
+    )
+    await connection.commit()
+    return { id: cycleId, status: 'done', inspections }
+  } catch (error) {
+    await connection.rollback()
+    throw error
+  } finally {
+    connection.release()
+  }
+}
+
+// The listener's refusal (optics: occupancy or prefix). The frame is kept as
+// evidence of what the refused tray looked like. No egg rows ever exist.
+export async function rejectCycle(cycleId, body) {
+  requireCycleId(cycleId)
+  const { reason, detail, occupiedSlots, framePath } = parseCycleReject(body)
+  const suffix = occupiedSlots.length ? ` (occupied ${occupiedSlots.join(',')})` : ''
+  const stored = (detail || suffix) ? `${reason}: ${detail}${suffix}`.slice(0, 200) : reason
+
+  const [result] = await database.execute(
+    "UPDATE tray_cycles SET status = 'rejected', rejected_reason = ?, frame_path = COALESCE(?, frame_path) WHERE id = ? AND status = 'pending'",
+    [stored, framePath, cycleId],
+  )
+  if (result.affectedRows === 0) {
+    const [rows] = await database.execute('SELECT status FROM tray_cycles WHERE id = ? LIMIT 1', [cycleId])
+    if (!rows[0]) throw new InspectionError('Cycle not found.', 404, 'CYCLE_NOT_FOUND')
+    throw new InspectionError(`Cycle is already ${rows[0].status}.`, 409, 'CYCLE_NOT_PENDING')
+  }
+  return { id: cycleId, status: 'rejected', reason }
+}
