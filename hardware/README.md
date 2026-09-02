@@ -10,8 +10,16 @@ Which ESP32 this is, and why it matters to the pin map, is in `firmware/README.m
   against the version 2 build; everything else is bought and priced.
 - `wiring-diagram.png` — load cell → HX711 → ESP32, and the light-sealed enclosure. *(Not created
   yet.* Committed when it is — see the `!hardware/**/*.png` exception in `.gitignore`.)
-- Enclosure blueprint — per-batch candling, **woodwork, not a 3D print** (team ruling 2026-08-28).
-  *(Not created yet.)*
+- Enclosure blueprint — per-batch candling, **cintra** (team, 2026-09-02, superseding the
+  2026-08-28 "woodwork" ruling); not a 3D print either way. 🔴 **Still not created.** M's
+  hand-drawn original of 2026-09-01 has never been photographed, and `docs/pinned.md` §9 remains
+  its only written record. R has a FreeCAD visualisation of it (`prototype.FCStd`, reviewed
+  2026-09-02) which he describes as a rough measurement, **not a spec** — do not cut against it.
+
+- [`measurements-needed.md`](measurements-needed.md) — 🔴 **open, requested 2026-09-02.** The
+  dimensions J is measuring. Nothing in v2 can be drawn or cut until these land. Includes the two
+  build-before-measure traps: the load cell's rated platform size and the webcam's minimum focus
+  distance.
 
 **The BOM here must match the hardware cost table in the capstone paper (§2.4) — keep them in sync.**
 The components that entered scope late and are easy to forget: transillumination LEDs, light-sealing
@@ -20,25 +28,32 @@ for the candling chamber, the load cell, and the HX711 amplifier.
 ## Buy in two waves
 
 1. ✅ **Wave 1 — electronics.** Load cell, HX711, ESP32, candler. All bought and arrived.
-2. 🔴 **Wave 2 — the rig.** Enclosure, blackout material, tray and platform, fasteners. **Blocked on
-   R's blueprint** — the version 1 rig is being scrapped, so nothing here should be bought against
-   the old geometry.
+2. 🔴 **Wave 2 — the rig.** Enclosure, blackout material, tray and platform, fasteners, **lid hinge
+   and lid-close switch**. **Blocked on measurements, not on the blueprint** — the design intent is
+   settled enough (see `docs/pinned.md` §9), but no real dimensions exist yet. See
+   [`measurements-needed.md`](measurements-needed.md). The version 1 rig is being scrapped, so
+   nothing here should be bought against the old geometry.
 
 **Still check before building the box:** the webcam's **minimum focus distance**. Many webcams will
 not focus at close range, and that distance sets the depth of the chamber. Building the box first
 means building it twice.
 
-## Enclosure — version 2, woodwork, built from scratch
+## Enclosure — version 2, cintra, built from scratch
 
 🔴 **The enclosure built for the 2026-08-26 defense is being scrapped, not modified.** The panel
 forced per-batch candling over a conveyor, and a chamber sized for one egg cannot be widened into
-one that lights and weighs a whole tray. R is drawing a **new design**.
+one that lights and weighs a whole tray. The **new design is M's**, hand-drawn 2026-09-01; R is
+visualising it in FreeCAD, which is not the same thing as speccing it.
 
-Two rulings supersede everything that used to be in this section:
+Rulings that supersede everything that used to be in this section:
 
-- **It is woodwork, not a 3D print** (team ruling 2026-08-28). The commissioned-print route — STL
-  or STEP to an external shop, build-volume limits, opaque filament — is gone with it.
+- **It is cintra** (team, 2026-09-02), superseding **woodwork** (team ruling 2026-08-28). Neither
+  is a 3D print — the commissioned-print route, STL or STEP to an external shop, build-volume
+  limits, opaque filament, is gone regardless. 🔴 The two material rulings have not been reconciled
+  with each other and a woodworker was described as secured; confirm before buying sheet.
 - **It is per-batch** (panel ruling 2026-08-26). One tray, one candling pass, one weighing.
+- **Eggs lie horizontal** (team, 2026-09-02) and **the lid is hinged** (team, 2026-09-02). The
+  hinge fixes the camera's arc, so it sets camera-to-tray distance and has to close repeatably.
 
 The geometry questions the new design has to answer are listed under "Enclosure — version 2" in
 [`bill-of-materials.md`](bill-of-materials.md), together with the weighing method that constrains
