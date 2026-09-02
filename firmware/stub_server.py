@@ -1,4 +1,4 @@
-"""Throwaway stand-in for the three calls in CONTRACT.md section 4.1.
+"""Throwaway stand-in for CONTRACT.md sections 4.1 (single egg) and 4.5 (tray cycle).
 
 WHAT THIS IS FOR
     It lets the ESP32 be tested end to end -- load cell, LCD, LEDs,
@@ -46,9 +46,9 @@ import threading
 import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-PORT = 3001                        # same port the Node backend uses, so the board
-                                   # can swap between stub and real without reflashing
-                                   # (run one or the other, not both)
+PORT = int(os.environ.get("STUB_PORT", "3001"))   # same port the Node backend uses by default, so the board
+                                                  # can swap between stub and real without reflashing
+                                                  # (run one or the other, not both). STUB_PORT for tests.
 DEVICE_KEY = "replace-me"          # must match secrets.h
 # 🔴 TURN THIS OFF BEFORE RUNNING ai/listen_station.py AGAINST THIS STUB:
 #
@@ -71,6 +71,53 @@ _label_cursor = 0
 
 _ASSESS_RE = re.compile(r"^/api/inspections/(\d+)/assessment$")
 _RESULT_RE = re.compile(r"^/api/inspections/(\d+)/result$")
+
+# ---- v2 tray cycle (CONTRACT.md section 4.5) -------------------------------
+# Same idea as the v1 routes: THE BOARD AGAINST THE SPEC, in memory, nothing
+# stored. A real v2 board can be bench-tested against these before (or without)
+# the Node backend. The size bands are the PNS ones so the result grid the TFT
+# draws looks like the real thing.
+_cycles = {}                        # id -> dict(status, station_name, weights, total_g, frame_path, rejected_reason, eggs)
+_next_cycle_id = 1
+_CYCLE_ASSESS_RE = re.compile(r"^/api/cycles/(\d+)/assessment$")
+_CYCLE_REJECT_RE = re.compile(r"^/api/cycles/(\d+)/reject$")
+_CYCLE_RESULT_RE = re.compile(r"^/api/cycles/(\d+)/result$")
+_SUM_TOLERANCE_G = 3.0
+_DISPOSITION = {"good": "accepted", "defective": "rejected", "not_an_egg": "no_egg"}
+_REJECT_REASONS = {"occupancy_mismatch", "not_prefix"}
+
+
+def _size_label(grams):
+    """PNS/BAFS 321:2021 bands, matching database/sample-data.sql."""
+    if grams < 45.0:
+        return "Pewee"
+    if grams < 55.0:
+        return "Small"
+    if grams < 60.0:
+        return "Medium"
+    if grams < 65.0:
+        return "Large"
+    if grams < 70.0:
+        return "Extra Large"
+    return "Jumbo"
+
+
+def _auto_cycle_verdict(cycle_id):
+    """Invent a verdict per slot a moment later, unless the listener beat us to it."""
+    global _label_cursor
+    time.sleep(AUTO_VERDICT_AFTER_S)
+    with _lock:
+        cycle = _cycles.get(cycle_id)
+        if cycle is None or cycle["status"] != "pending":
+            return
+        cycle["eggs"] = []
+        for slot, grams in enumerate(cycle["weights"], start=1):
+            label = _LABELS[_label_cursor % len(_LABELS)]
+            _label_cursor += 1
+            cycle["eggs"].append({"slot": slot, "label": label, "disposition": _DISPOSITION[label],
+                                  "size": None if label == "not_an_egg" else _size_label(grams)})
+        cycle["status"] = "done"
+        print(f"  [auto] cycle {cycle_id} -> {[e['label'] for e in cycle['eggs']]}")
 
 
 def _auto_verdict(inspection_id):
@@ -153,6 +200,85 @@ class Handler(BaseHTTPRequestHandler):
                   f"({payload.get('confidence')})")
             return self._send(201, {"ok": True})
 
+        # ---- v2: lid-close mints a cycle ---------------------------------
+        if self.path == "/api/cycles":
+            global _next_cycle_id
+            body = self._body()
+            weights = body.get("weights")
+            if not isinstance(weights, list) or not 1 <= len(weights) <= 6 or not all(isinstance(w, (int, float)) and 0 < w <= 1000 for w in weights):
+                return self._send(400, {"error": "weights must hold 1..6 grams in slot order", "code": "WEIGHTS_REQUIRED"})
+            try:
+                total = float(body.get("total_g"))
+            except (TypeError, ValueError):
+                return self._send(400, {"error": "total_g must be a number", "code": "INVALID_TOTAL"})
+            mismatch = abs(sum(weights) - total) > _SUM_TOLERANCE_G
+            with _lock:
+                cycle_id = _next_cycle_id
+                _next_cycle_id += 1
+                _cycles[cycle_id] = {
+                    "status": "rejected" if mismatch else "pending",
+                    "station_name": body.get("station_name") or "Station 1",
+                    "weights": [round(float(w), 2) for w in weights],
+                    "total_g": total,
+                    "frame_path": None,
+                    "rejected_reason": "weights_sum_mismatch" if mismatch else None,
+                    "eggs": [],
+                }
+            print(f"POST /api/cycles  weights={weights} total={total} -> id={cycle_id} {'REJECTED (sum)' if mismatch else 'pending'}")
+            if not mismatch and AUTO_VERDICT_AFTER_S is not None:
+                threading.Thread(target=_auto_cycle_verdict, args=(cycle_id,), daemon=True).start()
+            return self._send(201, {"id": cycle_id, "status": _cycles[cycle_id]["status"]})
+
+        # ---- v2: the listener's bundle -----------------------------------
+        match = _CYCLE_ASSESS_RE.match(self.path)
+        if match:
+            cycle_id = int(match.group(1))
+            body = self._body()
+            eggs = body.get("eggs")
+            with _lock:
+                cycle = _cycles.get(cycle_id)
+                if cycle is None:
+                    return self._send(404, {"error": "no such cycle", "code": "CYCLE_NOT_FOUND"})
+                if cycle["status"] != "pending":
+                    return self._send(409, {"error": f"cycle is already {cycle['status']}", "code": "CYCLE_NOT_PENDING"})
+                if not isinstance(eggs, list) or len(eggs) != len(cycle["weights"]):
+                    return self._send(400, {"error": "eggs count must equal weights count", "code": "EGG_COUNT_MISMATCH"})
+                slots = sorted(int(e.get("slot", 0)) for e in eggs)
+                if slots != list(range(1, len(cycle["weights"]) + 1)):
+                    return self._send(400, {"error": "slots must be exactly 1..k", "code": "SLOTS_NOT_PREFIX"})
+                if any(e.get("class") not in _DISPOSITION for e in eggs):
+                    return self._send(400, {"error": "class must be good, defective, or not_an_egg", "code": "INVALID_RESULT_LABEL"})
+                cycle["eggs"] = []
+                for e in sorted(eggs, key=lambda item: int(item["slot"])):
+                    slot = int(e["slot"])
+                    label = e["class"]
+                    cycle["eggs"].append({"slot": slot, "label": label, "disposition": _DISPOSITION[label],
+                                          "size": None if label == "not_an_egg" else _size_label(cycle["weights"][slot - 1])})
+                cycle["frame_path"] = body.get("frame_path")
+                cycle["status"] = "done"
+            print(f"POST cycle assessment id={cycle_id} -> {[e['label'] for e in cycle['eggs']]}")
+            return self._send(201, {"id": cycle_id, "status": "done", "inspections": [{"slot": e["slot"], "id": cycle_id * 10 + e["slot"]} for e in cycle["eggs"]]})
+
+        # ---- v2: the listener's refusal ----------------------------------
+        match = _CYCLE_REJECT_RE.match(self.path)
+        if match:
+            cycle_id = int(match.group(1))
+            body = self._body()
+            reason = body.get("reason")
+            if reason not in _REJECT_REASONS:
+                return self._send(400, {"error": "reason must be occupancy_mismatch or not_prefix", "code": "INVALID_REJECT_REASON"})
+            with _lock:
+                cycle = _cycles.get(cycle_id)
+                if cycle is None:
+                    return self._send(404, {"error": "no such cycle", "code": "CYCLE_NOT_FOUND"})
+                if cycle["status"] != "pending":
+                    return self._send(409, {"error": f"cycle is already {cycle['status']}", "code": "CYCLE_NOT_PENDING"})
+                cycle["status"] = "rejected"
+                cycle["rejected_reason"] = reason
+                cycle["frame_path"] = body.get("frame_path") or cycle["frame_path"]
+            print(f"POST cycle reject id={cycle_id} -> {reason}: {body.get('detail', '')}")
+            return self._send(200, {"id": cycle_id, "status": "rejected", "reason": reason})
+
         self._send(404, {"error": "not found"})
 
     def do_GET(self):
@@ -191,6 +317,31 @@ class Handler(BaseHTTPRequestHandler):
                 "confidence": row["confidence"],
             })
 
+        # ---- v2: the listener asks for the oldest pending tray ------------
+        if self.path == "/api/cycles/pending":
+            with _lock:
+                waiting = [(key, row) for key, row in sorted(_cycles.items()) if row["status"] == "pending"]
+            if not waiting:
+                return self._send(404, {"error": "No cycle is waiting.", "code": "NO_PENDING_CYCLE"})
+            cycle_id, cycle = waiting[0]
+            print(f"GET /api/cycles/pending -> id={cycle_id}")
+            return self._send(200, {"id": cycle_id, "weights": cycle["weights"], "created_at": None})
+
+        # ---- v2: the board polls until terminal ---------------------------
+        match = _CYCLE_RESULT_RE.match(self.path)
+        if match:
+            cycle_id = int(match.group(1))
+            with _lock:
+                cycle = _cycles.get(cycle_id)
+                if cycle is None:
+                    return self._send(404, {"error": "no such cycle", "code": "CYCLE_NOT_FOUND"})
+                if cycle["status"] == "pending":
+                    return self._send(200, {"status": "pending"})
+                if cycle["status"] == "rejected":
+                    return self._send(200, {"status": "rejected", "reason": cycle["rejected_reason"]})
+                return self._send(200, {"status": "done", "eggs": list(cycle["eggs"]),
+                                        "any_defective": any(e["label"] == "defective" for e in cycle["eggs"])})
+
         self._send(404, {"error": "not found"})
 
     def log_message(self, *args):
@@ -198,7 +349,7 @@ class Handler(BaseHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    print(f"stub server on 0.0.0.0:{PORT}  (CONTRACT.md 4.1)")
+    print(f"stub server on 0.0.0.0:{PORT}  (CONTRACT.md 4.1 and 4.5)")
     print(f"  device key : {DEVICE_KEY}")
     print(f"  auto verdict: {AUTO_VERDICT_AFTER_S}s, cycling {' -> '.join(_LABELS)}")
     print("  nothing is stored. Ctrl+C to stop.\n")
