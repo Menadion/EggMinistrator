@@ -37,7 +37,7 @@ Table 6 and Table 15 in the paper along with the ROI derived from them.
 | 3 | Egg candler, USB rechargeable | The transillumination source. **Must be fixed in position and run on continuous USB power** — that is what makes the paper's "illumination remains constant between inspections" claim true | 1 | 180.00 ⚠️ | 180.00 |
 | 4 | Egg holder / platform | Holds the egg over the light **and transfers its weight to the load cell**. Two jobs at once, which makes this the trickiest geometry in the build. **The photo rig used for dataset collection does not need the second job**, so it can be mocked up far more crudely than the final holder | 1 | 250.00 | 250.00 |
 | 5 | Jumper wires, breadboard, connectors | Consumables. The HX711 needs wiring to the ESP32 | 1 set | 250.00 | 250.00 |
-| 6 | Enclosure — **cintra**, tray-sized | The light-sealed chamber. Candling fails if stray ambient light reaches the sensor. 🔴 **This row is out of date.** The figure is an acrylic single-egg estimate; the build is now **cintra cut in-house** (team, 2026-09-02; the woodworker route was deferred) and has to hold a whole tray, so this prices as **sheet plus fasteners, not a commissioned build**. **Also now includes a lid hinge and a lid-close switch** — the switch is what FR-01/FR-11 trigger on and it has never been priced here. Re-cost from M's blueprint once J's measurements land | 1 | 2,000.00 🔴 | 2,000.00 |
+| 6 | Enclosure — **cintra**, tray-sized | The light-sealed chamber. Candling fails if stray ambient light reaches the sensor. 🔴 **This row is out of date.** The figure is an acrylic single-egg estimate; the build is now **cintra cut in-house** (team, 2026-09-02; the woodworker route was deferred) and has to hold a whole tray, so this prices as **sheet plus fasteners, not a commissioned build**. **Also now includes a lid hinge and a lid-close switch** — the switch is what FR-01/FR-11 trigger on and it has never been priced here. 🟡 R is *thinking about* replacing it with a touch on the TFT (2026-09-02, not decided); if that wins, the TFT row becomes a dearer **touch** panel, and see `docs/pinned.md` §9 for why a touch alone cannot confirm the lid is actually shut. Re-cost from the blueprint once the measurements land | 1 | 2,000.00 🔴 | 2,000.00 |
 
 ⚠️ = rough estimate, not from a listing. **Items 3 and 6 are unverified.** Item 3's Shopee listing has
 not been checked; item 6's ₱2,000 is a guess. **Item 6 is the largest single line in the parts bill**,
@@ -98,9 +98,9 @@ title claims the former.*
 
 🔴 **The enclosure built for the 2026-08-26 defense is being scrapped, not modified.** The panel
 forced per-batch candling over a conveyor, and a chamber built to hold one egg at a time cannot be
-widened into one that lights and weighs a whole tray. The blueprint is a **new design** — hand-drawn
-by **M** on 2026-09-01, not by R; R's FreeCAD file is his visualisation of it and he describes it as
-a rough measurement, not a spec. Material is **cintra**, cut **in-house by R, J and D** (team,
+widened into one that lights and weighs a whole tray. The blueprint is a **new design**, hand-drawn
+on 2026-09-01. ⚠️ **Who drew it is unverified.** §9's wording, *"hand-drawn on paper and described verbally by M"*, does not say who held the pen. M believes **R drew it and M relayed it verbally**, but says so with a hedge, and an earlier pass through these files asserted the opposite. **Do not restate either version as settled** — it is resolved only when the drawing itself surfaces. Practical consequence: **ask R for the drawing.** Either way R's FreeCAD file is a visualisation of it and he
+describes it as a rough measurement, not a spec. Material is **cintra**, cut **in-house by R, J and D** (team,
 2026-09-02) after the woodworker route was deferred; not a 3D print either. Nothing below is a
 modification list — it is the set of questions the new design has to answer:
 

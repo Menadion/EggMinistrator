@@ -14,7 +14,8 @@ Which ESP32 this is, and why it matters to the pin map, is in `firmware/README.m
   woodworker route was deferred, which is what retired the 2026-08-28 "woodwork" ruling); not a
   3D print either way. 🔴 **Still not created.** M's
   hand-drawn original of 2026-09-01 has never been photographed, and `docs/pinned.md` §9 remains
-  its only written record. R has a FreeCAD visualisation of it (`prototype.FCStd`, reviewed
+  its only written record — in a folder this repo ignores, so the team cannot read it either.
+  ⚠️ **Authorship unverified; M believes R drew it, so ask R for the drawing.** R has a FreeCAD visualisation of it (`prototype.FCStd`, reviewed
   2026-09-02) which he describes as a rough measurement, **not a spec** — do not cut against it.
 - [`measurements-needed.md`](measurements-needed.md) — 🔴 **open, requested 2026-09-02,
   cut down the same day.** Three numbers the build-first method cannot produce: the smallest egg's
@@ -46,8 +47,10 @@ means building it twice.
 
 🔴 **The enclosure built for the 2026-08-26 defense is being scrapped, not modified.** The panel
 forced per-batch candling over a conveyor, and a chamber sized for one egg cannot be widened into
-one that lights and weighs a whole tray. The **new design is M's**, hand-drawn 2026-09-01; R is
-visualising it in FreeCAD, which is not the same thing as speccing it.
+one that lights and weighs a whole tray. The **new design was hand-drawn on 2026-09-01**, and R
+has since visualised it in FreeCAD, which is not the same thing as speccing it.
+
+⚠️ **Who drew it is unverified.** §9's wording, *"hand-drawn on paper and described verbally by M"*, does not say who held the pen. M believes **R drew it and M relayed it verbally**, but says so with a hedge, and an earlier pass through these files asserted the opposite. **Do not restate either version as settled** — it is resolved only when the drawing itself surfaces. Practical consequence: **ask R for the drawing.**
 
 Rulings that supersede everything that used to be in this section:
 
