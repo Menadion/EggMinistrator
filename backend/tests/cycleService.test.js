@@ -1,5 +1,6 @@
 import test, { after, before } from 'node:test'
 import assert from 'node:assert/strict'
+import { randomUUID } from 'node:crypto'
 import { databaseReachable } from './loadEnv.js'
 import database from '../db.js'
 import { createCycle, findPendingCycle, getCycleResult, weightsOf, saveCycleAssessment, rejectCycle } from '../services/cycleService.js'
@@ -129,6 +130,32 @@ test('saveCycleAssessment is all-or-nothing: a bad egg in the bundle leaves zero
   )
   const [rows] = await database.query('SELECT COUNT(*) AS n FROM egg_inspections WHERE cycle_id = ?', [made.id])
   assert.equal(Number(rows[0].n), 0)
+  assert.deepEqual(await getCycleResult(made.id), { status: 'pending' })
+})
+
+test('saveCycleAssessment rolls back the eggs already inserted when a later egg fails', async (t) => {
+  if (!dbUp) return t.skip('MySQL is not running on 3306')
+  const made = await createCycle({ weights: [58.2, 61.0], total_g: 119.2 })
+  created.push(made.id)
+  // Plant a row that occupies (cycle_id, tray_slot 2) ahead of time, so the
+  // loop's second iteration collides on uq_egg_inspections_cycle_slot after
+  // the first egg's rows (inspection + assessment + image) are already
+  // inserted inside the transaction.
+  await database.execute(
+    "INSERT INTO egg_inspections (inspection_code, station_name, weight_g, cycle_id, tray_slot) VALUES (?, 'Test Station', 61.0, ?, 2)",
+    [randomUUID(), made.id],
+  )
+  await assert.rejects(
+    () => saveCycleAssessment(made.id, { frame_path: 'ai/captures/x.jpg', eggs: [eggBody(1), eggBody(2)] }),
+    { code: 'ER_DUP_ENTRY' },
+  )
+  const [rows] = await database.query('SELECT COUNT(*) AS n FROM egg_inspections WHERE cycle_id = ?', [made.id])
+  assert.equal(Number(rows[0].n), 1) // only the planted row survives; egg 1's insert was rolled back
+  const [assessments] = await database.query(
+    'SELECT COUNT(*) AS n FROM ai_assessments a JOIN egg_inspections i ON i.id = a.inspection_id WHERE i.cycle_id = ?',
+    [made.id],
+  )
+  assert.equal(Number(assessments[0].n), 0)
   assert.deepEqual(await getCycleResult(made.id), { status: 'pending' })
 })
 
