@@ -10,8 +10,9 @@ Which ESP32 this is, and why it matters to the pin map, is in `firmware/README.m
   against the version 2 build; everything else is bought and priced.
 - `wiring-diagram.png` — load cell → HX711 → ESP32, and the light-sealed enclosure. *(Not created
   yet.* Committed when it is — see the `!hardware/**/*.png` exception in `.gitignore`.)
-- Enclosure blueprint — per-batch candling, **cintra** (team, 2026-09-02, superseding the
-  2026-08-28 "woodwork" ruling); not a 3D print either way. 🔴 **Still not created.** M's
+- Enclosure blueprint — per-batch candling, **cintra, cut in-house** (team, 2026-09-02; the
+  woodworker route was deferred, which is what retired the 2026-08-28 "woodwork" ruling); not a
+  3D print either way. 🔴 **Still not created.** M's
   hand-drawn original of 2026-09-01 has never been photographed, and `docs/pinned.md` §9 remains
   its only written record. R has a FreeCAD visualisation of it (`prototype.FCStd`, reviewed
   2026-09-02) which he describes as a rough measurement, **not a spec** — do not cut against it.
@@ -50,10 +51,10 @@ visualising it in FreeCAD, which is not the same thing as speccing it.
 
 Rulings that supersede everything that used to be in this section:
 
-- **It is cintra** (team, 2026-09-02), superseding **woodwork** (team ruling 2026-08-28). Neither
-  is a 3D print — the commissioned-print route, STL or STEP to an external shop, build-volume
-  limits, opaque filament, is gone regardless. 🔴 The two material rulings have not been reconciled
-  with each other and a woodworker was described as secured; confirm before buying sheet.
+- **It is cintra, cut in-house by R, J and D** (team, 2026-09-02). The **woodworker was
+  deferred**, which is what retired the 2026-08-28 "woodwork" ruling — wood lost with the
+  outsourced build it assumed, not on its merits. Every commissioned route is now gone: no external
+  woodworker, and no STL or STEP to a print shop either.
 - **It is per-batch** (panel ruling 2026-08-26). One tray, one candling pass, one weighing.
 - **Eggs lie horizontal** (team, 2026-09-02) and **the lid is hinged** (team, 2026-09-02). The
   hinge fixes the camera's arc, so it sets camera-to-tray distance and has to close repeatably.

@@ -16,11 +16,15 @@ carry them: subtotal ₱3,120.00, contingency ₱312.00, total ₱3,432.00.
 figure is an acrylic single-egg estimate. The build is now tray-sized, so re-costing it
 moves all three tables and the ROI that derives from them.
 
-🔴 **Material changed again, 2026-09-02: the team settled on CINTRA**, relayed by M. That is the
-second material change to this row (acrylic → wood 2026-08-28 → cintra 2026-09-02), and it sits
-against the 2026-08-28 ruling recorded as *"woodwork, not a 3D print"* with a woodworker described
-as secured. **Confirm the team meant to replace wood, not merely to rule out printing**, before
-re-costing — a sheet-cintra figure and a commissioned-woodwork figure are not close to each other.
+🔴 **Material settled 2026-09-02: CINTRA, and the enclosure is now built in-house.** The
+**woodworker route was deferred**, so the hardware group (R, J, D) cuts and assembles the box
+themselves rather than commissioning it. That resolves the apparent clash with the 2026-08-28
+"woodwork" ruling — wood was not overruled on its merits, the outsourced build it depended on was
+dropped, and cintra is what an in-house team can cut.
+
+**Re-cost this row as sheet material plus fasteners, not as a commissioned build.** Those are very
+different figures, and this row is the largest single line in the parts bill, so it moves Table 2,
+Table 6 and Table 15 in the paper along with the ROI derived from them.
 
 ---
 
@@ -33,7 +37,7 @@ re-costing — a sheet-cintra figure and a commissioned-woodwork figure are not 
 | 3 | Egg candler, USB rechargeable | The transillumination source. **Must be fixed in position and run on continuous USB power** — that is what makes the paper's "illumination remains constant between inspections" claim true | 1 | 180.00 ⚠️ | 180.00 |
 | 4 | Egg holder / platform | Holds the egg over the light **and transfers its weight to the load cell**. Two jobs at once, which makes this the trickiest geometry in the build. **The photo rig used for dataset collection does not need the second job**, so it can be mocked up far more crudely than the final holder | 1 | 250.00 | 250.00 |
 | 5 | Jumper wires, breadboard, connectors | Consumables. The HX711 needs wiring to the ESP32 | 1 set | 250.00 | 250.00 |
-| 6 | Enclosure — **cintra**, tray-sized | The light-sealed chamber. Candling fails if stray ambient light reaches the sensor. 🔴 **This row is out of date.** The figure is an acrylic single-egg estimate; the build is now **cintra** (team, 2026-09-02, superseding wood) and has to hold a whole tray. **Also now includes a lid hinge and a lid-close switch** — the switch is what FR-01/FR-11 trigger on and it has never been priced here. Re-cost from M's blueprint once J's measurements land | 1 | 2,000.00 🔴 | 2,000.00 |
+| 6 | Enclosure — **cintra**, tray-sized | The light-sealed chamber. Candling fails if stray ambient light reaches the sensor. 🔴 **This row is out of date.** The figure is an acrylic single-egg estimate; the build is now **cintra cut in-house** (team, 2026-09-02; the woodworker route was deferred) and has to hold a whole tray, so this prices as **sheet plus fasteners, not a commissioned build**. **Also now includes a lid hinge and a lid-close switch** — the switch is what FR-01/FR-11 trigger on and it has never been priced here. Re-cost from M's blueprint once J's measurements land | 1 | 2,000.00 🔴 | 2,000.00 |
 
 ⚠️ = rough estimate, not from a listing. **Items 3 and 6 are unverified.** Item 3's Shopee listing has
 not been checked; item 6's ₱2,000 is a guess. **Item 6 is the largest single line in the parts bill**,
@@ -96,9 +100,9 @@ title claims the former.*
 forced per-batch candling over a conveyor, and a chamber built to hold one egg at a time cannot be
 widened into one that lights and weighs a whole tray. The blueprint is a **new design** — hand-drawn
 by **M** on 2026-09-01, not by R; R's FreeCAD file is his visualisation of it and he describes it as
-a rough measurement, not a spec. Material is **cintra** (team, 2026-09-02), superseding the
-**woodwork** ruling of 2026-08-28; neither is a 3D print. Nothing below is a modification list — it
-is the set of questions the new design has to answer:
+a rough measurement, not a spec. Material is **cintra**, cut **in-house by R, J and D** (team,
+2026-09-02) after the woodworker route was deferred; not a 3D print either. Nothing below is a
+modification list — it is the set of questions the new design has to answer:
 
 - Where the candler sits relative to the tray and the webcam (transillumination = light *behind* the
   eggs, camera opposite), and whether one source lights a whole tray evenly.
