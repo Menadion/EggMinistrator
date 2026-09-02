@@ -16,10 +16,10 @@ const created = []
 const startServer = () => new Promise((ready, fail) => {
   server = spawn(process.execPath, [resolve(backendDir, 'server.js')], { cwd: backendDir, env: { ...process.env, BACKEND_PORT: String(PORT) }, stdio: ['ignore', 'pipe', 'pipe'] })
   let output = ''
-  server.stdout.on('data', (chunk) => { output += chunk; if (output.includes('listening')) ready() })
+  server.stdout.on('data', (chunk) => { output += chunk; if (output.includes('listening')) { clearTimeout(timer); ready() } })
   server.stderr.on('data', (chunk) => { output += chunk })
-  server.once('exit', (code) => fail(new Error(`server exited early (${code}): ${output}`)))
-  setTimeout(() => fail(new Error(`server did not start: ${output}`)), 8000)
+  server.once('exit', (code) => { clearTimeout(timer); fail(new Error(`server exited early (${code}): ${output}`)) })
+  const timer = setTimeout(() => fail(new Error(`server did not start: ${output}`)), 8000)
 })
 
 const api = async (method, path, body) => {
