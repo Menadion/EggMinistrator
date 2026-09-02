@@ -15,11 +15,11 @@ Which ESP32 this is, and why it matters to the pin map, is in `firmware/README.m
   hand-drawn original of 2026-09-01 has never been photographed, and `docs/pinned.md` §9 remains
   its only written record. R has a FreeCAD visualisation of it (`prototype.FCStd`, reviewed
   2026-09-02) which he describes as a rough measurement, **not a spec** — do not cut against it.
-
-- [`measurements-needed.md`](measurements-needed.md) — 🔴 **open, requested 2026-09-02.** The
-  dimensions J is measuring. Nothing in v2 can be drawn or cut until these land. Includes the two
-  build-before-measure traps: the load cell's rated platform size and the webcam's minimum focus
-  distance.
+- [`measurements-needed.md`](measurements-needed.md) — 🔴 **open, requested 2026-09-02,
+  cut down the same day.** Three numbers the build-first method cannot produce: the smallest egg's
+  width, the load cell's **rated platform size**, and the webcam's **minimum focus distance**. The
+  per-component measuring list was dropped — the team builds the internals first and measures the
+  enclosure around them, so parts are not pre-measured for cutouts.
 
 **The BOM here must match the hardware cost table in the capstone paper (§2.4) — keep them in sync.**
 The components that entered scope late and are easy to forget: transillumination LEDs, light-sealing
@@ -29,10 +29,13 @@ for the candling chamber, the load cell, and the HX711 amplifier.
 
 1. ✅ **Wave 1 — electronics.** Load cell, HX711, ESP32, candler. All bought and arrived.
 2. 🔴 **Wave 2 — the rig.** Enclosure, blackout material, tray and platform, fasteners, **lid hinge
-   and lid-close switch**. **Blocked on measurements, not on the blueprint** — the design intent is
-   settled enough (see `docs/pinned.md` §9), but no real dimensions exist yet. See
-   [`measurements-needed.md`](measurements-needed.md). The version 1 rig is being scrapped, so
-   nothing here should be bought against the old geometry.
+   and lid-close switch**. **Blocked on the internals** (team method, 2026-09-02) — the enclosure is
+   measured off the assembled internals rather than cut to a drawing, so the box is sized last.
+   Three inputs still gate it, and they are in [`measurements-needed.md`](measurements-needed.md):
+   egg width gates the **tray**, which is built early; the load cell's rated platform size gates
+   whether that tray weighs **correctly**; and the webcam's focus distance gates the chamber
+   **height**, which the hinge then locks in. The version 1 rig is being scrapped, so nothing here
+   should be bought against the old geometry.
 
 **Still check before building the box:** the webcam's **minimum focus distance**. Many webcams will
 not focus at close range, and that distance sets the depth of the chamber. Building the box first
