@@ -31,6 +31,10 @@ It also creates the hashed session and password-change-token tables required by 
 new roles to `admin` or `inspector`. It stops instead of changing any existing viewer account.
 Existing accounts with blank structured-name fields must be updated manually in Accounts.
 
+`20260902_add_tray_cycles.sql` adds the `tray_cycles` table (one row per 2×3 tray lid-close) and
+two nullable columns on `egg_inspections`, `cycle_id` and `tray_slot`, with a unique key on the
+pair. Additive; every existing inspection keeps both columns NULL.
+
 ## Files
 
 - `schema.sql` - canonical database definition, indexes, foreign keys, and daily summary view.

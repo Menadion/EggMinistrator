@@ -15,6 +15,7 @@ DROP TABLE IF EXISTS `staff_overrides`;
 DROP TABLE IF EXISTS `ai_assessments`;
 DROP TABLE IF EXISTS `inspection_images`;
 DROP TABLE IF EXISTS `egg_inspections`;
+DROP TABLE IF EXISTS `tray_cycles`;
 DROP TABLE IF EXISTS `inspection_batches`;
 DROP TABLE IF EXISTS `size_grades`;
 DROP TABLE IF EXISTS `users`;
@@ -73,11 +74,26 @@ CREATE TABLE `inspection_batches` (
         ON UPDATE CASCADE ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
+CREATE TABLE `tray_cycles` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `station_name` VARCHAR(100) NOT NULL DEFAULT 'Station 1',
+    `status` ENUM('pending','done','rejected') NOT NULL DEFAULT 'pending',
+    `frame_path` VARCHAR(500) NULL,
+    `raw_weights` LONGTEXT NULL,
+    `rejected_reason` VARCHAR(200) NULL,
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `completed_at` DATETIME NULL,
+    PRIMARY KEY (`id`),
+    KEY `idx_tray_cycles_status_created` (`status`, `created_at`)
+) ENGINE=InnoDB;
+
 CREATE TABLE `egg_inspections` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `inspection_code` CHAR(36) NOT NULL,
     `batch_id` BIGINT UNSIGNED NULL,
     `sequence_number` INT UNSIGNED NULL,
+    `cycle_id` BIGINT UNSIGNED NULL,
+    `tray_slot` TINYINT UNSIGNED NULL,
     `station_name` VARCHAR(100) NOT NULL DEFAULT 'Station 1',
     `captured_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `weight_g` DECIMAL(6,2) NULL,
@@ -92,6 +108,7 @@ CREATE TABLE `egg_inspections` (
     PRIMARY KEY (`id`),
     UNIQUE KEY `uq_egg_inspections_code` (`inspection_code`),
     UNIQUE KEY `uq_egg_inspections_batch_sequence` (`batch_id`, `sequence_number`),
+    UNIQUE KEY `uq_egg_inspections_cycle_slot` (`cycle_id`, `tray_slot`),
     KEY `idx_egg_inspections_captured_at` (`captured_at`),
     KEY `idx_egg_inspections_final_disposition_captured` (`final_disposition`, `captured_at`),
     KEY `idx_egg_inspections_size_grade` (`size_grade_id`),
@@ -100,6 +117,9 @@ CREATE TABLE `egg_inspections` (
         ON UPDATE CASCADE ON DELETE SET NULL,
     CONSTRAINT `fk_inspections_size_grade`
         FOREIGN KEY (`size_grade_id`) REFERENCES `size_grades` (`id`)
+        ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT `fk_inspections_cycle`
+        FOREIGN KEY (`cycle_id`) REFERENCES `tray_cycles` (`id`)
         ON UPDATE CASCADE ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
