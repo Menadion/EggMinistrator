@@ -89,6 +89,7 @@ webcam for it.
 | `secrets.h.example` | placeholder Wi-Fi credentials and device key. Copy to `secrets.h`, which is gitignored and never committed |
 | `simulate_station.py` | plays both hardware roles against the **real** backend, so History fills with real rows when nothing is wired up |
 | `stub_server.py` | plays the backend against the **real** board, so the LCD, LEDs and buzzer can be tested before R's routes exist |
+| `simulate_tray.py` | plays board **and** listener against the **real** backend for the tray path (CONTRACT.md 4.5), so the fan-out can be shown end to end before the enclosure exists |
 
 ## Why it must be Wi-Fi, not USB serial
 
