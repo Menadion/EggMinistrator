@@ -59,6 +59,21 @@ python ai/scripts/train.py
 python ai/inference/classify.py some_photo.jpg
 ```
 
+## Two listeners
+
+| | `ai/listen_station.py` | `ai/listen_tray.py` |
+|---|---|---|
+| Trigger | `GET /api/inspections/pending` (one egg) | `GET /api/cycles/pending` (one tray) |
+| Frame | one egg, cropped by `capture_settings.json` zoom/pan | one 4K tray, cropped six ways by `tray_map.json` |
+| Verdicts | one | up to six, one `predict()` call |
+| Report | `POST /api/inspections/:id/assessment` | `POST /api/cycles/:id/assessment` or `/reject` |
+| Who | J's single-candling dataset rig (internal tooling) | the product (per-batch candling, panel ruling 2026-08-26) |
+
+Shared code is in `ai/station_common.py`. Geometry and thresholds for the tray are measured once per
+rig by `ai/scripts/calibrate_tray.py`; synthetic tray frames for testing come from
+`ai/scripts/make_tray_frame.py`. Run the tray listener headless on a synthetic frame with
+`py ai/listen_tray.py --frame <jpg> --once --default-map`.
+
 ⚠️ **`train.py` will fail right now.** The 12 debug fixture images were deleted on 2026-08-07 once
 the pipeline was proven, so `ai/dataset/` is empty and there is nothing to train on. That is
 expected, not a broken script. It starts working again as soon as real photos land in the three
