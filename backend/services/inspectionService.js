@@ -9,16 +9,16 @@ export class InspectionError extends Error {
   }
 }
 
-const classificationDispositions = {
+export const classificationDispositions = {
   good: 'accepted',
   defective: 'rejected',
   not_an_egg: 'no_egg',
 }
 
-const isSafeInteger = (value) => Number.isInteger(value) && value >= 0
-const hasText = (value) => typeof value === 'string' && value.trim().length > 0
+export const isSafeInteger = (value) => Number.isInteger(value) && value >= 0
+export const hasText = (value) => typeof value === 'string' && value.trim().length > 0
 
-const parseRawResult = (value) => {
+export const parseRawResult = (value) => {
   if (!hasText(value)) {
     throw new InspectionError('raw_result must contain the classifier JSON line exactly as emitted.', 400, 'RAW_RESULT_REQUIRED')
   }
@@ -32,25 +32,25 @@ const parseRawResult = (value) => {
   return value
 }
 
-const parseWeight = (value) => {
+export const parseWeight = (value) => {
   const weight = Number(value)
   if (!Number.isFinite(weight) || weight <= 0 || weight > 1000) throw new InspectionError('weight_g must be a number between 0 and 1000.', 400, 'INVALID_WEIGHT')
   return Number(weight.toFixed(2))
 }
 
-const parseConfidence = (value) => {
+export const parseConfidence = (value) => {
   const confidence = Number(value)
   if (!Number.isFinite(confidence) || confidence < 0 || confidence > 1) throw new InspectionError('confidence must be a number from 0 to 1.', 400, 'INVALID_CONFIDENCE')
   return Number(confidence.toFixed(4))
 }
 
-const parseInferenceTime = (value) => {
+export const parseInferenceTime = (value) => {
   const time = Number(value)
   if (!isSafeInteger(time)) throw new InspectionError('inference_time_ms must be a non-negative whole number.', 400, 'INVALID_INFERENCE_TIME')
   return time
 }
 
-const findSizeGrade = async (connection, weight) => {
+export const findSizeGrade = async (connection, weight) => {
   const [rows] = await connection.execute(`
     SELECT id, label
     FROM size_grades
@@ -86,7 +86,7 @@ export function requireDeviceKey(headers) {
 // with captured_at, which defaults to the database clock. Deriving it in Node
 // puts the batch a day out whenever UTC and local time fall either side of
 // midnight, which in Manila is every evening.
-async function findOrCreateDailyBatch(connection, stationName) {
+export async function findOrCreateDailyBatch(connection, stationName) {
   const [result] = await connection.execute(`
     INSERT INTO inspection_batches (batch_code, source_name, notes, started_at)
     VALUES (CONCAT(?, ' ', CURDATE()), ?, 'Daily inspection run, opened automatically by the station.', CURRENT_TIMESTAMP)
@@ -98,7 +98,7 @@ async function findOrCreateDailyBatch(connection, stationName) {
 // sequence_number counts within its own batch, so it restarts at 1 each day.
 // The batch row is locked first: two eggs arriving together would otherwise
 // read the same MAX and both claim the same number.
-async function nextSequenceNumber(connection, batchId) {
+export async function nextSequenceNumber(connection, batchId) {
   await connection.execute('SELECT id FROM inspection_batches WHERE id = ? FOR UPDATE', [batchId])
   const [rows] = await connection.execute(
     'SELECT COALESCE(MAX(sequence_number), 0) + 1 AS nextNumber FROM egg_inspections WHERE batch_id = ?',
