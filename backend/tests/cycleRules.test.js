@@ -14,7 +14,11 @@ test('parseCyclePost accepts 1..6 slot-ordered weights and a total', () => {
 })
 
 test('parseCyclePost defaults the station name', () => {
+  delete process.env.STATION_NAME
   assert.equal(parseCyclePost({ weights: [50], total_g: 50 }).stationName, 'Station 1')
+  process.env.STATION_NAME = 'Bench'
+  assert.equal(parseCyclePost({ weights: [50], total_g: 50 }).stationName, 'Bench')
+  delete process.env.STATION_NAME
 })
 
 test('parseCyclePost rejects empty, oversized, and non-numeric weights', () => {

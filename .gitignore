@@ -37,6 +37,8 @@ dataset/**
 ai/capture_settings.json
 # Same reasoning for the tray: six rectangles and two brightness levels that describe ONE rig.
 ai/tray_map.json
+# Every frame and crop the listeners write, and the synthetic frames plus their answer keys.
+ai/captures/
 
 # === Trained models — large binaries; link them if over ~100MB ===
 # classes.json is written by the same training run as the weights and describes only that

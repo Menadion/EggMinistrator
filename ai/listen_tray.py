@@ -225,10 +225,16 @@ def main():
 
             try:
                 if outcome == "reject":
-                    call(f"{arguments.api}/api/cycles/{cycle['id']}/reject", arguments.key, "POST", payload)
+                    url = f"{arguments.api}/api/cycles/{cycle['id']}/reject"
+                    result = call(url, arguments.key, "POST", payload)
+                    if result is None:
+                        raise RuntimeError(f"{url} -> 404; is this backend running the cycle routes (CONTRACT.md 4.5)?")
                     print(f"cycle {cycle['id']}  REJECTED  {payload['reason']}: {payload['detail']}  {payload['frame_path']}")
                 else:
-                    call(f"{arguments.api}/api/cycles/{cycle['id']}/assessment", arguments.key, "POST", payload)
+                    url = f"{arguments.api}/api/cycles/{cycle['id']}/assessment"
+                    result = call(url, arguments.key, "POST", payload)
+                    if result is None:
+                        raise RuntimeError(f"{url} -> 404; is this backend running the cycle routes (CONTRACT.md 4.5)?")
                     print(f"cycle {cycle['id']}  {len(payload['eggs'])} egg(s)  {payload['frame_path']}")
                     for egg in payload["eggs"]:
                         print(f"    {slot_label(egg['slot'])}  {egg['class']:<11} {egg['confidence']:.2f}  {egg['inference_time_ms']:>4} ms  {egg['image_path']}")

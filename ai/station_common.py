@@ -9,7 +9,6 @@ in this file, both listeners depend on it; change it with both in mind.
 """
 
 import json
-import time
 import urllib.error
 import urllib.request
 from pathlib import Path

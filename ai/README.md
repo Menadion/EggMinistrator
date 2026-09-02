@@ -59,6 +59,11 @@ python ai/scripts/train.py
 python ai/inference/classify.py some_photo.jpg
 ```
 
+⚠️ **`train.py` will fail right now.** The 12 debug fixture images were deleted on 2026-08-07 once
+the pipeline was proven, so `ai/dataset/` is empty and there is nothing to train on. That is
+expected, not a broken script. It starts working again as soon as real photos land in the three
+class folders.
+
 ## Two listeners
 
 | | `ai/listen_station.py` | `ai/listen_tray.py` |
@@ -73,11 +78,6 @@ Shared code is in `ai/station_common.py`. Geometry and thresholds for the tray a
 rig by `ai/scripts/calibrate_tray.py`; synthetic tray frames for testing come from
 `ai/scripts/make_tray_frame.py`. Run the tray listener headless on a synthetic frame with
 `py ai/listen_tray.py --frame <jpg> --once --default-map`.
-
-⚠️ **`train.py` will fail right now.** The 12 debug fixture images were deleted on 2026-08-07 once
-the pipeline was proven, so `ai/dataset/` is empty and there is nothing to train on. That is
-expected, not a broken script. It starts working again as soon as real photos land in the three
-class folders.
 
 ## Dataset (NOT in the repo)
 
