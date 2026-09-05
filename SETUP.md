@@ -93,7 +93,8 @@ run-eggministrator.bat
 
 It checks each prerequisite and stops at the first missing one, naming the exact path and the
 command that fixes it. Then it brings up MySQL → backend → listener → dashboard in order,
-each in its own window, and opens the browser.
+the three servers as tabs of one Windows Terminal window (or one window each where
+`wt.exe` is missing), and opens the browser. `stop` closes the tabs it empties.
 
 ```
 run-eggministrator.bat --no-listener    leaves the webcam free for ai\capture.py

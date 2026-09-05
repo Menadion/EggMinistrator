@@ -10,8 +10,16 @@ rem  Order is not cosmetic: mysql2 throws on its first query if MySQL is
 rem  not up, the listener polls a dead port if the backend is not up, and
 rem  the dashboard shows an empty shell if it starts before either.
 rem
-rem  Each process gets its own titled window so a crash is visible at a
-rem  glance and one can be restarted without killing the other three.
+rem  The backend, listener and dashboard each get a titled TAB in one
+rem  Windows Terminal window (J's ask, 2026-09-05: three loose windows were
+rem  a nuisance to minimise, and stop.bat left them standing). A crash is
+rem  still visible at a glance, one tab can be restarted without killing
+rem  the others, and because each tab runs its server under 'cmd /c ... &
+rem  exit 0', the tab closes itself when stop.bat kills the server. On a
+rem  machine without Windows Terminal (wt.exe) it falls back to one plain
+rem  window per process, as before. MySQL stays a minimised window of its
+rem  own: stop.bat leaves it running on purpose, so as a tab it would be
+rem  the one left behind every time.
 rem
 rem    run-eggministrator.bat                 everything
 rem    run-eggministrator.bat --no-listener   leaves the webcam free for
@@ -20,6 +28,8 @@ rem ===================================================================
 
 set "MYSQL_BIN=C:\xampp\mysql\bin"
 set "VENV_PY=%~dp0.venv\Scripts\python.exe"
+set "WT="
+where wt.exe >nul 2>&1 && set "WT=1"
 set "SKIP_LISTENER="
 if /i "%~1"=="--no-listener" set "SKIP_LISTENER=1"
 
@@ -99,7 +109,8 @@ call :is_port_up 3001
 if !ERRORLEVEL! EQU 0 (
     echo         already running on 3001
 ) else (
-    start "EggMinistrator backend" cmd /k "cd /d "%~dp0backend" && npm start"
+    set "LAUNCH_CMD=npm start"
+    call :launch "backend" "%~dp0backend"
     call :wait_for_port 3001 30
     if !ERRORLEVEL! NEQ 0 (
         echo         Backend never answered on 3001. Look at its window.
@@ -145,11 +156,13 @@ for /f "usebackq delims=" %%z in (`"%VENV_PY%" ai\scripts\print_zoom.py`) do set
 :zoom_done
 if defined STATION_ZOOM (
     echo         zoom !STATION_ZOOM!x, taken from ai\capture_settings.json
-    start "EggMinistrator listener" cmd /k ""%VENV_PY%" ai\listen_station.py --key "!DEVICE_API_KEY!" --zoom !STATION_ZOOM!"
+    set "LAUNCH_CMD="%VENV_PY%" ai\listen_station.py --key "!DEVICE_API_KEY!" --zoom !STATION_ZOOM!"
+    call :launch "listener" "%~dp0."
 ) else (
     echo         WARNING: no saved zoom. Using the listener's default, which may
     echo                  not match how the dataset was shot.
-    start "EggMinistrator listener" cmd /k ""%VENV_PY%" ai\listen_station.py --key "!DEVICE_API_KEY!""
+    set "LAUNCH_CMD="%VENV_PY%" ai\listen_station.py --key "!DEVICE_API_KEY!""
+    call :launch "listener" "%~dp0."
 )
 echo         started -- it holds the webcam until you stop it
 
@@ -161,7 +174,8 @@ call :is_port_up 5173
 if !ERRORLEVEL! EQU 0 (
     echo         already running on 5173
 ) else (
-    start "EggMinistrator dashboard" cmd /k "cd /d "%~dp0dashboard" && npm run dev"
+    set "LAUNCH_CMD=npm run dev"
+    call :launch "dashboard" "%~dp0dashboard"
     call :wait_for_port 5173 45
     if !ERRORLEVEL! NEQ 0 (
         echo         Vite never came up on 5173. Look at its window.
@@ -204,3 +218,21 @@ set /a "_tries+=1"
 if !_tries! GEQ %~2 exit /b 1
 timeout /t 1 /nobreak >nul
 goto :wait_loop
+
+rem --- start one server: a tab in the shared window, or a window ------
+rem   %1 name (tab title)   %2 working directory   LAUNCH_CMD the command
+rem The command travels in a variable, not an argument: the listener's
+rem line carries its own quotes, and 'call' splits a quoted argument at
+rem the first space outside them -- which is any space in the repo path.
+rem The '& exit 0' matters: stop.bat kills the server by port, the wrapper
+rem cmd then reaches 'exit 0', and Windows Terminal closes a tab whose
+rem process ended cleanly. 'cmd /k' would keep the tab open on a corpse.
+rem '-w eggministrator' names the window, so the second and third calls
+rem attach to it instead of opening their own.
+:launch
+if defined WT (
+    wt -w eggministrator new-tab --suppressApplicationTitle --title "EggMinistrator %~1" -d "%~2" cmd /c "!LAUNCH_CMD! & exit 0"
+) else (
+    start "EggMinistrator %~1" cmd /k "cd /d "%~2" && !LAUNCH_CMD!"
+)
+exit /b 0
