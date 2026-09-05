@@ -104,11 +104,15 @@ const buildGroups = (scans, groupBy) => {
     const current = groups.get(group.key) || {
       ...group,
       inspections: 0,
+      eggInspections: 0,
       good: 0,
       defective: 0,
       weights: [],
     }
     current.inspections += 1
+    // not_an_egg is a reject class, not a defect: it stays in the inspection
+    // count but out of the defect-rate denominator, matching AnalyticsPage.
+    current.eggInspections += scan.quality === 'not_an_egg' ? 0 : 1
     current.good += scan.quality === 'good' ? 1 : 0
     current.defective += scan.quality === 'defective' ? 1 : 0
     if (validWeight(scan.weight)) current.weights.push(Number(scan.weight))
@@ -125,7 +129,7 @@ const buildGroups = (scans, groupBy) => {
             (group.weights.reduce((sum, value) => sum + value, 0) / group.weights.length).toFixed(1)
           )
         : null,
-      defectRate: rate(group.defective, group.inspections),
+      defectRate: rate(group.defective, group.eggInspections),
     }))
 }
 
@@ -217,6 +221,10 @@ export default function ReportsPage() {
   const summary = useMemo(() => {
     const good = reportScans.filter((scan) => scan.quality === 'good').length
     const defective = reportScans.filter((scan) => scan.quality === 'defective').length
+    // Eggs only. A not_an_egg scan is recorded but excluded from the quality
+    // rate, the same rule the schema's daily summary applies with
+    // `final_disposition <> 'no_egg'`.
+    const eggScans = reportScans.filter((scan) => scan.quality !== 'not_an_egg')
     const weights = reportScans
       .filter((scan) => validWeight(scan.weight))
       .map((scan) => Number(scan.weight))
@@ -237,7 +245,7 @@ export default function ReportsPage() {
       averageWeight: weights.length
         ? Number((weights.reduce((sum, value) => sum + value, 0) / weights.length).toFixed(1))
         : null,
-      defectRate: rate(defective, reportScans.length),
+      defectRate: rate(defective, eggScans.length),
       mostCommonSize,
       missingData: reportScans.some((scan) => !validWeight(scan.weight) || !scan.size),
     }
